@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ĐHTK - Tổng Kho Sỉ Lẻ V12 (Bug Fix Data)</title>
+    <meta name="description" id="seoDescription" content="Hệ thống đặt hàng sỉ lẻ thông minh ĐHTK, tự động tính toán chiết khấu, đồng bộ tồn kho POS Pancake trực tuyến.">
+    <meta name="keywords" content="đhtk, tổng kho sỉ lẻ, đặt hàng thông minh, pancake pos, đồng bộ tồn kho">
+    <meta name="robots" content="index, follow">
+    <style>
+        :root {
+            --primary: #0f172a; --accent: #3b82f6; --accent-hover: #2563eb;
+            --bg-color: #f8fafc; --card-bg: #ffffff; --text-main: #1e293b;
+            --text-muted: #64748b; --border: #e2e8f0;
+            --price-retail: #ef4444; --price-wholesale: #10b981;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; padding-bottom: 50px; }
+        header { background-color: var(--card-bg); box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+        .header-content { display: flex; justify-content: space-between; align-items: center; height: 70px; }
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-decoration: none; }
+        .logo span { color: var(--accent); }
+        
+        .cart-icon { position: relative; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; }
+        .cart-count { position: absolute; top: 0; right: 0; background: var(--price-retail); color: white; font-size: 0.75rem; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+        .policy-banner { background: linear-gradient(135deg, var(--primary), #1e293b); color: white; padding: 3rem 1rem; text-align: center; border-radius: 16px; margin: 2rem auto; max-width: 1200px; position: relative;}
+        .section-title { text-align: center; font-size: 2rem; margin: 2rem 0 1rem; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 1rem;}
+
+        /* Toolbar */
+        .toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; background: var(--card-bg); padding: 1rem; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid var(--border);}
+        .search-box { flex: 1; min-width: 250px; position: relative; }
+        .search-box input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border-radius: 20px; border: 1px solid var(--border); outline: none; transition: 0.2s; font-size: 0.95rem;}
+        .search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        .search-box::before { content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 1rem; color: var(--text-muted); opacity: 0.7;}
+        .view-toggles { display: flex; gap: 0.5rem; background: var(--bg-color); padding: 4px; border-radius: 8px; border: 1px solid var(--border);}
+        .view-btn { background: none; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; color: var(--text-muted); font-size: 1.1rem; transition: 0.2s;}
+        .view-btn.active { background: white; color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* Categories */
+        .category-scroll { width: 100%; overflow-x: auto; white-space: nowrap; padding-bottom: 10px; margin-bottom: 1rem; scrollbar-width: none; }
+        .category-scroll::-webkit-scrollbar { display: none; }
+        .category-tabs { display: flex; gap: 0.5rem; }
+        .cat-tab { padding: 8px 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; cursor: pointer; font-weight: 500; font-size: 0.95rem; color: var(--text-muted); transition: 0.2s; }
+        .cat-tab:hover { border-color: var(--accent); color: var(--accent); }
+        .cat-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Product Grid */
+        .product-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; }
+        .product-card { background: var(--card-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid var(--border); position: relative; transition: transform 0.2s; display: flex; flex-direction: column;}
+        .product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .product-card.admin-mode:hover { border: 2px dashed var(--accent); transform: none; box-shadow: none; cursor: default;}
+
+        .product-image { width: 100%; height: 250px; background-color: #f1f5f9; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.9rem; position: relative; background-size: cover; background-position: center; cursor: pointer; flex-shrink: 0;}
+        .product-image.no-img::before { content: ''; position: absolute; inset: 0; opacity: 0.5; background-image: repeating-linear-gradient(45deg, #e2e8f0 25%, transparent 25%, transparent 75%, #e2e8f0 75%, #e2e8f0); background-size: 20px 20px; }
+
+        .product-info { padding: 1.5rem; display: flex; flex-direction: column; flex: 1;}
+        .product-title { font-size: 1.1rem; font-weight: 600; outline: none; margin-bottom: 0.25rem;}
+        .cat-badge { font-size: 0.7rem; background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;}
+        .product-meta { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px dashed var(--border); line-height: 1.6;}
+        .meta-val { font-weight: 600; color: var(--text-main); outline: none;}
+        
+        .price-container { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+        .price-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;}
+        .price-label { color: var(--text-muted); font-weight: 500; display: flex; flex-direction: column;}
+        .price-condition { font-size: 0.75rem; color: #94a3b8; font-weight: normal; }
+        .price-value { font-weight: 700; color: var(--primary); font-size: 1.05rem; outline: none;}
+        .price-row:nth-child(1) .price-value { color: var(--price-retail); }
+        .price-row:nth-child(2) .price-value { color: var(--price-wholesale); }
+
+        .controls { display: flex; flex-direction: column; gap: 0.75rem; margin-top: auto;}
+        .opt-row { margin-bottom: 0.5rem; }
+        .opt-label { font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem; }
+        .opt-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .opt-tag-btn { background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; display:flex; align-items:center; gap:5px; }
+        .opt-tag-btn:hover { border-color: var(--accent); }
+        .opt-tag-btn.selected { background: var(--accent); color: white; border-color: var(--accent); }
+        
+        .action-buttons { display: flex; gap: 0.5rem; margin-top: 0.5rem;}
+        .btn { padding: 0.75rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 0.5rem; transition: 0.2s;}
+        .btn-primary { background-color: var(--accent); color: white; flex: 1;}
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-primary:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        .btn-secondary { background-color: #f1f5f9; color: var(--text-main); flex: 1; border: 1px solid var(--border);}
+        .btn-secondary:hover { background-color: #e2e8f0; }
+        .btn-danger { background-color: var(--price-retail); color: white; margin-top: 10px; width:100%;}
+        
+        /* List View */
+        .product-list.list-view { grid-template-columns: 1fr; gap: 1rem; }
+        .product-list.list-view .product-card { flex-direction: row; align-items: stretch; }
+        .product-list.list-view .product-image { width: 220px; height: auto; min-height: 200px; border-right: 1px solid var(--border); }
+        .product-list.list-view .product-info { padding: 1.5rem; display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 1.5rem; align-items: center;}
+        .product-list.list-view .price-container { margin: 0; border-left: 1px dashed var(--border); padding-left: 1.5rem; height: 100%; justify-content: center;}
+        .product-list.list-view .controls { margin: 0; border-left: 1px dashed var(--border); padding-left: 1.5rem; height: 100%; justify-content: center;}
+        @media (max-width: 800px) {
+            .product-list.list-view .product-info { grid-template-columns: 1fr; gap: 1rem; }
+            .product-list.list-view .price-container, .product-list.list-view .controls { border-left: none; padding-left: 0; border-top: 1px dashed var(--border); padding-top: 1rem; }
+            .product-list.list-view .product-card { flex-direction: column; }
+            .product-list.list-view .product-image { width: 100%; height: 200px; border-right: none; border-bottom: 1px solid var(--border); }
+        }
+
+        /* Admin Mode */
+        [contenteditable="true"] { border-bottom: 1px dashed var(--accent); background: rgba(59, 130, 246, 0.05); transition: all 0.2s; cursor: text; border-radius: 2px;}
+        [contenteditable="true"]:focus { background: white; border: 1px solid var(--accent); padding: 2px 4px; color: var(--text-main); }
+        .admin-top-bar { display: none; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; justify-content: center; gap: 10px; border: 1px solid var(--border);}
+        
+        .admin-only-btn, .admin-only-inline, .admin-only-flex { display: none !important; }
+        
+        .admin-mode-active .admin-top-bar { display: flex; }
+        .admin-mode-active .admin-only-btn { display: block !important; }
+        .admin-mode-active .admin-only-inline { display: inline-block !important; }
+        .admin-mode-active .admin-only-flex { display: flex !important; }
+
+        input[type="number"], select, input[type="text"] { padding: 6px; border: 1px solid var(--border); border-radius: 6px; font-size:0.9rem;}
+
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-overlay.active { display: flex; }
+        .close-btn { cursor: pointer; font-size: 1.5rem; font-weight: bold; color: var(--text-muted); border:none; background:none; }
+        
+        .admin-modal { background: white; width: 90%; max-width: 750px; border-radius: 16px; padding: 2rem; position: relative; max-height: 90vh; overflow-y:auto;}
+        .cart-modal { background: white; width: 100%; max-width: 400px; height: 100%; padding: 1.5rem; display: flex; flex-direction: column; position: absolute; right: 0; }
+        
+        .detail-modal { background: white; width: 90%; max-width: 1000px; max-height: 90vh; border-radius: 16px; display: flex; overflow: hidden; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);}
+        .detail-left { flex: 1.2; background: #f8fafc; position: relative; display:flex; align-items:center; justify-content:center; border-right: 1px solid var(--border);}
+        .detail-left img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .detail-right { flex: 1; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.2rem; text-align: left; background: white;}
+        
+        @media (max-width: 768px) {
+            .detail-modal { flex-direction: column; overflow-y: auto; }
+            .detail-left { height: 300px; flex: none; border-right: none; border-bottom: 1px solid var(--border);}
+            .detail-right { flex: none; overflow-y: visible;}
+        }
+
+        /* Map UI */
+        .mapping-box { background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--border); margin-top: 10px; text-align: left; }
+        .map-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size:0.9rem;}
+        .map-row select { width: 50%; padding: 4px; }
+        .map-title { font-weight: 600; margin-top: 15px; margin-bottom: 5px; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 5px;}
+
+        footer { text-align: center; margin-top: 4rem; padding: 2rem 0; color: var(--text-muted); font-size: 0.9rem;}
+        .admin-toggle { background: none; border: none; color: var(--text-muted); cursor: pointer; text-decoration: underline; margin-top: 1rem;}
+        
+        /* Admin Panel Tabs */
+        .apanel-tab { background:none; border:none; padding:12px 18px; cursor:pointer; font-size:0.9rem; font-weight:600; color:#64748b; border-bottom:3px solid transparent; transition:0.2s; white-space:nowrap; }
+        .apanel-tab:hover { color:#0f172a; }
+        .apanel-tab.active { color:#3b82f6; border-bottom-color:#3b82f6; background:white; }
+        .apanel-content { animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+        
+    </style>
+</head>
+<body id="bodyWrap">
+
+    <header>
+        <div class="container header-content">
+            <a href="#" class="logo" id="logoContainer" onclick="if(isAdmin){event.preventDefault();}">ĐH<span>TK</span></a>
+            <div class="cart-icon" onclick="toggleCart()">
+                🛒 Giỏ hàng <span class="cart-count" id="cartCount">0</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Khu vực hiển thị Banner -->
+        <div id="policyContainer"></div>
+
+        <div class="admin-top-bar">
+            <button class="btn btn-secondary" style="background:#10b981; color:white;" onclick="openExcelImport()">📥 Import từ Excel (Khớp cột)</button>
+            <button class="btn btn-secondary" style="background:#8b5cf6; color:white;" onclick="openPosSync()">🔄 Đồng bộ Tồn Kho POS</button>
+            <button class="btn btn-danger" onclick="resetDatabase()" style="margin:0; width:auto;">Làm Mới Data (Xoá Trắng)</button>
+        </div>
+
+        <h2 class="section-title">
+            Danh Mục Sản Phẩm 
+            <span id="adminBadge" style="display:none; font-size:1rem; background:red; color:white; padding: 2px 10px; border-radius:20px;">Chế độ Admin</span>
+        </h2>
+
+        <!-- Dải Category Tabs -->
+        <div class="category-scroll">
+            <div class="category-tabs" id="categoryTabs"></div>
+        </div>
+
+        <!-- Toolbar Lọc & Chế độ xem -->
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Tìm tên sản phẩm, mã SKU..." oninput="renderProducts()">
+            </div>
+            
+            <div style="display:flex; gap:10px; align-items:center;">
+                <select id="sortSelect" onchange="renderProducts()">
+                    <option value="default">Sắp xếp: Mặc định</option>
+                    <option value="price_asc">Giá: Thấp đến Cao</option>
+                    <option value="price_desc">Giá: Cao đến Thấp</option>
+                </select>
+
+                <div class="view-toggles">
+                    <button class="view-btn active" id="btnGrid" onclick="setViewMode('grid')" title="Lưới">🔲</button>
+                    <button class="view-btn" id="btnList" onclick="setViewMode('list')" title="Danh sách">☰</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="product-list" id="productList"></div>
+    </div>
+
+    <!-- Excel Import Modal -->
+    <div class="modal-overlay" id="excelModal" onclick="if(event.target === this) closeModal('excelModal')">
+        <div class="admin-modal">
+            <button class="close-btn" onclick="closeModal('excelModal')" style="position:absolute; top:10px; right:15px;">&times;</button>
+            <h2>Import & Khớp Cột (V12.1)</h2>
+            
+            <div id="excelStep1">
+                <p style="font-size:0.9rem; color:#666; margin-bottom:10px;">Dán dữ liệu từ bảng Excel/Google Sheet (kèm dòng tiêu đề).</p>
+                <!-- Remove white-space:pre to prevent horizontal clipping visually, use wrap -->
+                <textarea id="excelRawData" rows="15" wrap="off" style="width:100%; font-family:monospace; font-size:0.8rem; padding:10px; overflow-x:auto; line-height:1.4;">
+Mã SP	Tên sản phẩm	Phân loại 1	Phân loại 2	DANH MỤC SP	ẢNH 1	Bán Lẻ	Sỉ 1	Sỉ 2
+BD03HDV250G	Băng Dính	dễ vỡ 0.25KG		Băng dính	https://content.pancake.vn/2-25/2025/1/7/57214cf5e5d20e3966d0583da11fa8cdf6722e91.png	15500	14400	13500
+BD03HDV350G	Băng Dính	dễ vỡ 0.35KG		Băng dính	https://content.pancake.vn/2-25/2025/1/7/57214cf5e5d20e3966d0583da11fa8cdf6722e91.png	21600	20200	18900
+BD0503DUCT	Băng Dính	đục 0.5kg		Băng dính	https://content.pancake.vn/2-25/2025/1/7/1f69d28c6bf42475bb1c145615e75cdb172de601.png	28400	26500	24900
+BD0503TRANG	Băng Dính	Trắng 0.5kg		Băng dính	https://content.pancake.vn/2-25/2025/1/7/34de6462c3835319fb0dded34e6928fa410c33f9.png	28400	26500	24900
+BD0503VANGC	Băng Dính	vàng 0.5kg		Băng dính	https://content.pancake.vn/2-25/2025/1/7/98a4feed9df959f08990e9da67fa77ec01d332b8.png	28400	26500	24900
+BD1030DUCT	Băng Dính	đục 1kg		Băng dính	https://content.pancake.vn/2-25/2025/1/7/1f69d28c6bf42475bb1c145615e75cdb172de601.png	60500	56500	53000
+BD1030TRANG	Băng Dính	trong 1kg		Băng dính	https://content.pancake.vn/2-25/2025/1/7/34de6462c3835319fb0dded34e6928fa410c33f9.png	60500	56500	53000
+BD1030VANGC	Băng Dính	vàng 1kg		Băng dính	https://content.pancake.vn/2-25/2025/1/7/98a4feed9df959f08990e9da67fa77ec01d332b8.png	60500	56500	53000
+CUON100X150x350	Giấy in	100X150x350		Giấy in nhiệt	https://content.pancake.vn/2-25/2025/1/7/1345d1c30e4fe654ed395ed61e6cdf00675db1df.png	57100	53300	50000
+CUON75X100X300	Giấy in	75X100X300		Giấy in nhiệt	https://content.pancake.vn/2-25/2025/1/7/1345d1c30e4fe654ed395ed61e6cdf00675db1df.png	27800	26000	24300
+TNPTRDEN15x25	Túi niêm phong 1kg	Đen	15x25	Túi gói hàng NP	https://content.pancake.vn/2-25/2025/3/19/2fbc3906ca1478c6d528758e604d9a9336c1a213.png	45000	43200	40500
+TNPTRHONG15x25	Túi niêm phong 1kg	Hồng	15x25	Túi gói hàng NP	https://content.pancake.vn/2-25/2025/3/19/1a0081a28cefee944a78b7890b07d5738e2847f6.png	50000	49000	45900
+TNPTRXAM15x25	Túi niêm phong 1kg	Xám	15x25	Túi gói hàng NP	https://content.pancake.vn/2-25/2025/3/19/6241cdb19f8cf373cb591fd6bdccc9e11d6eb352.png	50000	49000	45900
+ZIPKHOA2030	Zip khóa	mờ	20x30cm	Túi ZIP	https://content.pancake.vn/2-25/2025/1/7/3571594f3af5abfb26c87184f1ed533d61900ff3.png	75600	70600	66200
+ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025/1/7/3571594f3af5abfb26c87184f1ed533d61900ff3.png	75600	70600	66200</textarea>
+                <button class="btn btn-primary" style="margin-top:10px; width:100%" onclick="processExcelRaw()">Tiếp theo (Phân tích cột)</button>
+            </div>
+
+            <div id="excelStep2" style="display:none;">
+                <p style="font-size:0.9rem; color:#666;">Ghép nối các cột trên file Excel của bạn vào hệ thống (Mapping).</p>
+                <div class="mapping-box" id="mappingBox"></div>
+                
+                <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
+                    <button class="btn btn-secondary" onclick="document.getElementById('excelStep1').style.display='block'; document.getElementById('excelStep2').style.display='none';">Quay lại</button>
+                    <!-- Tùy chọn Import -->
+                    <button class="btn btn-primary" style="background:#10b981; flex:2;" onclick="executeExcelImport(true)">Thêm (Nối tiếp dữ liệu)</button>
+                    <button class="btn btn-primary" style="background:#ef4444; flex:1;" onclick="executeExcelImport(false)">Import (Ghi Đè Xoá Cũ)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- POS Sync Modal -->
+    <div class="modal-overlay" id="posSyncModal" onclick="if(event.target === this) closeModal('posSyncModal')">
+        <div class="admin-modal" style="max-width:650px;">
+            <button class="close-btn" onclick="closeModal('posSyncModal')" style="position:absolute;top:10px;right:15px;">&times;</button>
+            <h2 style="margin-bottom:5px;">🔄 Đồng bộ Tồn Kho — Pancake POS</h2>
+            <p style="font-size:0.85rem; color:#64748b; margin-bottom:15px;">Kết nối Pancake POS, tải danh sách sản phẩm và cập nhật tồn kho tự động theo mã SKU.</p>
+
+            <!-- Cài đặt kết nối -->
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem; margin-bottom:1rem;">
+                <div style="font-weight:700; margin-bottom:10px; color:#0f172a;">⚙️ Cấu hình kết nối POS</div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <label style="width:120px; font-size:0.85rem; font-weight:600; color:#475569;">API Key:</label>
+                        <input type="text" id="pos_api_key" placeholder="Nhập API Key Pancake POS..." style="flex:1;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <label style="width:120px; font-size:0.85rem; font-weight:600; color:#475569;">Shop ID:</label>
+                        <input type="text" id="pos_shop_id" placeholder="VD: 430016713" style="flex:1;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <label style="width:120px; font-size:0.85rem; font-weight:600; color:#475569;">ID Kho:</label>
+                        <input type="text" id="pos_warehouse_id" placeholder="VD: 2e8695e7-078c-..." style="flex:1;">
+                    </div>
+                </div>
+                <button class="btn btn-secondary" style="margin-top:10px; font-size:0.85rem;" onclick="savePosCredentials()">💾 Lưu cấu hình này</button>
+            </div>
+
+            <!-- Kết quả sync -->
+            <div id="posSyncLog" style="display:none; background:#0f172a; color:#e2e8f0; border-radius:8px; padding:1rem; font-family:monospace; font-size:0.8rem; max-height:250px; overflow-y:auto; margin-bottom:1rem; line-height:1.8;"></div>
+
+            <!-- Tùy chọn khớp SKU -->
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px; margin-bottom:1rem; font-size:0.85rem; color:#1e40af;">
+                ℹ️ Hệ thống sẽ <strong>khớp theo Mã SKU</strong> của từng biến thể. Nếu SKU khớp → tồn kho được cập nhật tự động. SKU không khớp → bỏ qua.
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-primary" style="flex:1; background:#8b5cf6;" onclick="runPosSync()" id="posSyncBtn">🚀 Bắt đầu Đồng bộ Tồn Kho</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal-overlay" id="detailModalOverlay" onclick="if(event.target === this) closeModal('detailModalOverlay')">
+        <div class="detail-modal" id="detailModalContent"></div>
+    </div>
+
+    <!-- Giỏ hàng Modal -->
+    <div class="modal-overlay" id="cartModal" onclick="if(event.target === this) toggleCart()" style="justify-content: flex-end;">
+        <div class="cart-modal" onclick="event.stopPropagation()">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
+                <h2>Giỏ hàng của bạn</h2>
+                <button class="close-btn" onclick="toggleCart()">&times;</button>
+            </div>
+            <div class="cart-items" id="cartItems"></div>
+            <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+                <div style="display:flex; justify-content:space-between; font-weight:700; font-size:1.2rem; margin-bottom:1rem;"><span>Tổng tiền:</span><span id="cartTotalSum">0 đ</span></div>
+                
+                <!-- Form thông tin khách hàng -->
+                <div id="checkoutForm" style="background:#f8fafc; border-radius:10px; padding:1rem; margin-bottom:1rem; display:flex; flex-direction:column; gap:8px;">
+                    <div style="font-weight:700; font-size:0.9rem; color:#0f172a; margin-bottom:4px;">📋 Thông tin đặt hàng</div>
+                    <input type="text" id="orderName" placeholder="Họ tên khách hàng *" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px; font-size:0.9rem;">
+                    <input type="text" id="orderPhone" placeholder="Số điện thoại *" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px; font-size:0.9rem;">
+                    <textarea id="orderAddress" placeholder="Địa chỉ giao hàng" rows="2" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px; font-size:0.9rem; resize:none;"></textarea>
+                    <textarea id="orderNote" placeholder="Ghi chú (tuỳ chọn)" rows="2" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px; font-size:0.9rem; resize:none;"></textarea>
+                </div>
+
+                <button class="btn btn-primary" id="checkoutBtn" onclick="checkout()" style="width: 100%; padding:1rem; font-size:1.1rem; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16,185,129,0.4);">
+                    ✅ Chốt Đơn — Gửi về Telegram
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Telegram Settings Modal -->
+    <div class="modal-overlay" id="telegramModal" onclick="if(event.target===this) closeModal('telegramModal')">
+        <div class="admin-modal" style="max-width:500px;">
+            <button class="close-btn" onclick="closeModal('telegramModal')" style="position:absolute;top:10px;right:15px;">&times;</button>
+            <h2 style="margin-bottom:5px;">⚙️ Cài đặt Telegram Bot</h2>
+            <p style="font-size:0.85rem; color:#64748b; margin-bottom:15px;">Đơn hàng sẽ được gửi tự động vào nhóm/kênh Telegram khi khách bấm "Chốt Đơn".</p>
+            <div style="display:flex; flex-direction:column; gap:10px; background:#f8fafc; padding:1rem; border-radius:10px; border:1px solid #e2e8f0;">
+                <div>
+                    <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Bot Token:</label>
+                    <input type="text" id="tg_bot_token" placeholder="VD: 7123456789:AAF..." style="width:100%;">
+                    <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Lấy từ @BotFather trên Telegram</div>
+                </div>
+                <div>
+                    <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Chat ID (Nhóm/Kênh):</label>
+                    <input type="text" id="tg_chat_id" placeholder="VD: -1001234567890" style="width:100%;">
+                    <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Thêm bot vào nhóm → dùng @userinfobot để lấy ID</div>
+                </div>
+                <div>
+                    <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Tiêu đề đơn hàng:</label>
+                    <input type="text" id="tg_store_name" placeholder="VD: 🏪 ĐHTK - Đơn hàng mới" style="width:100%;">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="testTelegramBot()">📨 Gửi tin nhắn test</button>
+                <button class="btn btn-primary" style="flex:1;" onclick="saveTelegramSettings()">💾 Lưu cài đặt</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 Bản quyền thuộc về ĐHTK.</p>
+        <button class="admin-toggle" onclick="promptAdmin()" id="adminLoginBtn">🔐 Đăng nhập Admin</button>
+    </footer>
+
+    <!-- Admin Login Modal -->
+    <div class="modal-overlay" id="adminLoginModal" onclick="if(event.target===this) closeModal('adminLoginModal')">
+        <div style="background:white; width:90%; max-width:380px; border-radius:20px; padding:2rem; position:relative; box-shadow: 0 25px 60px rgba(0,0,0,0.3);">
+            <div style="text-align:center; margin-bottom:1.5rem;">
+                <div style="font-size:3rem;">🔐</div>
+                <h2 style="color:#0f172a; margin-top:0.5rem;">Đăng nhập Admin</h2>
+                <p style="color:#64748b; font-size:0.85rem;">Chỉ dành cho quản trị viên cửa hàng</p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <input type="text" id="adminUsername" placeholder="Tên đăng nhập" autocomplete="username" style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px; font-size:1rem; outline:none;">
+                <input type="password" id="adminPassword" placeholder="Mật khẩu" autocomplete="current-password" onkeydown="if(event.key==='Enter') doAdminLogin()" style="width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:10px; font-size:1rem; outline:none;">
+                <div id="loginError" style="color:#ef4444; font-size:0.85rem; display:none; text-align:center;"></div>
+                <button onclick="doAdminLogin()" style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; border:none; border-radius:10px; padding:14px; font-size:1rem; font-weight:700; cursor:pointer; margin-top:5px;">Đăng nhập</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div class="modal-overlay" id="adminPanelModal" onclick="if(event.target===this) closeAdminPanel()">
+        <div class="admin-modal" style="max-width:780px; padding:0; overflow:hidden;">
+            <!-- Header -->
+            <div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; padding:1.5rem 2rem; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-size:1.3rem; font-weight:800;">⚙️ Admin Panel — ĐHTK</div>
+                    <div style="font-size:0.8rem; opacity:0.7; margin-top:2px;" id="adminWelcome">Xin chào!</div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button onclick="closeAdminPanel()" style="background:rgba(255,255,255,0.15); border:none; color:white; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.9rem;">✕ Đóng</button>
+                    <button onclick="adminLogout()" style="background:#ef4444; border:none; color:white; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.9rem;">🚪 Đăng xuất</button>
+                </div>
+            </div>
+            <!-- Tabs -->
+            <div style="display:flex; border-bottom:2px solid #e2e8f0; background:#f8fafc;">
+                <button class="apanel-tab active" onclick="switchTab('tab-store')" id="t-store">🏪 Cửa hàng</button>
+                <button class="apanel-tab" onclick="switchTab('tab-telegram')" id="t-telegram">📨 Telegram</button>
+                <button class="apanel-tab" onclick="switchTab('tab-pos')" id="t-pos">🔄 POS Sync</button>
+                <button class="apanel-tab" onclick="switchTab('tab-import')" id="t-import">📥 Import</button>
+                <button class="apanel-tab" onclick="switchTab('tab-account')" id="t-account">👤 Tài khoản</button>
+            </div>
+            <!-- Tab Content -->
+            <div style="padding:1.5rem; max-height:65vh; overflow-y:auto;">
+
+                <!-- Tab: Cửa hàng -->
+                <div id="tab-store" class="apanel-content">
+                    <h3 style="margin-bottom:1rem;">🏪 Quản lý Cửa hàng</h3>
+                    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:1.5rem;">
+                        <button class="btn" style="background:#10b981; color:white; flex:1; min-width:150px;" onclick="closeAdminPanel(); openExcelImport();">📥 Import Excel</button>
+                        <button class="btn" style="background:#8b5cf6; color:white; flex:1; min-width:150px;" onclick="closeAdminPanel(); openPosSync();">🔄 Đồng bộ Tồn Kho POS</button>
+                        <button class="btn" style="background:#ef4444; color:white; flex:1; min-width:150px;" onclick="closeAdminPanel(); resetDatabase();">🗑 Xóa trắng Database</button>
+                    </div>
+
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1.2rem; display:flex; flex-direction:column; gap:12px; margin-bottom:1.5rem;">
+                        <div style="font-weight:700; color:#0f172a; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">⚙️ Cấu hình Banner & Giao diện</div>
+                        
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Chữ hiển thị Logo:</label>
+                            <input type="text" id="ap_store_logo" style="width:100%;" placeholder="VD: ĐHTK">
+                        </div>
+
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Tiêu đề Banner:</label>
+                            <input type="text" id="ap_banner_title" style="width:100%;" placeholder="Nhập tiêu đề banner...">
+                        </div>
+
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Mô tả / Điều kiện Banner:</label>
+                            <textarea id="ap_banner_subtitle" rows="3" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; font-size:0.9rem;" placeholder="Nhập mô tả hoặc điều kiện mua sỉ..."></textarea>
+                        </div>
+                    </div>
+
+                    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:1.2rem; display:flex; flex-direction:column; gap:12px; margin-bottom:1.5rem;">
+                        <div style="font-weight:700; color:#1e40af; border-bottom:1px solid #bfdbfe; padding-bottom:6px;">🔍 Tối ưu SEO cho Website</div>
+                        
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; color:#1e40af; display:block; margin-bottom:4px;">Meta Title (Tiêu đề SEO):</label>
+                            <input type="text" id="ap_seo_title" style="width:100%;" placeholder="VD: Tổng Kho Sỉ Lẻ ĐHTK - Giá Tốt Nhất">
+                        </div>
+
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; color:#1e40af; display:block; margin-bottom:4px;">Meta Description (Mô tả SEO):</label>
+                            <textarea id="ap_seo_desc" rows="3" style="width:100%; padding:8px; border:1px solid #bfdbfe; border-radius:6px; font-size:0.9rem;" placeholder="Nhập mô tả ngắn gọn hiển thị trên Google search..."></textarea>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="apSaveStoreConfig()" style="width:100%; margin-bottom:1.5rem; background:#3b82f6;">💾 Lưu cấu hình Banner & SEO</button>
+
+                    <div style="padding:1rem; background:#f0fdf4; border-radius:10px; border:1px solid #bbf7d0;">
+                        <div style="font-weight:700; margin-bottom:8px;">📊 Thống kê nhanh</div>
+                        <div id="adminStats" style="font-size:0.9rem; color:#166534;"></div>
+                    </div>
+                </div>
+
+                <!-- Tab: Telegram -->
+                <div id="tab-telegram" class="apanel-content" style="display:none;">
+                    <h3 style="margin-bottom:1rem;">📨 Cài đặt thông báo Telegram</h3>
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Bot Token:</label>
+                            <input type="text" id="ap_tg_token" placeholder="VD: 7123456789:AAF..." style="width:100%;">
+                            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Lấy từ @BotFather → /newbot trên Telegram</div>
+                        </div>
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Chat ID (Nhóm nhận đơn):</label>
+                            <input type="text" id="ap_tg_chatid" placeholder="VD: -1001234567890" style="width:100%;">
+                            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Thêm bot vào nhóm → gõ bất kỳ tin → mở <code>api.telegram.org/bot{TOKEN}/getUpdates</code> lấy chat.id</div>
+                        </div>
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Tiêu đề thông báo:</label>
+                            <input type="text" id="ap_tg_name" placeholder="VD: 🏪 ĐHTK - Đơn hàng mới" style="width:100%;">
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button class="btn btn-secondary" style="flex:1;" onclick="apTestTelegram()">📨 Gửi tin test</button>
+                            <button class="btn btn-primary" style="flex:1;" onclick="apSaveTelegram()">💾 Lưu cài đặt</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: POS Sync -->
+                <div id="tab-pos" class="apanel-content" style="display:none;">
+                    <h3 style="margin-bottom:1rem;">🔄 Kết nối Pancake POS</h3>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <label style="width:100px; font-size:0.85rem; font-weight:600;">API Key:</label>
+                            <input type="text" id="ap_pos_key" style="flex:1;" placeholder="Nhập API Key Pancake POS...">
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <label style="width:100px; font-size:0.85rem; font-weight:600;">Shop ID:</label>
+                            <input type="text" id="ap_pos_shop" style="flex:1;" placeholder="VD: 430016713">
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <label style="width:100px; font-size:0.85rem; font-weight:600;">ID Kho:</label>
+                            <input type="text" id="ap_pos_wh" style="flex:1;" placeholder="VD: 2e8695e7-...">
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn btn-secondary" style="flex:1;" onclick="apSavePOS()">💾 Lưu cấu hình POS</button>
+                            <button class="btn btn-primary" style="flex:1; background:#8b5cf6;" onclick="closeAdminPanel(); openPosSync();">🚀 Mở giao diện Sync</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Import -->
+                <div id="tab-import" class="apanel-content" style="display:none;">
+                    <h3 style="margin-bottom:1rem;">📥 Import Sản phẩm từ Excel</h3>
+                    <p style="color:#64748b; font-size:0.9rem; margin-bottom:1rem;">Dán dữ liệu từ Excel/Google Sheet vào đây để cập nhật kho.</p>
+                    <button class="btn btn-primary" style="width:100%; background:#10b981;" onclick="closeAdminPanel(); openExcelImport();">📥 Mở giao diện Import Excel</button>
+                </div>
+
+                <!-- Tab: Tài khoản -->
+                <div id="tab-account" class="apanel-content" style="display:none;">
+                    <h3 style="margin-bottom:1rem;">👤 Quản lý tài khoản Admin</h3>
+                    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:1rem; margin-bottom:1rem; font-size:0.85rem; color:#92400e;">
+                        ⚠️ Mật khẩu được mã hóa và lưu trên trình duyệt. Không chia sẻ thiết bị khi đang đăng nhập Admin.
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Tên đăng nhập:</label>
+                            <input type="text" id="ap_new_username" placeholder="Nhập tên đăng nhập mới" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Mật khẩu hiện tại:</label>
+                            <input type="password" id="ap_old_password" placeholder="Xác nhận mật khẩu cũ" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Mật khẩu mới:</label>
+                            <input type="password" id="ap_new_password" placeholder="Nhập mật khẩu mới" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Xác nhận mật khẩu mới:</label>
+                            <input type="password" id="ap_confirm_password" placeholder="Nhập lại mật khẩu mới" style="width:100%;">
+                        </div>
+                        <button class="btn btn-primary" onclick="apChangePassword()">🔐 Đổi mật khẩu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CORE DATA MODEL V12 ---
+        let isAdmin = localStorage.getItem('dhtk_isAdmin') === 'true';
+        let cart = [];
+        let selections = {};
+        let excelHeaders = []; let excelRows = []; 
+        let currentViewMode = 'grid'; 
+        let activeCategory = 'all';
+
+        let storeSettings = JSON.parse(localStorage.getItem('dhtk_settings_v12')) || {
+            bannerTitle: 'Tổng Kho Sỉ Lẻ ĐHTK',
+            bannerSubtitle: 'Hệ thống đặt hàng thông minh, tự động cộng gộp chiết khấu. Đã fix lỗi gom nhóm, load chuẩn 100% dữ liệu!',
+            logoText: 'ĐHTK',
+            metaTitle: 'ĐHTK - Tổng Kho Sỉ Lẻ V12 (Bug Fix Data)',
+            metaDescription: 'Hệ thống đặt hàng sỉ lẻ thông minh ĐHTK, tự động tính toán chiết khấu, đồng bộ tồn kho POS Pancake trực tuyến.'
+        };
+        function saveSettings() { localStorage.setItem('dhtk_settings_v12', JSON.stringify(storeSettings)); }
+
+        const formatMoney = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        const parseMoney = (str) => { const num = parseInt(str.toString().replace(/\D/g, '')); return isNaN(num) ? 0 : num; };
+
+        let products = JSON.parse(localStorage.getItem('dhtk_products_v12')) || [];
+        
+        // --- SEED REAL DATA LOGIC ---
+        if(products.length === 0) {
+            runDataSeed();
+        }
+
+        function resetDatabase() {
+            if(confirm("Bạn có chắc muốn Reset sạch sẽ dữ liệu kho? Tất cả sẽ bị xóa mất!")) {
+                localStorage.removeItem('dhtk_products_v12');
+                products = [];
+                renderUI();
+                alert("Đã xóa trắng data thành công!");
+            }
+        }
+
+        function runDataSeed() {
+            console.log("Seeding real data...");
+            const rawSeed = document.getElementById('excelRawData').value.trim();
+            const lines = rawSeed.split('\n');
+            const delimiter = '\t';
+            let rawRows = [];
+            for(let i=1; i<lines.length; i++) { if(lines[i].trim()) rawRows.push(lines[i].split(delimiter).map(s=>s.trim())); }
+            
+            let groups = {};
+            rawRows.forEach(r => {
+                const pName = r[1] ? r[1].trim() : 'Không Tên';
+                if(!groups[pName]) groups[pName] = [];
+                groups[pName].push(r);
+            });
+
+            for(let pName in groups) {
+                const rG = groups[pName];
+                const cat = rG[0][4] || 'Chưa phân loại';
+                const pId = Date.now() + Math.floor(Math.random()*10000);
+                
+                let opts = [];
+                let hasOpt1 = rG.some(r => r[2] && r[2].trim() !== '');
+                let hasOpt2 = rG.some(r => r[3] && r[3].trim() !== '');
+                
+                if(hasOpt1) {
+                    let v = new Set(); rG.forEach(r=>{if(r[2] && r[2].trim() !== '') v.add(r[2].trim())});
+                    opts.push({id:'opt_1', name:'Phân loại 1', values:Array.from(v), hidden:false});
+                }
+                if(hasOpt2) {
+                    let v = new Set(); rG.forEach(r=>{if(r[3] && r[3].trim() !== '') v.add(r[3].trim())});
+                    opts.push({id:'opt_2', name:'Phân loại 2', values:Array.from(v), hidden:false});
+                }
+
+                let tiers = [
+                    { id: pId+'_t0', name: 'Giá Bán Lẻ', condition: 0, price: 0 },
+                    { id: pId+'_t1', name: 'Giá Sỉ 1', condition: 10, price: 0 },
+                    { id: pId+'_t2', name: 'Giá Sỉ 2', condition: 100, price: 0 }
+                ];
+
+                let product = {
+                    id: pId, name: pName, category: cat, images: [rG[0][5]||''], description: "Sản phẩm chất lượng cao, chuyên đổ sỉ cho các shop toàn quốc.", 
+                    sku: rG[0][0] || pName, unit: "sp", weight: "0", pricingTiers: tiers, options: opts, variants: []
+                };
+
+                rG.forEach((r, idx) => {
+                    let optionValues = {};
+                    let labelArr = [];
+                    if(hasOpt1 && r[2] && r[2].trim() !== '') { optionValues['opt_1'] = r[2].trim(); labelArr.push(r[2].trim()); }
+                    if(hasOpt2 && r[3] && r[3].trim() !== '') { optionValues['opt_2'] = r[3].trim(); labelArr.push(r[3].trim()); }
+                    
+                    let prices = {};
+                    prices[pId+'_t0'] = parseMoney(r[6]);
+                    prices[pId+'_t1'] = parseMoney(r[7]);
+                    prices[pId+'_t2'] = parseMoney(r[8]);
+                    
+                    product.variants.push({
+                        id: 'v_' + pId + '_' + idx,
+                        label: labelArr.length > 0 ? labelArr.join(' - ') : 'Mặc định',
+                        optionValues: optionValues,
+                        sku: r[0] ? r[0].trim() : (pName + '-' + idx),
+                        weight: "0",
+                        stock: Math.floor(Math.random()*500) + 50,
+                        image: r[5] ? r[5].trim() : '',
+                        prices: prices
+                    });
+                });
+
+                if(product.variants.length > 0) {
+                    tiers[0].price = product.variants[0].prices[pId+'_t0'];
+                    tiers[1].price = product.variants[0].prices[pId+'_t1'];
+                    tiers[2].price = product.variants[0].prices[pId+'_t2'];
+                }
+                products.push(product);
+                
+                // Auto-select the first variant
+                if(!selections[pId]) selections[pId] = {};
+                if(product.variants.length > 0) {
+                    for(let k in product.variants[0].optionValues) {
+                        selections[pId][k] = product.variants[0].optionValues[k];
+                    }
+                }
+            }
+            saveData();
+        }
+
+        function saveData() {
+            localStorage.setItem('dhtk_products_v12', JSON.stringify(products));
+        }
+
+        // --- EXCEL IMPORT LOGIC ---
+        function openExcelImport() {
+            document.getElementById('excelStep1').style.display = 'block';
+            document.getElementById('excelStep2').style.display = 'none';
+            document.getElementById('excelModal').classList.add('active');
+        }
+
+        function processExcelRaw() {
+            const raw = document.getElementById('excelRawData').value.trim();
+            if(!raw) return alert("Vui lòng dán dữ liệu!");
+            const lines = raw.split('\n');
+            const delimiter = lines[0].includes('\t') ? '\t' : (lines[0].includes(',') ? ',' : '|');
+            excelHeaders = lines[0].split(delimiter).map(s => s.trim().replace(/^"|"$/g, ''));
+            excelRows = [];
+            for(let i=1; i<lines.length; i++) {
+                if(!lines[i].trim()) continue;
+                excelRows.push(lines[i].split(delimiter).map(s => s.trim().replace(/^"|"$/g, '')));
+            }
+            renderMappingUI();
+            document.getElementById('excelStep1').style.display = 'none';
+            document.getElementById('excelStep2').style.display = 'block';
+        }
+
+        function renderMappingUI() {
+            const box = document.getElementById('mappingBox');
+            const getOpts = (match) => excelHeaders.map((h, i) => `<option value="${i}" ${h.toLowerCase().includes(match)?'selected':''}>${h}</option>`).join('');
+            
+            let html = `
+                <div class="map-title">1. Cột Thông Tin Cơ Bản</div>
+                <div class="map-row"><label>Tên Sản Phẩm (*):</label><select id="map_name">${getOpts('tên')}</select></div>
+                <div class="map-row"><label>Danh mục SP:</label><select id="map_cat"><option value="-1">-- Mặc định --</option>${getOpts('danh mục')}</select></div>
+                <div class="map-row"><label>Mã SKU Phân loại:</label><select id="map_sku"><option value="-1">-- Tự sinh --</option>${getOpts('mã')}</select></div>
+                <div class="map-row"><label>Link Ảnh:</label><select id="map_img"><option value="-1">-- Bỏ qua --</option>${getOpts('ảnh')}</select></div>
+                
+                <div class="map-title">2. Cột Phân Loại (Biến thể)</div>
+                <div style="font-size:0.85rem; margin-bottom:5px;">Tick chọn các cột thuộc tính (Màu, Size, Loại...):</div>
+                <div style="display:flex; flex-wrap:wrap; gap:10px;" id="map_options_box">
+                    ${excelHeaders.map((h,i) => `<label><input type="checkbox" value="${i}" ${(h.toLowerCase().includes('phân loại')||h.toLowerCase().includes('màu')||h.toLowerCase().includes('size'))?'checked':''}> ${h}</label>`).join('')}
+                </div>
+
+                <div class="map-title">3. Bảng Giá</div>
+                <div id="map_tiers_box">
+                    <div class="map-row"><label>Giá Lẻ (Mua > 0):</label><select class="map_tier_sel" data-cond="0">${getOpts('lẻ')}</select></div>
+                    <div class="map-row"><label>Giá Sỉ 1 (Mua >= 10):</label><select class="map_tier_sel" data-cond="10">${getOpts('sỉ 1')}</select></div>
+                    <div class="map-row"><label>Giá Sỉ 2 (Mua >= 100):</label><select class="map_tier_sel" data-cond="100">${getOpts('sỉ 2')}</select></div>
+                </div>
+            `;
+            box.innerHTML = html;
+        }
+
+        function executeExcelImport(appendMode) {
+            if(!appendMode && !confirm("Hành động này sẽ XÓA TOÀN BỘ kho hiện tại và GHI ĐÈ bằng dữ liệu mới. Bạn chắc chắn chứ?")) return;
+            
+            if(!appendMode) {
+                products = [];
+                selections = {};
+            }
+            
+            const nameIdx = parseInt(document.getElementById('map_name').value);
+            const catIdx = parseInt(document.getElementById('map_cat').value);
+            const skuIdx = parseInt(document.getElementById('map_sku').value);
+            const imgIdx = parseInt(document.getElementById('map_img').value);
+            const optBoxes = Array.from(document.querySelectorAll('#map_options_box input:checked')).map(x=>parseInt(x.value));
+            const tierSels = Array.from(document.querySelectorAll('.map_tier_sel'));
+
+            let groups = {};
+            excelRows.forEach(r => { const pName = r[nameIdx]; if(pName && pName.trim()) { if(!groups[pName]) groups[pName]=[]; groups[pName].push(r); } });
+
+            for(let pName in groups) {
+                const rG = groups[pName];
+                const cat = (catIdx>=0 && rG[0][catIdx]) ? rG[0][catIdx] : 'Chưa phân loại';
+                const pId = Date.now() + Math.floor(Math.random()*10000);
+                
+                let opts = [];
+                optBoxes.forEach((idx, n) => {
+                    let v = new Set(); rG.forEach(r=>{if(r[idx] && r[idx].trim()) v.add(r[idx].trim())});
+                    if(v.size>0) opts.push({id:'opt_'+n, name:excelHeaders[idx], values:Array.from(v), hidden:false});
+                });
+
+                let tiers = tierSels.map((sel, i) => ({
+                    id: pId+'_t'+i, name: i==0?'Giá Bán Lẻ':`Giá Sỉ ${i}`, condition: parseInt(sel.getAttribute('data-cond')), price: 0, _col: parseInt(sel.value)
+                }));
+
+                let product = { id: pId, name: pName, category: cat, images: [imgIdx>=0?rG[0][imgIdx]:''], description: "", sku: pName, unit: "sp", weight: "0", pricingTiers: tiers, options: opts, variants: [] };
+                
+                rG.forEach((r, idx) => {
+                    let optionValues = {};
+                    let labelArr = [];
+                    optBoxes.forEach((optIdx, n) => {
+                        if(r[optIdx] && r[optIdx].trim()) {
+                            optionValues['opt_'+n] = r[optIdx].trim();
+                            labelArr.push(r[optIdx].trim());
+                        }
+                    });
+
+                    let prices = {};
+                    tiers.forEach(t => { if(t._col>=0) prices[t.id] = parseMoney(r[t._col]); });
+
+                    product.variants.push({
+                        id: 'v_' + pId + '_' + idx,
+                        label: labelArr.length > 0 ? labelArr.join(' - ') : 'Mặc định',
+                        optionValues: optionValues,
+                        sku: (skuIdx>=0 && r[skuIdx]) ? r[skuIdx] : (pName+'-'+idx),
+                        weight: "0",
+                        stock: Math.floor(Math.random()*500)+10,
+                        image: (imgIdx>=0 && r[imgIdx]) ? r[imgIdx] : '',
+                        prices: prices
+                    });
+                });
+
+                if(product.variants.length > 0) {
+                    tiers.forEach(t => { t.price = product.variants[0].prices[t.id]; });
+                    // Auto-select first
+                    selections[pId] = {};
+                    for(let k in product.variants[0].optionValues) {
+                        selections[pId][k] = product.variants[0].optionValues[k];
+                    }
+                }
+                
+                // Tránh trùng nếu append mode
+                const existingProdIdx = products.findIndex(x=>x.name.toLowerCase() === pName.toLowerCase());
+                if(appendMode && existingProdIdx > -1) {
+                    // Update/Merge? Or just replace the old one. We choose to replace the old one if it has same name.
+                    products[existingProdIdx] = product;
+                } else {
+                    products.push(product);
+                }
+            }
+            saveData(); renderUI(); closeModal('excelModal'); 
+            alert(appendMode ? "Đã nối tiếp/Cập nhật dữ liệu thành công!" : "Đã Import đè thành công!");
+        }
+
+        // --- VIEW LOGIC ---
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            document.getElementById('btnGrid').classList.toggle('active', mode==='grid');
+            document.getElementById('btnList').classList.toggle('active', mode==='list');
+            const listEl = document.getElementById('productList');
+            if(mode === 'list') listEl.classList.add('list-view'); else listEl.classList.remove('list-view');
+        }
+
+        function setCategory(cat) { activeCategory = cat; renderProducts(); renderCategories(); }
+
+        function renderCategories() {
+            let cats = new Set(products.map(p => p.category).filter(c=>c));
+            const catArr = ['all', ...Array.from(cats)];
+            const html = catArr.map(c => {
+                const label = c === 'all' ? 'Tất cả sản phẩm' : c;
+                return `<div class="cat-tab ${activeCategory === c ? 'active' : ''}" onclick="setCategory('${c}')">${label}</div>`;
+            }).join('');
+            document.getElementById('categoryTabs').innerHTML = html;
+        }
+
+        function getActiveVariant(pId) {
+            const p = products.find(x=>x.id===pId);
+            if(!p) return null;
+            if(p.variants.length === 1) return p.variants[0]; 
+            
+            const currentSel = selections[pId] || {};
+            let matchedVariants = p.variants.filter(v => {
+                for(let optId in currentSel) {
+                    if(v.optionValues[optId] !== currentSel[optId]) return false;
+                }
+                return true;
+            });
+
+            if(matchedVariants.length === 1) return matchedVariants[0]; 
+            return null; 
+        }
+
+        function selectOption(pId, optId, val, ctx='grid') {
+            if(!selections[pId]) selections[pId] = {};
+            selections[pId][optId] = val;
+            
+            if(ctx==='grid') renderProducts();
+            else openDetailModal(pId);
+        }
+
+        function renderProducts() {
+            const listEl = document.getElementById('productList'); listEl.innerHTML = '';
+            const searchQ = document.getElementById('searchInput').value.toLowerCase();
+            const sortMode = document.getElementById('sortSelect').value;
+
+            let filtered = products.filter(p => {
+                if(activeCategory !== 'all' && p.category !== activeCategory) return false;
+                if(searchQ && !p.name.toLowerCase().includes(searchQ) && !p.sku.toLowerCase().includes(searchQ)) return false;
+                return true;
+            });
+
+            if(sortMode === 'price_asc') filtered.sort((a,b) => a.pricingTiers[0].price - b.pricingTiers[0].price);
+            if(sortMode === 'price_desc') filtered.sort((a,b) => b.pricingTiers[0].price - a.pricingTiers[0].price);
+
+            if(filtered.length === 0) { listEl.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: #94a3b8;">Không tìm thấy sản phẩm nào!</div>'; return; }
+
+            const editAttr = isAdmin ? 'contenteditable="true"' : '';
+
+            filtered.forEach(p => {
+                const activeV = getActiveVariant(p.id);
+                let imgUrl = '';
+                if(activeV && activeV.image) imgUrl = activeV.image;
+                else if(p.variants.length > 0 && p.variants[0].image) imgUrl = p.variants[0].image;
+
+                const canBuy = activeV !== null;
+
+                let optsHtml = '';
+                const activeOpts = p.options.filter(o => !o.hidden && o.values.length > 0);
+                activeOpts.forEach(opt => {
+                    optsHtml += `<div class="opt-row"><div class="opt-label">${opt.name}:</div><div class="opt-tags">`;
+                    opt.values.forEach(v => {
+                        const isSelected = selections[p.id] && selections[p.id][opt.id] === v;
+                        optsHtml += `<button class="opt-tag-btn ${isSelected?'selected':''}" onclick="selectOption(${p.id}, '${opt.id}', '${v}', 'grid')">${v}</button>`;
+                    });
+                    optsHtml += `</div></div>`;
+                });
+
+                let pricesHtml = p.pricingTiers.map(t => `<div class="price-row"><span class="price-label">${t.name}: <span class="price-condition">${t.condition>0?`(SL >= ${t.condition})`:''}</span></span><span class="price-value">${formatMoney(activeV?activeV.prices[t.id]:t.price).replace(' ₫','')} đ</span></div>`).join('');
+
+                const sku = activeV?activeV.sku:p.sku;
+                const stock = activeV?activeV.stock:'?';
+
+                listEl.innerHTML += `
+                    <div class="product-card ${isAdmin?'admin-mode':''}">
+                        <div class="product-image ${imgUrl?'':'no-img'}" style="${imgUrl?`background-image:url('${imgUrl}')`:''}" onclick="openDetailModal(${p.id})">
+                            ${imgUrl?'':`<span>Ảnh ${p.name}</span>`}
+                        </div>
+                        <div class="product-info">
+                            <div class="info-main">
+                                <div class="cat-badge" ${editAttr} onblur="updateProductInfo(${p.id}, 'category', this.innerText)">${p.category}</div>
+                                <h3 class="product-title" ${editAttr} onblur="updateProductInfo(${p.id}, 'name', this.innerText)">${p.name}</h3>
+                                <div class="product-meta">Mã: <span class="meta-val">${sku}</span> | Tồn kho: <span class="meta-val" style="color:var(--accent);">${stock}</span></div>
+                                ${optsHtml}
+                            </div>
+                            <div class="price-container">${pricesHtml}</div>
+                            <div class="controls">
+                                <div style="display:flex; gap:0.5rem; align-items: center; margin-bottom:0.75rem;">
+                                    <label style="font-size:0.85rem; font-weight:600; width:50px;">Mua:</label>
+                                    <input type="number" id="qty-${p.id}" value="1" min="1" style="flex:1;" ${!canBuy?'disabled':''}>
+                                </div>
+                                <div class="action-buttons">
+                                    <button class="btn btn-secondary" onclick="openDetailModal(${p.id})">Xem Chi Tiết</button>
+                                    <button class="btn btn-primary" onclick="addFromGrid(${p.id})" ${!canBuy?'disabled':''}>${canBuy?'🛒 Giỏ hàng':'Chọn Phân loại'}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // --- UPDATE DATA FROM UI ---
+        function updateProductInfo(id, field, value) { 
+            const p=products.find(x=>x.id===id); 
+            if(p){ p[field]=value.trim(); saveData(); if(field === 'category') renderCategories(); } 
+        }
+        function updateTierPrice(pId, tierId, valueStr, variantId) {
+            const p=products.find(x=>x.id===pId); 
+            if(p){
+                const newPrice = parseMoney(valueStr);
+                if(variantId) { const v = p.variants.find(x=>x.id===variantId); if(v) v.prices[tierId] = newPrice; }
+                else { const t = p.pricingTiers.find(x=>x.id===tierId); if(t) t.price = newPrice; }
+                saveData();
+            }
+        }
+        function updateVariantInfo(pId, vId, field, valueStr) {
+            const p=products.find(x=>x.id===pId); 
+            if(p){
+                const v = p.variants.find(x=>x.id===vId);
+                if(v) {
+                    if(field === 'stock') v.stock = parseInt(valueStr) || 0;
+                    else v[field] = valueStr.trim();
+                    saveData();
+                }
+            }
+        }
+        function updateTierInfo(pId, tierId, field, valueStr) {
+            const p=products.find(x=>x.id===pId); 
+            if(p){
+                const t = p.pricingTiers.find(x=>x.id===tierId);
+                if(t) {
+                    if(field === 'name') t.name = valueStr.trim();
+                    else if (field === 'condition') { const num = parseInt(valueStr.replace(/\\D/g, '')); if(!isNaN(num)) t.condition = num; }
+                    saveData();
+                }
+            }
+        }
+        
+        function deleteProduct(id) { 
+            if(confirm("Xoá vĩnh viễn sản phẩm này?")) { 
+                products=products.filter(p=>p.id!==id); 
+                saveData(); renderUI(); closeModal('detailModalOverlay');
+            } 
+        }
+        
+        // Clone (Nhân bản SP)
+        function cloneProduct(id) {
+            if(!confirm("Tạo một bản sao mới của sản phẩm này?")) return;
+            const p = products.find(x => x.id === id);
+            if(p) {
+                let newP = JSON.parse(JSON.stringify(p));
+                newP.id = Date.now() + Math.floor(Math.random()*10000);
+                newP.name = newP.name + ' (Copy)';
+                
+                // Mapping tier IDs
+                let tierMap = {};
+                newP.pricingTiers.forEach((t, i) => {
+                    let oldId = t.id;
+                    t.id = newP.id + '_t' + i;
+                    tierMap[oldId] = t.id;
+                });
+
+                // Update variants ID and prices keys
+                newP.variants.forEach((v, idx) => {
+                    v.id = 'v_' + newP.id + '_' + Date.now() + '_' + idx;
+                    let newPrices = {};
+                    for(let oldTierId in v.prices) {
+                        if(tierMap[oldTierId]) newPrices[tierMap[oldTierId]] = v.prices[oldTierId];
+                    }
+                    v.prices = newPrices;
+                });
+
+                products.unshift(newP); // Insert top
+                
+                // Setup active selection
+                selections[newP.id] = {};
+                if(newP.variants.length > 0) {
+                    for(let k in newP.variants[0].optionValues) {
+                        selections[newP.id][k] = newP.variants[0].optionValues[k];
+                    }
+                }
+                
+                saveData();
+                renderProducts();
+                closeModal('detailModalOverlay');
+                alert("Đã tạo bản sao sản phẩm!");
+            }
+        }
+
+        // --- ADVANCED ADMIN: EDIT/DELETE/ADD OPTIONS ---
+        function editOptionValue(pId, optId, oldVal, newVal) {
+            const val = newVal.trim();
+            if(oldVal === val) return;
+            if(!val) { renderUI(); return; } // prevent empty
+            const p = products.find(x=>x.id===pId);
+            if(p) {
+                const opt = p.options.find(o=>o.id===optId);
+                if(opt) {
+                    const idx = opt.values.indexOf(oldVal);
+                    if(idx>-1) opt.values[idx] = val;
+                }
+                p.variants.forEach(v => {
+                    if(v.optionValues[optId] === oldVal) v.optionValues[optId] = val;
+                });
+                if(selections[pId] && selections[pId][optId] === oldVal) {
+                    selections[pId][optId] = val;
+                }
+                saveData(); openDetailModal(pId);
+            }
+        }
+
+        function deleteOptionValue(pId, optId, val) {
+            if(!confirm(`CẢNH BÁO: Xoá phân loại "${val}"? MỌI BIẾN THỂ đang chứa phân loại này sẽ bị xoá vĩnh viễn khỏi hệ thống!`)) return;
+            const p = products.find(x=>x.id===pId);
+            if(p) {
+                const opt = p.options.find(o=>o.id===optId);
+                if(opt) {
+                    opt.values = opt.values.filter(v => v !== val);
+                    if(opt.values.length === 0) opt.hidden = true;
+                }
+                p.variants = p.variants.filter(v => v.optionValues[optId] !== val);
+                
+                // Reset Selection
+                selections[pId] = {};
+                if(p.variants.length > 0) {
+                    for(let k in p.variants[0].optionValues) selections[pId][k] = p.variants[0].optionValues[k];
+                }
+                saveData(); 
+                if(p.variants.length === 0) closeModal('detailModalOverlay');
+                else openDetailModal(pId);
+                renderProducts();
+            }
+        }
+
+        function addOptionValue(pId, optId) {
+            const newVal = prompt("Nhập tên phân loại mới (VD: XL, Đỏ...):");
+            if(!newVal || !newVal.trim()) return;
+            const val = newVal.trim();
+            
+            const p = products.find(x=>x.id===pId);
+            if(p) {
+                const opt = p.options.find(o=>o.id===optId);
+                if(opt) {
+                    if(opt.values.includes(val)) return alert("Tên phân loại đã tồn tại!");
+                    opt.values.push(val);
+                }
+                
+                let baseV = getActiveVariant(pId) || (p.variants.length > 0 ? p.variants[0] : null);
+                if(!baseV) return alert("Sản phẩm chưa có biến thể gốc nào để nhân bản! Hãy xoá SP và tạo lại.");
+                
+                let newV = JSON.parse(JSON.stringify(baseV)); 
+                newV.id = 'v_' + pId + '_' + Date.now();
+                newV.optionValues[optId] = val;
+                
+                let labelArr = [];
+                p.options.forEach(o => { if(newV.optionValues[o.id]) labelArr.push(newV.optionValues[o.id]); });
+                newV.label = labelArr.length > 0 ? labelArr.join(' - ') : 'Mặc định';
+                newV.sku = p.sku + '-' + val.replace(/\\s+/g, '').toUpperCase();
+                
+                p.variants.push(newV);
+                
+                selections[pId] = {};
+                for(let k in newV.optionValues) selections[pId][k] = newV.optionValues[k];
+                
+                saveData(); openDetailModal(pId); renderProducts();
+            }
+        }
+
+        // --- PRODUCT DETAIL MODAL ---
+        function openDetailModal(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+            const activeV = getActiveVariant(p.id);
+            let imgUrl = (activeV && activeV.image) ? activeV.image : (p.variants.length > 0 ? p.variants[0].image : '');
+            const canBuy = activeV !== null;
+
+            const editAttr = isAdmin ? 'contenteditable="true"' : '';
+
+            let optsHtml = '';
+            const activeOpts = p.options.filter(o => !o.hidden && o.values.length > 0);
+            activeOpts.forEach(opt => {
+                optsHtml += `<div class="opt-row">
+                    <div class="opt-label" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span ${editAttr} onblur="updateProductInfo(${p.id}, 'opt_name', this.innerText)">${opt.name}:</span>
+                        <button class="btn-secondary admin-only-inline" style="padding:2px 8px; font-size:0.75rem; border-radius:4px;" onclick="addOptionValue(${p.id}, '${opt.id}')">+ Thêm loại mới</button>
+                    </div>
+                    <div class="opt-tags">`;
+                
+                opt.values.forEach(v => {
+                    const isSelected = selections[p.id] && selections[p.id][opt.id] === v;
+                    
+                    // Admin UI for Option Tag
+                    const editSpan = isAdmin 
+                        ? `<span contenteditable="true" style="outline:none; min-width:20px; display:inline-block;" onblur="editOptionValue(${p.id}, '${opt.id}', '${v}', this.innerText)" onclick="event.stopPropagation()">${v}</span>` 
+                        : v;
+                    const delBtn = isAdmin 
+                        ? `<span style="color:var(--price-retail); margin-left:8px; cursor:pointer; font-weight:bold; font-size:1rem;" onclick="event.stopPropagation(); deleteOptionValue(${p.id}, '${opt.id}', '${v}')">&times;</span>` 
+                        : '';
+                    
+                    optsHtml += `<button class="opt-tag-btn ${isSelected?'selected':''}" onclick="selectOption(${p.id}, '${opt.id}', '${v}', 'modal')">${editSpan}${delBtn}</button>`;
+                });
+                optsHtml += `</div></div>`;
+            });
+
+            // Beautiful Prices Box
+            let pricesHtml = p.pricingTiers.map((t, idx) => {
+                const color = idx===0 ? 'var(--price-retail)' : 'var(--price-wholesale)';
+                const bg = idx===0 ? '#fef2f2' : '#ecfdf5';
+                const border = idx===0 ? '#fca5a5' : '#6ee7b7';
+                
+                const conditionHtml = (idx > 0) 
+                    ? `(Từ <span ${editAttr} onblur="updateTierInfo(${p.id}, '${t.id}', 'condition', this.innerText)">${t.condition}</span> SP)` 
+                    : `(Mua lẻ)`;
+                
+                return `
+                <div style="background:${bg}; border:1px solid ${border}; border-radius:8px; padding:1rem; flex:1; text-align:center;">
+                    <div style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:5px;" ${editAttr} onblur="updateTierInfo(${p.id}, '${t.id}', 'name', this.innerText)">${t.name}</div>
+                    <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:10px;">${conditionHtml}</div>
+                    <div class="price-value" style="color:${color}; font-size:1.3rem; font-weight:800;" ${editAttr} onblur="updateTierPrice(${p.id}, '${t.id}', this.innerText, '${activeV?activeV.id:''}')">
+                        ${formatMoney(activeV?activeV.prices[t.id]:t.price)}
+                    </div>
+                </div>
+            `}).join('');
+
+            const sku = activeV?activeV.sku:p.sku;
+            const stock = activeV?activeV.stock:'0';
+
+            const content = document.getElementById('detailModalContent');
+            content.innerHTML = `
+                <button class="close-btn" onclick="closeModal('detailModalOverlay')" style="position:absolute; top:15px; right:20px; z-index:10;">&times;</button>
+                <div class="detail-left">
+                    ${imgUrl ? `<img src="${imgUrl}" alt="Ảnh SP">` : `<div style="color:var(--text-muted);">Chưa có ảnh</div>`}
+                    <div class="admin-only-btn" style="position:absolute; bottom:10px; left:10px; right:10px;">
+                        <input type="text" placeholder="Dán link ảnh mới vào đây..." value="${imgUrl}" style="width:100%; font-size:0.8rem;" onchange="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'image', this.value); openDetailModal(${p.id});">
+                    </div>
+                </div>
+                <div class="detail-right">
+                    <div>
+                        <div class="cat-badge" ${editAttr} onblur="updateProductInfo(${p.id}, 'category', this.innerText)">${p.category}</div>
+                        <h2 style="font-size: 1.8rem; color: var(--primary); margin-bottom: 0.5rem; line-height:1.2;" ${editAttr} onblur="updateProductInfo(${p.id}, 'name', this.innerText)">${p.name}</h2>
+                        
+                        <div style="display:flex; gap:15px; border-bottom: 1px dashed var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
+                            <div class="product-meta" style="border:none; margin:0; padding:0;">Mã SKU: <span class="meta-val" ${editAttr} onblur="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'sku', this.innerText)">${sku}</span></div>
+                            <div class="product-meta" style="border:none; margin:0; padding:0;">Tồn kho: <span class="meta-val" style="color:var(--accent);" ${editAttr} onblur="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'stock', this.innerText)">${stock}</span></div>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; gap:10px; margin-bottom: 0.5rem; flex-wrap:wrap;">
+                        ${pricesHtml}
+                    </div>
+
+                    <div style="margin-top: 0.5rem; background: var(--bg-color); padding: 1rem; border-radius: 8px;">
+                        ${optsHtml}
+                    </div>
+
+                    <div style="margin-top: 0.5rem;">
+                        <div style="font-weight:600; margin-bottom:0.5rem;">Mô tả sản phẩm:</div>
+                        <p style="color:var(--text-muted); font-size:0.95rem; line-height:1.6; white-space:pre-wrap;" ${editAttr} onblur="updateProductInfo(${p.id}, 'description', this.innerText)">${p.description || "Đang cập nhật mô tả..."}</p>
+                    </div>
+
+                    <div style="display:flex; gap: 1rem; margin-top: auto; align-items:center; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                        <div style="display:flex; flex-direction:column;">
+                            <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:5px;">Số lượng:</label>
+                            <input type="number" id="qty-modal-${p.id}" value="1" min="1" style="width: 100px; padding: 0.8rem; border-radius: 8px; border: 2px solid var(--border); font-size:1.1rem; text-align:center;" ${!canBuy?'disabled':''}>
+                        </div>
+                        <button class="btn btn-primary" style="flex:1; padding: 1.2rem; font-size: 1.2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(59,130,246,0.5);" onclick="addFromModal(${p.id})" ${!canBuy?'disabled':''}>
+                            ${canBuy?'🛒 Thêm vào Giỏ hàng':'Vui lòng chọn Phân loại'}
+                        </button>
+                    </div>
+                    
+                    <div class="admin-only-flex" style="margin-top:1rem; gap:10px;">
+                        <button class="btn btn-secondary" style="flex:1;" onclick="cloneProduct(${p.id})">📋 Nhân Bản SP Này</button>
+                        <button class="btn btn-danger" style="flex:1; margin-top:0;" onclick="deleteProduct(${p.id})">🗑 Xóa SP Này</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('detailModalOverlay').classList.add('active');
+        }
+
+        // --- CART LOGIC ---
+        function addFromGrid(id) { 
+            if(isAdmin) return alert("Thoát chế độ Admin để mua hàng."); 
+            const activeV = getActiveVariant(id);
+            if(!activeV) return alert("Vui lòng chọn đủ thuộc tính phân loại!");
+            addToCart(id, activeV.id, parseInt(document.getElementById(`qty-${id}`).value)); 
+        }
+
+        function addFromModal(id) { 
+            if(isAdmin) return alert("Thoát chế độ Admin để mua hàng."); 
+            const activeV = getActiveVariant(id);
+            if(!activeV) return alert("Vui lòng chọn đủ thuộc tính phân loại!");
+            addToCart(id, activeV.id, parseInt(document.getElementById(`qty-modal-${id}`).value)); 
+            closeModal('detailModalOverlay');
+        }
+
+        function addToCart(pId, vId, qty) {
+            if(isNaN(qty)||qty<=0) return alert("Số lượng sai!");
+            const exist = cart.find(c => c.productId === pId && c.variantId === vId);
+            if (exist) exist.qty += qty; else cart.push({ productId: pId, variantId: vId, qty });
+            updateCartUI(); document.getElementById('cartModal').classList.add('active');
+        }
+
+        function getProductAppliedTier(pId) {
+            const p = products.find(x=>x.id===pId);
+            const totalQty = cart.filter(c => c.productId === pId).reduce((sum, item) => sum + item.qty, 0);
+            let appliedTier = p.pricingTiers[0];
+            for (let i = 0; i < p.pricingTiers.length; i++) { if (totalQty >= p.pricingTiers[i].condition) appliedTier = p.pricingTiers[i]; }
+            return { tier: appliedTier, totalQty, p };
+        }
+
+        function updateCartUI() {
+            let finalSum = 0; const cartItemsEl = document.getElementById('cartItems'); cartItemsEl.innerHTML = '';
+            cart.forEach((item, index) => {
+                const { tier, p } = getProductAppliedTier(item.productId);
+                const v = p.variants.find(x=>x.id===item.variantId);
+                const appliedPrice = v.prices[tier.id] || 0; finalSum += appliedPrice * item.qty;
+                const img = v.image ? v.image : (p.images[0] || '');
+                
+                cartItemsEl.innerHTML += `
+                    <div class="cart-item" style="display:flex; gap:1rem; border-bottom:1px solid #e2e8f0; padding-bottom:1rem;">
+                        <div style="width:60px; height:60px; background: url('${img}') center/cover no-repeat; border-radius:8px; border:1px solid #e2e8f0;"></div>
+                        <div style="flex:1;">
+                            <div style="font-weight:600; font-size:0.95rem;">${p.name} <span style="font-size:0.75rem; color:#888;">(${v.sku})</span></div>
+                            <div style="font-size:0.85rem; color:#64748b;">${v.label}</div>
+                            <div style="font-size:0.85rem; margin-top:4px;">Giá: <span style="color:#ef4444; font-weight:bold;">${formatMoney(appliedPrice)}</span> <span style="background:#dcfce7; color:#166534; font-size:0.7rem; padding:2px 6px; border-radius:10px;">${tier.name}</span></div>
+                            <div style="display:flex; justify-content:space-between; margin-top:5px; align-items:center;">
+                                <strong style="font-size:0.9rem;">SL: ${item.qty}</strong>
+                                <button onclick="removeFromCart(${index})" style="color:red; background:none; border:none; cursor:pointer; font-size:0.85rem;">Xóa</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            if(cart.length===0) cartItemsEl.innerHTML = '<div style="text-align:center; color:#888;">Giỏ trống</div>';
+            document.getElementById('cartCount').innerText = cart.reduce((s, c) => s + c.qty, 0);
+            document.getElementById('cartTotalSum').innerText = formatMoney(finalSum);
+        }
+
+        function removeFromCart(i) { cart.splice(i,1); updateCartUI(); }
+        function toggleCart() { document.getElementById('cartModal').classList.toggle('active'); updateCartUI(); }
+        function checkout() { alert("Vui lòng xem V10 để check luồng Zalo."); }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function promptAdmin() { 
+            isAdmin = !isAdmin; 
+            document.getElementById('bodyWrap').classList.toggle('admin-mode-active', isAdmin);
+            document.getElementById('adminBadge').style.display = isAdmin ? 'inline-block' : 'none';
+            renderProducts(); 
+            renderPolicy();
+        }
+
+        function renderLogo() {
+            const editAttr = isAdmin ? 'contenteditable="true"' : '';
+            const logoEl = document.getElementById('logoContainer');
+            if (logoEl) {
+                // Giữ lại cấu trúc ĐH<span>TK</span> nếu logoText khớp với text mặc định
+                const text = storeSettings.logoText || 'ĐHTK';
+                if (text === 'ĐHTK') {
+                    logoEl.innerHTML = `<span ${editAttr} onblur="storeSettings.logoText=this.innerText; saveSettings(); updateSEO(); renderLogo();">ĐH<span>TK</span></span>`;
+                } else {
+                    logoEl.innerHTML = `<span ${editAttr} onblur="storeSettings.logoText=this.innerText; saveSettings(); updateSEO(); renderLogo();">${text}</span>`;
+                }
+            }
+        }
+
+        function updateSEO() {
+            document.title = storeSettings.metaTitle || 'ĐHTK - Tổng Kho Sỉ Lẻ V12';
+            const metaDesc = document.getElementById('seoDescription');
+            if (metaDesc) {
+                metaDesc.setAttribute('content', storeSettings.metaDescription || '');
+            }
+        }
+
+        function renderPolicy() {
+            const editAttr = isAdmin ? 'contenteditable="true"' : '';
+            document.getElementById('policyContainer').innerHTML = `
+                <div class="policy-banner">
+                    <h1 style="font-size:2.5rem; margin-bottom:1rem;" ${editAttr} onblur="storeSettings.bannerTitle=this.innerText; saveSettings()">${storeSettings.bannerTitle}</h1>
+                    <p style="font-size:1.1rem; opacity:0.9; max-width:600px; margin:0 auto;" ${editAttr} onblur="storeSettings.bannerSubtitle=this.innerText; saveSettings()">${storeSettings.bannerSubtitle}</p>
+                </div>
+            `;
+        }
+
+        function renderUI() {
+            updateSEO();
+            renderLogo();
+            renderPolicy();
+            renderCategories();
+            renderProducts();
+        }
+
+
+        // =============================================
+        // --- PANCAKE POS SYNC ENGINE ---
+        // =============================================
+        const PANCAKE_BASE = 'https://pos.pages.fm/api/v1';
+
+        // Load credentials từ localStorage (hoặc dùng mặc định từ cấu hình)
+        let posCredentials = JSON.parse(localStorage.getItem('dhtk_pos_credentials')) || {
+            apiKey: '898c0e01aaad4d64bd77e9dcc3ee3e76',
+            shopId: '430016713',
+            warehouseId: '2e8695e7-078c-4c0a-8598-dacf05979ed1'
+        };
+
+        function openPosSync() {
+            // Điền credentials vào form
+            document.getElementById('pos_api_key').value = posCredentials.apiKey || '';
+            document.getElementById('pos_shop_id').value = posCredentials.shopId || '';
+            document.getElementById('pos_warehouse_id').value = posCredentials.warehouseId || '';
+            document.getElementById('posSyncLog').style.display = 'none';
+            document.getElementById('posSyncLog').innerHTML = '';
+            document.getElementById('posSyncModal').classList.add('active');
+        }
+
+        function savePosCredentials() {
+            posCredentials.apiKey = document.getElementById('pos_api_key').value.trim();
+            posCredentials.shopId = document.getElementById('pos_shop_id').value.trim();
+            posCredentials.warehouseId = document.getElementById('pos_warehouse_id').value.trim();
+            localStorage.setItem('dhtk_pos_credentials', JSON.stringify(posCredentials));
+            alert('✅ Đã lưu cấu hình kết nối POS thành công!');
+        }
+
+        function posLog(msg, type = 'info') {
+            const logEl = document.getElementById('posSyncLog');
+            logEl.style.display = 'block';
+            const colors = { info: '#94a3b8', success: '#34d399', error: '#f87171', warn: '#fbbf24', header: '#60a5fa' };
+            const color = colors[type] || colors.info;
+            const time = new Date().toLocaleTimeString('vi-VN');
+            logEl.innerHTML += `<div style="color:${color};"><span style="color:#475569;">[${time}]</span> ${msg}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        async function fetchPancakeProducts(apiKey, shopId, warehouseId, page = 1) {
+            const params = new URLSearchParams({
+                api_key: apiKey,
+                page_number: page,
+                page_size: 50,
+            });
+            if (warehouseId) params.append('warehouse_id', warehouseId);
+
+            const url = `${PANCAKE_BASE}/shops/${shopId}/products?${params.toString()}`;
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status} khi gọi API Pancake POS`);
+            const json = await resp.json();
+            if (json.success === false) throw new Error(json.message || 'API trả về lỗi không xác định');
+            return json;
+        }
+
+        async function runPosSync() {
+            const apiKey = document.getElementById('pos_api_key').value.trim();
+            const shopId = document.getElementById('pos_shop_id').value.trim();
+            const warehouseId = document.getElementById('pos_warehouse_id').value.trim();
+
+            if (!apiKey || !shopId) return alert('Vui lòng nhập API Key và Shop ID!');
+
+            const btn = document.getElementById('posSyncBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Đang đồng bộ...';
+            document.getElementById('posSyncLog').innerHTML = '';
+            document.getElementById('posSyncLog').style.display = 'block';
+
+            posLog('═══════════════════════════════════', 'header');
+            posLog('  ĐỒNG BỘ TỒN KHO — PANCAKE POS', 'header');
+            posLog('═══════════════════════════════════', 'header');
+            posLog(`Shop ID: ${shopId}`, 'info');
+            posLog(`Kho ID: ${warehouseId || '(Tất cả kho)'}`, 'info');
+
+            try {
+                // Bước 1: Lấy tổng số trang
+                posLog('► Bước 1: Kết nối và lấy danh sách sản phẩm...', 'info');
+                const firstPage = await fetchPancakeProducts(apiKey, shopId, warehouseId, 1);
+                const totalPages = firstPage.total_pages || 1;
+                const totalEntries = firstPage.total_entries || 0;
+                posLog(`✓ Kết nối thành công! Tìm thấy ${totalEntries} sản phẩm (${totalPages} trang)`, 'success');
+
+                // Bước 2: Lấy tất cả trang
+                let allPosProducts = [...(firstPage.products || firstPage.data || [])];
+                for (let pg = 2; pg <= totalPages; pg++) {
+                    posLog(`  → Đang tải trang ${pg}/${totalPages}...`, 'info');
+                    const pageData = await fetchPancakeProducts(apiKey, shopId, warehouseId, pg);
+                    allPosProducts = allPosProducts.concat(pageData.products || pageData.data || []);
+                }
+                posLog(`✓ Đã tải xong ${allPosProducts.length} sản phẩm từ POS`, 'success');
+
+                // DEBUG: In mẫu cấu trúc variation đầu tiên để kiểm tra tên field
+                if (allPosProducts.length > 0) {
+                    const sample = allPosProducts[0];
+                    const sampleVar = (sample.variations || sample.product_variations || [])[0] || sample;
+                    const keys = Object.keys(sampleVar).filter(k => 
+                        ['quantity','stock','available','available_quantity','remain_quantity','inventories','code','sku'].includes(k)
+                    );
+                    posLog(`🔍 Debug — Fields tồn kho của biến thể mẫu: ${JSON.stringify(keys.reduce((o,k)=>{o[k]=sampleVar[k];return o;},{}))}`, 'warn');
+                }
+
+                // Bước 3: Xây dựng bảng tra cứu SKU → tồn kho từ Pancake
+                posLog('► Bước 2: Phân tích biến thể và xây dựng bảng khớp SKU...', 'info');
+                const skuStockMap = {}; // { 'BD03HDV250G': 142 }
+
+                allPosProducts.forEach(posProduct => {
+                    // Pancake trả về variations hoặc product_variations
+                    const variations = posProduct.variations || posProduct.product_variations || [];
+
+                    // Helper: lấy số lượng tồn kho từ 1 object (variation hoặc product)
+                    // Pancake POS lưu stock theo kho trong mảng `inventories` lồng bên trong
+                    const getStock = (obj) => {
+                        // Ưu tiên 1: Tìm trong mảng inventories theo warehouseId
+                        if (obj.inventories && Array.isArray(obj.inventories) && obj.inventories.length > 0) {
+                            if (warehouseId) {
+                                const whInv = obj.inventories.find(inv => 
+                                    inv.warehouse_id === warehouseId || inv.id === warehouseId
+                                );
+                                if (whInv) {
+                                    return whInv.available_quantity ?? whInv.available ?? whInv.quantity ?? 0;
+                                }
+                            }
+                            // Không tìm thấy kho cụ thể → tổng tất cả kho
+                            return obj.inventories.reduce((sum, inv) => 
+                                sum + (inv.available_quantity ?? inv.available ?? inv.quantity ?? 0), 0
+                            );
+                        }
+                        // Ưu tiên 2: field trực tiếp trên object
+                        if (obj.available_quantity != null) return obj.available_quantity;
+                        if (obj.available != null) return obj.available;
+                        if (obj.remain_quantity != null) return obj.remain_quantity;
+                        if (obj.quantity != null) return obj.quantity;
+                        if (obj.stock != null) return obj.stock;
+                        return 0;
+                    };
+
+                    if (variations.length === 0) {
+                        // SP không biến thể: dùng code của product
+                        const code = posProduct.code || posProduct.sku || posProduct.id;
+                        if (code) {
+                            skuStockMap[code.trim().toUpperCase()] = getStock(posProduct);
+                        }
+                    } else {
+                        variations.forEach(v => {
+                            const sku = v.code || v.sku || v.barcode;
+                            if (sku) {
+                                skuStockMap[sku.trim().toUpperCase()] = getStock(v);
+                            }
+                        });
+                    }
+                });
+
+
+                const totalSkus = Object.keys(skuStockMap).length;
+                posLog(`✓ Đã xây dựng bảng khớp với ${totalSkus} mã SKU từ Pancake POS`, 'success');
+
+                // Bước 4: Khớp và cập nhật tồn kho trong hệ thống
+                posLog('► Bước 3: Cập nhật tồn kho theo SKU...', 'info');
+                let matched = 0, skipped = 0;
+
+                products.forEach(p => {
+                    p.variants.forEach(v => {
+                        const skuKey = (v.sku || '').trim().toUpperCase();
+                        if (skuKey && skuStockMap.hasOwnProperty(skuKey)) {
+                            const oldStock = v.stock;
+                            v.stock = skuStockMap[skuKey];
+                            posLog(`  ✓ [${v.sku}] "${p.name}" — ${oldStock} → <span style="color:#34d399;font-weight:bold;">${v.stock}</span>`, 'success');
+                            matched++;
+                        } else {
+                            skipped++;
+                        }
+                    });
+                });
+
+                // Lưu và render lại
+                saveData();
+                renderProducts();
+
+                // Tóm tắt kết quả
+                posLog('', 'info');
+                posLog('═══════════════════════════════════', 'header');
+                posLog(`  HOÀN THÀNH ĐỒNG BỘ TỒN KHO`, 'header');
+                posLog(`  ✅ Đã cập nhật: ${matched} biến thể`, 'success');
+                posLog(`  ⚠️  Không khớp SKU: ${skipped} biến thể`, 'warn');
+                posLog('═══════════════════════════════════', 'header');
+
+                if (skipped > 0) {
+                    posLog('💡 Mẹo: Kiểm tra lại Mã SKU trong kho nội bộ có trùng khớp với Mã biến thể trên Pancake POS không.', 'warn');
+                }
+
+            } catch (err) {
+                posLog(`❌ LỖI: ${err.message}`, 'error');
+                posLog('💡 Nguyên nhân thường gặp:', 'warn');
+                posLog('  • API Key sai hoặc hết hạn', 'warn');
+                posLog('  • Shop ID không đúng', 'warn');
+                posLog('  • Trình duyệt chặn CORS (thử dùng Chrome/Edge)', 'warn');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🚀 Đồng bộ lại';
+            }
+        }
+
+
+        // =============================================
+        // --- TELEGRAM ORDER NOTIFICATION ENGINE ---
+        // =============================================
+        let telegramSettings = JSON.parse(localStorage.getItem('dhtk_telegram_v12')) || {
+            botToken: '',
+            chatId: '',
+            storeName: '🏪 ĐHTK - Đơn hàng mới'
+        };
+
+        function openTelegramSettings() {
+            document.getElementById('tg_bot_token').value = telegramSettings.botToken || '';
+            document.getElementById('tg_chat_id').value = telegramSettings.chatId || '';
+            document.getElementById('tg_store_name').value = telegramSettings.storeName || '🏪 ĐHTK - Đơn hàng mới';
+            document.getElementById('telegramModal').classList.add('active');
+        }
+
+        function saveTelegramSettings() {
+            telegramSettings.botToken = document.getElementById('tg_bot_token').value.trim();
+            telegramSettings.chatId = document.getElementById('tg_chat_id').value.trim();
+            telegramSettings.storeName = document.getElementById('tg_store_name').value.trim() || '🏪 ĐHTK - Đơn hàng mới';
+            localStorage.setItem('dhtk_telegram_v12', JSON.stringify(telegramSettings));
+            alert('✅ Đã lưu cài đặt Telegram thành công!');
+            closeModal('telegramModal');
+        }
+
+        async function sendTelegramMessage(text) {
+            const token = telegramSettings.botToken;
+            const chatId = telegramSettings.chatId;
+            if (!token || !chatId) throw new Error('Chưa cấu hình Telegram Bot Token hoặc Chat ID!');
+            const url = `https://api.telegram.org/bot${token}/sendMessage`;
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' })
+            });
+            const json = await resp.json();
+            if (!json.ok) throw new Error(json.description || 'Telegram API lỗi');
+            return json;
+        }
+
+        async function testTelegramBot() {
+            saveTelegramSettings();
+            try {
+                await sendTelegramMessage(`✅ <b>Test thành công!</b>\n\nBot Telegram đã kết nối với <b>${telegramSettings.storeName}</b>.\nThời gian: ${new Date().toLocaleString('vi-VN')}`);
+                alert('✅ Gửi test thành công! Kiểm tra Telegram của bạn.');
+            } catch(e) {
+                alert('❌ Lỗi: ' + e.message);
+            }
+        }
+
+        async function checkout() {
+            if (cart.length === 0) return alert('Giỏ hàng trống!');
+
+            const name = document.getElementById('orderName').value.trim();
+            const phone = document.getElementById('orderPhone').value.trim();
+            const address = document.getElementById('orderAddress').value.trim();
+            const note = document.getElementById('orderNote').value.trim();
+
+            if (!name) return alert('Vui lòng nhập họ tên!');
+            if (!phone) return alert('Vui lòng nhập số điện thoại!');
+
+            const btn = document.getElementById('checkoutBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Đang gửi đơn...';
+
+            try {
+                // Tạo nội dung đơn hàng
+                let orderNo = 'ĐH' + Date.now().toString().slice(-6);
+                let totalMoney = 0;
+                let itemsText = '';
+                let itemCount = 0;
+
+                cart.forEach((item, i) => {
+                    const { tier, p } = getProductAppliedTier(item.productId);
+                    const v = p.variants.find(x => x.id === item.variantId);
+                    const price = v.prices[tier.id] || 0;
+                    const lineTotal = price * item.qty;
+                    totalMoney += lineTotal;
+                    itemCount += item.qty;
+                    itemsText += `\n${i+1}. <b>${p.name}</b> — ${v.label}\n`;
+                    itemsText += `   📦 SL: <b>${item.qty}</b>  |  Đơn giá: <b>${formatMoney(price)}</b>  |  Thành tiền: <b>${formatMoney(lineTotal)}</b>\n`;
+                    itemsText += `   🏷 Áp dụng: ${tier.name} (${tier.condition > 0 ? 'SL >= '+tier.condition : 'Mua lẻ'})\n`;
+                });
+
+                const now = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+                const msgText = [
+                    `🔔 <b>${telegramSettings.storeName || '🏪 ĐHTK'}</b>`,
+                    `━━━━━━━━━━━━━━━━━━━━━`,
+                    `📋 <b>Mã đơn: #${orderNo}</b>`,
+                    `🕐 Thời gian: ${now}`,
+                    ``,
+                    `👤 <b>KHÁCH HÀNG</b>`,
+                    `• Tên: <b>${name}</b>`,
+                    `• SĐT: <b>${phone}</b>`,
+                    `• Địa chỉ: ${address || '(chưa cung cấp)'}`,
+                    note ? `• Ghi chú: <i>${note}</i>` : '',
+                    ``,
+                    `🛒 <b>ĐƠN HÀNG (${itemCount} sản phẩm)</b>`,
+                    `━━━━━━━━━━━━━━━━━━━━━`,
+                    itemsText.trim(),
+                    `━━━━━━━━━━━━━━━━━━━━━`,
+                    `💰 <b>TỔNG TIỀN: ${formatMoney(totalMoney)}</b>`,
+                    ``,
+                    `👉 Xác nhận và liên hệ khách ngay!`
+                ].filter(x => x !== '').join('\n');
+
+                await sendTelegramMessage(msgText);
+
+                // Thành công!
+                btn.style.background = '#10b981';
+                btn.textContent = '✅ Đã gửi đơn thành công!';
+                alert(`✅ Đơn hàng #${orderNo} đã được gửi về Telegram thành công!\nChúng tôi sẽ liên hệ bạn sớm nhé!`);
+
+                // Reset giỏ hàng
+                cart = [];
+                updateCartUI();
+                document.getElementById('orderName').value = '';
+                document.getElementById('orderPhone').value = '';
+                document.getElementById('orderAddress').value = '';
+                document.getElementById('orderNote').value = '';
+                closeModal('cartModal');
+
+            } catch(e) {
+                alert(`❌ Lỗi gửi đơn: ${e.message}\n\nVui lòng kiểm tra lại cài đặt Telegram Bot (Token & Chat ID).`);
+                btn.style.background = '';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✅ Chốt Đơn — Gửi về Telegram';
+            }
+        }
+
+
+        // =============================================
+        // --- ADMIN AUTH SYSTEM ---
+        // =============================================
+
+        // Mặc định: admin / dhtk2024 (hash SHA-256)
+        const DEFAULT_ADMIN_CREDS = {
+            username: 'admin',
+            // SHA-256 của 'dhtk2024'
+            passwordHash: '756fc18174c6b994c361b04c9f27a70867d675f7e402c355a9f5bf6b18f67390'
+        };
+
+        async function sha256(str) {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+        }
+
+        function getAdminCreds() {
+            return JSON.parse(localStorage.getItem('dhtk_admin_creds')) || DEFAULT_ADMIN_CREDS;
+        }
+
+        function promptAdmin() {
+            if (isAdmin) {
+                openAdminPanel();
+            } else {
+                document.getElementById('adminUsername').value = '';
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('loginError').style.display = 'none';
+                document.getElementById('adminLoginModal').classList.add('active');
+                setTimeout(() => document.getElementById('adminUsername').focus(), 100);
+            }
+        }
+
+        async function doAdminLogin() {
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            const errEl = document.getElementById('loginError');
+
+            if (!username || !password) {
+                errEl.textContent = 'Vui lòng nhập đầy đủ thông tin!';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            const creds = getAdminCreds();
+            const inputHash = await sha256(password);
+
+            if (username === creds.username && inputHash === creds.passwordHash) {
+                // Đăng nhập thành công
+                isAdmin = true;
+                localStorage.setItem('dhtk_isAdmin', 'true');
+                closeModal('adminLoginModal');
+                document.getElementById('bodyWrap').classList.add('admin-mode-active');
+                document.getElementById('adminBadge').style.display = 'inline-block';
+                document.getElementById('adminLoginBtn').textContent = '⚙️ Admin Panel';
+                renderProducts();
+                openAdminPanel();
+            } else {
+                errEl.textContent = '❌ Sai tên đăng nhập hoặc mật khẩu!';
+                errEl.style.display = 'block';
+                document.getElementById('adminPassword').value = '';
+            }
+        }
+
+        function adminLogout() {
+            if (!confirm('Bạn có muốn đăng xuất khỏi chế độ Admin?')) return;
+            isAdmin = false;
+            localStorage.removeItem('dhtk_isAdmin');
+            document.getElementById('bodyWrap').classList.remove('admin-mode-active');
+            document.getElementById('adminBadge').style.display = 'none';
+            document.getElementById('adminLoginBtn').textContent = '🔐 Đăng nhập Admin';
+            closeModal('adminPanelModal');
+            renderProducts();
+        }
+
+        function openAdminPanel() {
+            // Điền dữ liệu vào các tab
+            const creds = getAdminCreds();
+            document.getElementById('adminWelcome').textContent = `Xin chào, ${creds.username}! | ${new Date().toLocaleString('vi-VN')}`;
+            document.getElementById('ap_new_username').value = creds.username;
+
+            // Store config (Logo / Banner / SEO)
+            document.getElementById('ap_store_logo').value = storeSettings.logoText || 'ĐHTK';
+            document.getElementById('ap_banner_title').value = storeSettings.bannerTitle || 'Tổng Kho Sỉ Lẻ ĐHTK';
+            document.getElementById('ap_banner_subtitle').value = storeSettings.bannerSubtitle || '';
+            document.getElementById('ap_seo_title').value = storeSettings.metaTitle || '';
+            document.getElementById('ap_seo_desc').value = storeSettings.metaDescription || '';
+
+            // Telegram
+            document.getElementById('ap_tg_token').value = telegramSettings.botToken || '';
+            document.getElementById('ap_tg_chatid').value = telegramSettings.chatId || '';
+            document.getElementById('ap_tg_name').value = telegramSettings.storeName || '';
+
+            // POS
+            document.getElementById('ap_pos_key').value = posCredentials.apiKey || '';
+            document.getElementById('ap_pos_shop').value = posCredentials.shopId || '';
+            document.getElementById('ap_pos_wh').value = posCredentials.warehouseId || '';
+
+            // Stats
+            const totalVariants = products.reduce((s, p) => s + p.variants.length, 0);
+            const categories = new Set(products.map(p => p.category)).size;
+            document.getElementById('adminStats').innerHTML = `
+                • Tổng sản phẩm: <b>${products.length}</b> nhóm &nbsp;|&nbsp; <b>${totalVariants}</b> biến thể<br>
+                • Danh mục: <b>${categories}</b><br>
+                • Telegram: <b>${telegramSettings.botToken ? '✅ Đã cấu hình' : '⚠️ Chưa cấu hình'}</b><br>
+                • POS Pancake: <b>${posCredentials.apiKey ? '✅ Đã cấu hình' : '⚠️ Chưa cấu hình'}</b>
+            `;
+
+            document.getElementById('adminPanelModal').classList.add('active');
+            switchTab('tab-store');
+        }
+
+        function apSaveStoreConfig() {
+            storeSettings.logoText = document.getElementById('ap_store_logo').value.trim() || 'ĐHTK';
+            storeSettings.bannerTitle = document.getElementById('ap_banner_title').value.trim() || 'Tổng Kho Sỉ Lẻ ĐHTK';
+            storeSettings.bannerSubtitle = document.getElementById('ap_banner_subtitle').value.trim();
+            storeSettings.metaTitle = document.getElementById('ap_seo_title').value.trim() || 'ĐHTK - Tổng Kho Sỉ Lẻ V12';
+            storeSettings.metaDescription = document.getElementById('ap_seo_desc').value.trim();
+            
+            saveSettings();
+            renderUI();
+            alert('✅ Đã lưu cấu hình Giao diện & SEO thành công!');
+        }
+
+        function closeAdminPanel() {
+            closeModal('adminPanelModal');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.apanel-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.apanel-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).style.display = 'block';
+            const tabMap = { 'tab-store': 't-store', 'tab-telegram': 't-telegram', 'tab-pos': 't-pos', 'tab-import': 't-import', 'tab-account': 't-account' };
+            document.getElementById(tabMap[tabId]).classList.add('active');
+        }
+
+        // --- Admin Panel Actions ---
+        function apSaveTelegram() {
+            telegramSettings.botToken = document.getElementById('ap_tg_token').value.trim();
+            telegramSettings.chatId = document.getElementById('ap_tg_chatid').value.trim();
+            telegramSettings.storeName = document.getElementById('ap_tg_name').value.trim() || '🏪 ĐHTK - Đơn hàng mới';
+            localStorage.setItem('dhtk_telegram_v12', JSON.stringify(telegramSettings));
+            alert('✅ Đã lưu cài đặt Telegram!');
+        }
+
+        async function apTestTelegram() {
+            apSaveTelegram();
+            try {
+                await sendTelegramMessage(`✅ <b>Test kết nối thành công!</b>\n\nBot đã kết nối với <b>${telegramSettings.storeName}</b>\nThời gian: ${new Date().toLocaleString('vi-VN')}`);
+                alert('✅ Gửi test thành công! Kiểm tra Telegram.');
+            } catch(e) {
+                alert('❌ Lỗi: ' + e.message);
+            }
+        }
+
+        function apSavePOS() {
+            posCredentials.apiKey = document.getElementById('ap_pos_key').value.trim();
+            posCredentials.shopId = document.getElementById('ap_pos_shop').value.trim();
+            posCredentials.warehouseId = document.getElementById('ap_pos_wh').value.trim();
+            localStorage.setItem('dhtk_pos_credentials', JSON.stringify(posCredentials));
+            // Sync lại vào form POS modal
+            document.getElementById('pos_api_key').value = posCredentials.apiKey;
+            document.getElementById('pos_shop_id').value = posCredentials.shopId;
+            document.getElementById('pos_warehouse_id').value = posCredentials.warehouseId;
+            alert('✅ Đã lưu cấu hình POS Pancake!');
+        }
+
+        async function apChangePassword() {
+            const newUsername = document.getElementById('ap_new_username').value.trim();
+            const oldPass = document.getElementById('ap_old_password').value;
+            const newPass = document.getElementById('ap_new_password').value;
+            const confirmPass = document.getElementById('ap_confirm_password').value;
+
+            if (!newUsername) return alert('Vui lòng nhập tên đăng nhập!');
+            if (!oldPass) return alert('Vui lòng nhập mật khẩu hiện tại!');
+            if (!newPass) return alert('Vui lòng nhập mật khẩu mới!');
+            if (newPass !== confirmPass) return alert('❌ Mật khẩu mới không khớp!');
+            if (newPass.length < 6) return alert('❌ Mật khẩu phải có ít nhất 6 ký tự!');
+
+            const creds = getAdminCreds();
+            const oldHash = await sha256(oldPass);
+            if (oldHash !== creds.passwordHash) return alert('❌ Mật khẩu hiện tại không đúng!');
+
+            const newHash = await sha256(newPass);
+            const newCreds = { username: newUsername, passwordHash: newHash };
+            localStorage.setItem('dhtk_admin_creds', JSON.stringify(newCreds));
+
+            document.getElementById('ap_old_password').value = '';
+            document.getElementById('ap_new_password').value = '';
+            document.getElementById('ap_confirm_password').value = '';
+            document.getElementById('adminWelcome').textContent = `Xin chào, ${newUsername}! | ${new Date().toLocaleString('vi-VN')}`;
+
+            alert(`✅ Đã đổi mật khẩu thành công!\nTên đăng nhập: ${newUsername}`);
+        }
+
+        if (isAdmin) {
+            document.getElementById('bodyWrap').classList.add('admin-mode-active');
+            document.getElementById('adminBadge').style.display = 'inline-block';
+            document.getElementById('adminLoginBtn').textContent = '⚙️ Admin Panel';
+        }
+
+        renderUI();
+    </script>
+
+</body>
+</html>
