@@ -14,18 +14,24 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-let dbUrl = process.env.TURSO_DATABASE_URL || 'libsql://fallback.turso.io';
+let dbUrl = (process.env.TURSO_DATABASE_URL || 'libsql://fallback.turso.io').trim();
 if (dbUrl.startsWith('libsql://')) {
     dbUrl = dbUrl.replace('libsql://', 'https://');
 }
 
 const db = createClient({
     url: dbUrl,
-    authToken: process.env.TURSO_AUTH_TOKEN || ''
+    authToken: (process.env.TURSO_AUTH_TOKEN || '').trim()
 });
 
 // --- DATABASE INITIALIZATION WITH TURSO ---
 async function initDB() {
+    // Trên Vercel, database đã được migrate cấu trúc và dữ liệu đầy đủ lên Turso Cloud.
+    // Bỏ qua tạo bảng & seeding để tránh lỗi và tăng tốc độ cold start của Serverless.
+    if (process.env.VERCEL) {
+        console.log('[DB] Running on Vercel, skipping table creation & seeding.');
+        return;
+    }
 
     // Create Tables
     await db.execute(`
