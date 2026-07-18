@@ -870,11 +870,27 @@ async function performPosSync(posCredentials) {
 }
 
 // 10. PANCAKE POS PROXY SYNC (SECURE & ALIGNED WITH MOCKUP)
-// Trigger redeploy to load newly added CRON_SECRET env variable
+app.get('/api/cron-check', (req, res) => {
+    res.json({
+        hasCronSecret: !!process.env.CRON_SECRET,
+        cronSecretLength: process.env.CRON_SECRET ? process.env.CRON_SECRET.length : 0,
+        cronSecretValueMatches: process.env.CRON_SECRET === 'DhTkCron2026AutoSyncXYZ',
+        receivedAuthHeader: req.headers['authorization']
+    });
+});
+
 app.get('/api/pos/sync', (req, res, next) => {
     // Neu la request tu Vercel Cron: Vercel gui Authorization: Bearer <CRON_SECRET>
     const cronSecret = process.env.CRON_SECRET;
     const authHeader = req.headers['authorization'];
+    
+    console.log('[CRON_DEBUG] Request received:', {
+        hasCronSecret: !!cronSecret,
+        cronSecretLength: cronSecret ? cronSecret.length : 0,
+        hasAuthHeader: !!authHeader,
+        authHeaderValue: authHeader
+    });
+
     if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
         return next(); // Bypass JWT - day la Vercel Cron hop le
     }
