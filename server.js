@@ -807,6 +807,20 @@ app.post('/api/telegram/test', authenticateToken, async (req, res) => {
     }
 });
 
+// 12. DEBUG ENDPOINT (TO CHECK VERCEL ENVIRONMENT VARIABLES)
+app.get('/api/debug', (req, res) => {
+    res.json({
+        node_env: process.env.NODE_ENV,
+        vercel: process.env.VERCEL,
+        has_turso_url: !!process.env.TURSO_DATABASE_URL,
+        url_prefix: process.env.TURSO_DATABASE_URL ? process.env.TURSO_DATABASE_URL.substring(0, 15) + '...' : 'MISSING',
+        has_turso_token: !!process.env.TURSO_AUTH_TOKEN,
+        token_length: process.env.TURSO_AUTH_TOKEN ? process.env.TURSO_AUTH_TOKEN.length : 0,
+        parsedUrl: dbUrl,
+        hasDbUrlVariable: dbUrl !== 'libsql://fallback.turso.io' && dbUrl !== 'https://fallback.turso.io'
+    });
+});
+
 // START EXPRESS SERVER OR EXPORT FOR VERCEL
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     initDB().then(() => {
