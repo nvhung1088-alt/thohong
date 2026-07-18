@@ -821,6 +821,22 @@ app.get('/api/debug', (req, res) => {
     });
 });
 
+// 13. DB TEST ENDPOINT (TO CATCH REAL EXECUTE ERROR)
+app.get('/api/db-test', async (req, res) => {
+    try {
+        const result = await db.execute('SELECT 1 as ok');
+        res.json({ success: true, data: result.rows });
+    } catch (err) {
+        res.status(500).json({ 
+            success: false, 
+            message: err.message,
+            name: err.name,
+            code: err.code,
+            stack: err.stack
+        });
+    }
+});
+
 // START EXPRESS SERVER OR EXPORT FOR VERCEL
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     initDB().then(() => {
