@@ -269,25 +269,7 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
             <h2 style="margin-bottom:5px;">🔄 Đồng bộ Tồn Kho — Pancake POS</h2>
             <p style="font-size:0.85rem; color:#64748b; margin-bottom:15px;">Kết nối Pancake POS, tải danh sách sản phẩm và cập nhật tồn kho tự động theo mã SKU.</p>
 
-            <!-- Cài đặt kết nối -->
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1rem; margin-bottom:1rem;">
-                <div style="font-weight:700; margin-bottom:10px; color:#0f172a;">⚙️ Cấu hình kết nối POS</div>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <label style="width:120px; font-size:0.85rem; font-weight:600; color:#475569;">API Key:</label>
-                        <input type="text" id="pos_api_key" placeholder="Nhập API Key Pancake POS..." style="flex:1;">
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <label style="width:120px; font-size:0.85rem; font-weight:600; color:#475569;">Shop ID:</label>
-                        <input type="text" id="pos_shop_id" placeholder="VD: 430016713" style="flex:1;">
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <label style="width:120px; font-size:0.85rem; font-weight:600; color:#475569;">ID Kho:</label>
-                        <input type="text" id="pos_warehouse_id" placeholder="VD: 2e8695e7-078c-..." style="flex:1;">
-                    </div>
-                </div>
-                <button class="btn btn-secondary" style="margin-top:10px; font-size:0.85rem;" onclick="savePosCredentials()">💾 Lưu cấu hình này</button>
-            </div>
+
 
             <!-- Kết quả sync -->
             <div id="posSyncLog" style="display:none; background:#0f172a; color:#e2e8f0; border-radius:8px; padding:1rem; font-family:monospace; font-size:0.8rem; max-height:250px; overflow-y:auto; margin-bottom:1rem; line-height:1.8;"></div>
@@ -1440,9 +1422,6 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
         let posCredentials = {};
 
         function openPosSync() {
-            document.getElementById('pos_api_key').value = storeSettings.pos_api_key || '';
-            document.getElementById('pos_shop_id').value = storeSettings.pos_shop_id || '';
-            document.getElementById('pos_warehouse_id').value = storeSettings.pos_warehouse_id || '';
             document.getElementById('posSyncLog').style.display = 'none';
             document.getElementById('posSyncLog').innerHTML = '';
             document.getElementById('posSyncModal').classList.add('active');
@@ -1481,28 +1460,7 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
             }
         }
 
-        async function savePosCredentials() {
-            const apiKey = document.getElementById('pos_api_key').value.trim();
-            const shopId = document.getElementById('pos_shop_id').value.trim();
-            const warehouseId = document.getElementById('pos_warehouse_id').value.trim();
-            
-            try {
-                await fetchAPI('/api/settings', {
-                    method: 'POST',
-                    body: {
-                        pos_api_key: apiKey,
-                        pos_shop_id: shopId,
-                        pos_warehouse_id: warehouseId
-                    }
-                });
-                storeSettings.pos_api_key = apiKey;
-                storeSettings.pos_shop_id = shopId;
-                storeSettings.pos_warehouse_id = warehouseId;
-                alert('✅ Đã lưu cấu hình kết nối POS lên server thành công!');
-            } catch(e) {
-                alert('Lỗi: ' + e.message);
-            }
-        }
+
 
         function posLog(msg, type = 'info') {
             const logEl = document.getElementById('posSyncLog');
