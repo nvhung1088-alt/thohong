@@ -15,7 +15,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const db = createClient({
-    url: process.env.TURSO_DATABASE_URL || '',
+    url: process.env.TURSO_DATABASE_URL || 'libsql://fallback.turso.io',
     authToken: process.env.TURSO_AUTH_TOKEN || ''
 });
 
