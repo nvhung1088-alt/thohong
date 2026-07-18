@@ -870,7 +870,13 @@ async function performPosSync(posCredentials) {
 }
 
 // 10. PANCAKE POS PROXY SYNC (SECURE & ALIGNED WITH MOCKUP)
-app.get('/api/pos/sync', authenticateToken, async (req, res) => {
+app.get('/api/pos/sync', (req, res, next) => {
+    // Neu la request tu Vercel Cron thi bypass authenticateToken
+    if (req.headers['x-vercel-cron'] === '1') {
+        return next();
+    }
+    authenticateToken(req, res, next);
+}, async (req, res) => {
     const posCredentials = {
         apiKey: process.env.PANCAKE_API_KEY,
         shopId: process.env.PANCAKE_SHOP_ID,
