@@ -239,11 +239,32 @@ async function sendTelegramMessage(token, chatId, text) {
 // --- ROUTES ---
 
 // 1. ADMIN LOGIN
-app.post('/api/login', async (req, res) => {
+const loginAttempts = {};
+app.post('/api/login', (req, res, next) => {
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const now = Date.now();
+    req.clientIp = ip;
+    req.requestTime = now;
+
+    if (loginAttempts[ip]) {
+        const attempt = loginAttempts[ip];
+        if (attempt.blockUntil && now < attempt.blockUntil) {
+            const timeLeft = Math.ceil((attempt.blockUntil - now) / 60000);
+            return res.status(429).json({ error: `Đăng nhập thất bại quá nhiều lần. Vui lòng thử lại sau ${timeLeft} phút.` });
+        }
+        if (attempt.blockUntil && now >= attempt.blockUntil) {
+            delete loginAttempts[ip];
+        }
+    }
+    next();
+}, async (req, res) => {
     const { username, passwordHash } = req.body;
     if (!username || !passwordHash) {
         return res.status(400).json({ error: 'Username and passwordHash are required' });
     }
+
+    const ip = req.clientIp;
+    const now = req.requestTime;
 
     try {
         const result = await db.execute({
@@ -252,9 +273,22 @@ app.post('/api/login', async (req, res) => {
         });
         const admin = result.rows[0];
         if (admin && admin.password_hash === passwordHash) {
+            if (loginAttempts[ip]) delete loginAttempts[ip];
             const token = jwt.sign({ username: admin.username }, JWT_SECRET, { expiresIn: '7d' });
             return res.json({ success: true, token, username: admin.username });
         }
+
+        // Tăng số lần thử sai
+        if (!loginAttempts[ip]) {
+            loginAttempts[ip] = { count: 1, blockUntil: null };
+        } else {
+            loginAttempts[ip].count += 1;
+            if (loginAttempts[ip].count >= 5) {
+                loginAttempts[ip].blockUntil = now + 5 * 60 * 1000; // khóa 5 phút
+                return res.status(429).json({ error: 'Đăng nhập sai quá 5 lần. Bạn bị tạm khóa đăng nhập trong 5 phút.' });
+            }
+        }
+
         return res.status(400).json({ error: 'Incorrect username or password' });
     } catch (e) {
         res.status(500).json({ error: e.message });
