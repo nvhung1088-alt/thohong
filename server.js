@@ -870,14 +870,6 @@ async function performPosSync(posCredentials) {
 }
 
 // 10. PANCAKE POS PROXY SYNC (SECURE & ALIGNED WITH MOCKUP)
-app.get('/api/cron-check', (req, res) => {
-    res.json({
-        hasCronSecret: !!process.env.CRON_SECRET,
-        cronSecretLength: process.env.CRON_SECRET ? process.env.CRON_SECRET.length : 0,
-        cronSecretValueMatches: process.env.CRON_SECRET === 'DhTkCron2026AutoSyncXYZ',
-        receivedAuthHeader: req.headers['authorization']
-    });
-});
 
 app.get('/api/pos/sync', (req, res, next) => {
     // Neu la request tu Vercel Cron: Vercel gui Authorization: Bearer <CRON_SECRET>
@@ -918,13 +910,45 @@ app.get('/api/pos/sync', (req, res, next) => {
 
     try {
         const result = await performPosSync(posCredentials);
+        
+        // Log sync history to database
+        try {
+            await db.execute({
+                sql: "INSERT INTO pos_sync_history (timestamp, status, total_products, matched_count, error_message) VALUES (?, 'success', ?, ?, '')",
+                args: [new Date().toLocaleString('vi-VN'), result.totalPosProducts, result.matchedCount]
+            });
+        } catch(histErr) {
+            console.error('[CRON_DEBUG] Failed to save sync history to db:', histErr.message);
+        }
+
         res.json({
             success: true,
             ...result
         });
     } catch (e) {
         console.error('[POS SYNC ERROR]', e.message);
+
+        // Log failed sync history to database
+        try {
+            await db.execute({
+                sql: "INSERT INTO pos_sync_history (timestamp, status, total_products, matched_count, error_message) VALUES (?, 'failed', 0, 0, ?)",
+                args: [new Date().toLocaleString('vi-VN'), e.message]
+            });
+        } catch(histErr) {
+            console.error('[CRON_DEBUG] Failed to save failed sync history to db:', histErr.message);
+        }
+
         res.status(500).json({ error: 'Đồng bộ thất bại: ' + e.message });
+    }
+});
+
+// 10b. POS SYNC HISTORY (ADMIN ONLY)
+app.get('/api/pos/sync-history', authenticateToken, async (req, res) => {
+    try {
+        const result = await db.execute('SELECT * FROM pos_sync_history ORDER BY id DESC LIMIT 50');
+        res.json({ success: true, history: result.rows });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 

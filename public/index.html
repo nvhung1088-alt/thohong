@@ -300,6 +300,29 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-primary" style="flex:1; background:#8b5cf6;" onclick="runPosSync()" id="posSyncBtn">🚀 Bắt đầu Đồng bộ Tồn Kho</button>
             </div>
+
+            <!-- Lịch sử đồng bộ gần đây -->
+            <div style="margin-top:1.5rem; border-top:1px solid #e2e8f0; padding-top:1rem;">
+                <div style="font-weight:700; margin-bottom:10px; color:#0f172a; display:flex; justify-content:space-between; align-items:center;">
+                    <span>📋 Lịch sử đồng bộ gần đây</span>
+                    <button class="btn btn-secondary" style="font-size:0.75rem; padding:4px 8px;" onclick="loadPosSyncHistory()">🔄 Tải lại</button>
+                </div>
+                <div style="max-height:180px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.8rem; text-align:left;">
+                        <thead>
+                            <tr style="background:#f1f5f9; border-bottom:1px solid #e2e8f0; color:#475569; position:sticky; top:0;">
+                                <th style="padding:8px 10px; font-weight:600;">Thời gian</th>
+                                <th style="padding:8px 10px; font-weight:600;">Trạng thái</th>
+                                <th style="padding:8px 10px; font-weight:600; text-align:right;">Sản phẩm khớp</th>
+                                <th style="padding:8px 10px; font-weight:600;">Chi tiết</th>
+                            </tr>
+                        </thead>
+                        <tbody id="posSyncHistoryList">
+                            <tr><td colspan="4" style="padding:15px; text-align:center; color:#64748b;">Đang tải lịch sử...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1423,6 +1446,39 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
             document.getElementById('posSyncLog').style.display = 'none';
             document.getElementById('posSyncLog').innerHTML = '';
             document.getElementById('posSyncModal').classList.add('active');
+            loadPosSyncHistory();
+        }
+
+        async function loadPosSyncHistory() {
+            const listEl = document.getElementById('posSyncHistoryList');
+            if(!listEl) return;
+            try {
+                const res = await fetchAPI('/api/pos/sync-history');
+                if (res && res.success && res.history) {
+                    if (res.history.length === 0) {
+                        listEl.innerHTML = '<tr><td colspan="4" style="padding:15px; text-align:center; color:#64748b;">Chưa có lịch sử đồng bộ.</td></tr>';
+                        return;
+                    }
+                    listEl.innerHTML = res.history.map(item => {
+                        const statusBadge = item.status === 'success' 
+                            ? '<span style="background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.75rem;">Thành công</span>' 
+                            : '<span style="background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:0.75rem;">Thất bại</span>';
+                        
+                        return `
+                            <tr style="border-bottom:1px solid #e2e8f0; background:white;">
+                                <td style="padding:8px 10px; color:#334155;">${item.timestamp}</td>
+                                <td style="padding:8px 10px;">${statusBadge}</td>
+                                <td style="padding:8px 10px; text-align:right; font-weight:600; color:#0f172a;">${item.matched_count}/${item.total_products}</td>
+                                <td style="padding:8px 10px; color:#ef4444; font-size:0.75rem; word-break:break-all;">${item.error_message || '-'}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    listEl.innerHTML = '<tr><td colspan="4" style="padding:15px; text-align:center; color:#ef4444;">Không thể tải lịch sử đồng bộ.</td></tr>';
+                }
+            } catch(e) {
+                listEl.innerHTML = `<tr><td colspan="4" style="padding:15px; text-align:center; color:#ef4444;">Lỗi: ${e.message}</td></tr>`;
+            }
         }
 
         async function savePosCredentials() {
@@ -1514,6 +1570,7 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
             } finally {
                 btn.disabled = false;
                 btn.textContent = '🚀 Đồng bộ lại';
+                loadPosSyncHistory();
             }
         }
 
