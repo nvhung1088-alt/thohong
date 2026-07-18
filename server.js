@@ -14,8 +14,13 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+let dbUrl = process.env.TURSO_DATABASE_URL || 'libsql://fallback.turso.io';
+if (dbUrl.startsWith('libsql://')) {
+    dbUrl = dbUrl.replace('libsql://', 'https://');
+}
+
 const db = createClient({
-    url: process.env.TURSO_DATABASE_URL || 'libsql://fallback.turso.io',
+    url: dbUrl,
     authToken: process.env.TURSO_AUTH_TOKEN || ''
 });
 
