@@ -701,20 +701,28 @@ async function performPosSync(posCredentials) {
 
     console.log(`[POS SYNC] Đã tải trang 1/${totalPages}. Lấy được ${pageProducts.length} sản phẩm.`);
 
-    // Fetch remaining pages
-    for (let pg = 2; pg <= totalPages; pg++) {
-        const url = `https://pos.pages.fm/api/v1/shops/${posCredentials.shopId}/products?${getParams(pg)}`;
-        try {
-            const resp = await fetchWithTimeout(url);
-            if (resp.ok) {
-                const result = await resp.json();
-                const pageData = result.products || result.data || [];
-                allPosProducts = allPosProducts.concat(pageData);
-                console.log(`[POS SYNC] Đã tải trang ${pg}/${totalPages}. Lấy được ${pageData.length} sản phẩm.`);
-            }
-        } catch (pgErr) {
-            console.error(`[POS SYNC] Lỗi tải trang ${pg} ngầm:`, pgErr.message);
+    // Fetch remaining pages in parallel using Promise.all (Tối ưu tốc độ gấp 10 lần, tránh timeout)
+    if (totalPages > 1) {
+        const promises = [];
+        for (let pg = 2; pg <= totalPages; pg++) {
+            const url = `https://pos.pages.fm/api/v1/shops/${posCredentials.shopId}/products?${getParams(pg)}`;
+            promises.push(
+                fetchWithTimeout(url).then(async resp => {
+                    if (resp.ok) {
+                        const result = await resp.json();
+                        return result.products || result.data || [];
+                    }
+                    return [];
+                }).catch(pgErr => {
+                    console.error(`[POS SYNC] Lỗi tải trang ${pg}:`, pgErr.message);
+                    return [];
+                })
+            );
         }
+        const results = await Promise.all(promises);
+        results.forEach(pageData => {
+            allPosProducts = allPosProducts.concat(pageData);
+        });
     }
 
     console.log(`[POS SYNC] Tổng cộng lấy được ${allPosProducts.length} sản phẩm từ Pancake POS. Bắt đầu đối soát...`);
