@@ -1269,7 +1269,26 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
             if(isNaN(qty)||qty<=0) return alert("Số lượng sai!");
             const exist = cart.find(c => c.productId === pId && c.variantId === vId);
             if (exist) exist.qty += qty; else cart.push({ productId: pId, variantId: vId, qty });
-            updateCartUI(); document.getElementById('cartModal').classList.add('active');
+            updateCartUI(); 
+            showToast("✅ Đã thêm sản phẩm vào giỏ!");
+        }
+
+        function showToast(msg) {
+            let toast = document.getElementById('customToast');
+            if(!toast) {
+                toast = document.createElement('div');
+                toast.id = 'customToast';
+                toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:rgba(16,185,129,0.95); color:white; padding:12px 24px; border-radius:30px; font-weight:600; font-size:0.95rem; z-index:10000; opacity:0; transition:opacity 0.3s, top 0.3s; pointer-events:none; box-shadow:0 4px 12px rgba(0,0,0,0.15); border: 1px solid #059669;';
+                document.body.appendChild(toast);
+            }
+            toast.innerText = msg;
+            toast.style.top = '40px';
+            toast.style.opacity = '1';
+            if(window.toastTimeout) clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.top = '20px';
+            }, 2000);
         }
 
         function getProductAppliedTier(pId) {
