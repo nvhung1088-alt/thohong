@@ -627,13 +627,32 @@ app.post('/api/orders', (req, res, next) => {
             totalAmount += itemTotal;
             originalAmount += itemOriginalTotal;
 
+            let posProductId = null;
+            let posVariantId = null;
+            try {
+                const details = JSON.parse(originalProduct.details || '{}');
+                if (details.variants && details.variants.length > 0) {
+                    const matchedVar = details.variants.find(v => (v.sku || '').trim().toUpperCase() === (item.sku || originalProduct.sku || '').trim().toUpperCase());
+                    if (matchedVar) {
+                        posProductId = matchedVar.pos_product_id;
+                        posVariantId = matchedVar.pos_variant_id;
+                    }
+                }
+                if (!posProductId) {
+                    posProductId = details.pos_product_id;
+                    posVariantId = details.pos_variant_id;
+                }
+            } catch(e) {}
+
             processedItems.push({
                 name: originalProduct.name,
                 sku: originalProduct.sku,
                 qty: item.qty,
                 originalPrice: originalProduct.price,
                 finalPrice: finalUnitPrice,
-                total: itemTotal
+                total: itemTotal,
+                pos_product_id: posProductId,
+                pos_variant_id: posVariantId
             });
         });
 
@@ -685,6 +704,9 @@ app.post('/api/orders', (req, res, next) => {
             }
         }
 
+        // Tự động đẩy đơn hàng sang Pancake POS ngầm (Background Async)
+        pushOrderToPancake(customerInfo, processedItems).catch(err => console.error('[PANCAKE SYNC ERROR]', err));
+
         res.json({
             success: true,
             orderId: Date.now(),
@@ -697,6 +719,65 @@ app.post('/api/orders', (req, res, next) => {
         res.status(500).json({ error: e.message });
     }
 });
+
+// --- HELPER FUNCTION FOR PANCAKE POS ORDER SYNC ---
+async function pushOrderToPancake(customerInfo, processedItems) {
+    try {
+        const rowsResult = await db.execute("SELECT * FROM settings WHERE key IN ('pos_api_key', 'pos_shop_id', 'pos_warehouse_id')");
+        const settings = {};
+        rowsResult.rows.forEach(r => settings[r.key] = r.value);
+
+        const apiKey = settings.pos_api_key || process.env.PANCAKE_API_KEY;
+        const shopId = settings.pos_shop_id || process.env.PANCAKE_SHOP_ID;
+        const warehouseId = settings.pos_warehouse_id || process.env.PANCAKE_WAREHOUSE_ID;
+
+        if (!apiKey || !shopId) {
+            console.log('[PANCAKE ORDER SYNC] Bỏ qua đẩy đơn vì chưa cài đặt pos_api_key hoặc pos_shop_id');
+            return;
+        }
+
+        const lineItems = processedItems.map(item => {
+            const line = {
+                quantity: item.qty,
+                price: item.finalPrice
+            };
+            if (item.pos_product_id) line.product_id = item.pos_product_id;
+            if (item.pos_variant_id) line.variation_id = item.pos_variant_id;
+            if (item.sku) line.sku = item.sku;
+            return line;
+        });
+
+        const orderPayload = {
+            order: {
+                source: 'Web Thỏ Hồng',
+                tags: ['Web Thỏ Hồng'],
+                warehouse_id: warehouseId ? Number(warehouseId) : undefined,
+                customer: {
+                    name: customerInfo.name,
+                    phone: customerInfo.phone,
+                    address: customerInfo.address
+                },
+                note: customerInfo.note || '',
+                line_items: lineItems,
+                items: lineItems
+            }
+        };
+
+        const url = `https://pos.pages.fm/api/v1/shops/${shopId}/orders?api_key=${apiKey}`;
+        console.log(`[PANCAKE ORDER SYNC] Đang đẩy đơn hàng của ${customerInfo.name} sang Pancake POS Shop ${shopId}...`);
+
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderPayload)
+        });
+
+        const result = await resp.json();
+        console.log('[PANCAKE ORDER SYNC RESULT]:', JSON.stringify(result));
+    } catch (err) {
+        console.error('[PANCAKE ORDER SYNC ERROR]:', err.message);
+    }
+}
 
 // --- HELPER FUNCTION FOR POS SYNC (WITH CONNECTION TIMEOUT) ---
 async function performPosSync(posCredentials) {
@@ -800,16 +881,25 @@ async function performPosSync(posCredentials) {
 
     allPosProducts.forEach(posProduct => {
         const variations = posProduct.variations || posProduct.product_variations || [];
+        const pId = posProduct.id || posProduct.product_id;
         if (variations.length === 0) {
             const code = posProduct.code || posProduct.sku || posProduct.id;
             if (code) {
-                skuStockMap[String(code).trim().toUpperCase()] = getStock(posProduct);
+                skuStockMap[String(code).trim().toUpperCase()] = {
+                    stock: getStock(posProduct),
+                    pos_product_id: pId,
+                    pos_variant_id: null
+                };
             }
         } else {
             variations.forEach(v => {
                 const sku = v.code || v.sku || v.barcode;
                 if (sku) {
-                    skuStockMap[String(sku).trim().toUpperCase()] = getStock(v);
+                    skuStockMap[String(sku).trim().toUpperCase()] = {
+                        stock: getStock(v),
+                        pos_product_id: pId || v.product_id,
+                        pos_variant_id: v.id || v.variation_id
+                    };
                 }
             });
         }
@@ -839,15 +929,17 @@ async function performPosSync(posCredentials) {
         if (variants.length === 0) {
             const parentSku = (localProduct.sku || '').trim().toUpperCase();
             if (parentSku && skuStockMap.hasOwnProperty(parentSku)) {
-                const newStock = skuStockMap[parentSku];
+                const posData = skuStockMap[parentSku];
+                const newStock = posData.stock;
                 const oldStock = localProduct.quantity || 0;
                 if (oldStock !== newStock) {
-                    productQuantitySum = newStock;
-                    isUpdated = true;
                     updateCount++;
-                } else {
-                    productQuantitySum = oldStock;
                 }
+                productQuantitySum = newStock;
+                details.pos_product_id = posData.pos_product_id;
+                details.pos_variant_id = posData.pos_variant_id;
+                isUpdated = true;
+
                 matchedProducts.push({
                     sku: localProduct.sku,
                     name: localProduct.name,
@@ -869,13 +961,17 @@ async function performPosSync(posCredentials) {
             variants.forEach(v => {
                 const skuKey = (v.sku || '').trim().toUpperCase();
                 if (skuKey && skuStockMap.hasOwnProperty(skuKey)) {
-                    const newStock = skuStockMap[skuKey];
+                    const posData = skuStockMap[skuKey];
+                    const newStock = posData.stock;
                     const oldStock = v.stock || 0;
                     if (oldStock !== newStock) {
-                        v.stock = newStock;
-                        isUpdated = true;
                         updateCount++;
                     }
+                    v.stock = newStock;
+                    v.pos_product_id = posData.pos_product_id;
+                    v.pos_variant_id = posData.pos_variant_id;
+                    isUpdated = true;
+
                     productQuantitySum += newStock;
                     matchedProducts.push({
                         sku: v.sku,
