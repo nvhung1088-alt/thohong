@@ -1145,7 +1145,7 @@
                     optsHtml += `<div class="opt-row"><div class="opt-label">${opt.name}:</div><div class="opt-tags">`;
                     opt.values.forEach(v => {
                         const isSelected = selections[p.id] && selections[p.id][opt.id] === v;
-                        optsHtml += `<button class="opt-tag-btn ${isSelected?'selected':''}" onclick="selectOption(${p.id}, '${opt.id}', '${v}', 'grid')">${v}</button>`;
+                        optsHtml += `<button class="opt-tag-btn ${isSelected?'selected':''}" onclick="selectOption('${p.id}', '${opt.id}', '${v}', 'grid')">${v}</button>`;
                     });
                     optsHtml += `</div></div>`;
                 });
@@ -1157,13 +1157,13 @@
 
                 htmlChunk += `
                     <div class="product-card ${isAdmin?'admin-mode':''}">
-                        <div class="product-image ${imgUrl?'':'no-img'}" style="${imgUrl?`background-image:url('${imgUrl}')`:''}" onclick="openDetailModal(${p.id})">
+                        <div class="product-image ${imgUrl?'':'no-img'}" style="${imgUrl?`background-image:url('${imgUrl}')`:''}" onclick="openDetailModal('${p.id}')">
                             ${imgUrl?'':`<span>Ảnh ${p.name}</span>`}
                         </div>
                         <div class="product-info">
                             <div class="info-main">
-                                <div class="cat-badge" ${editAttr} onblur="updateProductInfo(${p.id}, 'category', this.innerText)">${p.category}</div>
-                                <h3 class="product-title" ${editAttr} onblur="updateProductInfo(${p.id}, 'name', this.innerText)">${p.name}</h3>
+                                <div class="cat-badge" ${editAttr} onblur="updateProductInfo('${p.id}', 'category', this.innerText)">${p.category}</div>
+                                <h3 class="product-title" ${editAttr} onblur="updateProductInfo('${p.id}', 'name', this.innerText)">${p.name}</h3>
                                 <div class="product-meta">Mã: <span class="meta-val">${sku}</span> | Trọng lượng: <span class="meta-val">${p.weight || '0'}g</span> | Tồn kho: <span class="meta-val" style="color:var(--accent);">${stock}</span></div>
                                 ${optsHtml}
                             </div>
@@ -1174,8 +1174,8 @@
                                     <input type="number" id="qty-${p.id}" value="1" min="1" style="flex:1;" ${!canBuy?'disabled':''}>
                                 </div>
                                 <div class="action-buttons">
-                                    <button class="btn btn-secondary" onclick="openDetailModal(${p.id})">Xem Chi Tiết</button>
-                                    <button class="btn btn-primary" onclick="addFromGrid(${p.id})" ${!canBuy?'disabled':''}>${canBuy?'🛒 Giỏ hàng':'Chọn Phân loại'}</button>
+                                    <button class="btn btn-secondary" onclick="openDetailModal('${p.id}')">Xem Chi Tiết</button>
+                                    <button class="btn btn-primary" onclick="addFromGrid('${p.id}')" ${!canBuy?'disabled':''}>${canBuy?'🛒 Giỏ hàng':'Chọn Phân loại'}</button>
                                 </div>
                             </div>
                         </div>
@@ -1411,8 +1411,8 @@
             activeOpts.forEach(opt => {
                 optsHtml += `<div class="opt-row">
                     <div class="opt-label" style="display:flex; justify-content:space-between; align-items:center;">
-                        <span ${editAttr} onblur="updateProductInfo(${p.id}, 'opt_name', this.innerText)">${opt.name}:</span>
-                        <button class="btn-secondary admin-only-inline" style="padding:2px 8px; font-size:0.75rem; border-radius:4px;" onclick="addOptionValue(${p.id}, '${opt.id}')">+ Thêm loại mới</button>
+                        <span ${editAttr} onblur="updateProductInfo('${p.id}', 'opt_name', this.innerText)">${opt.name}:</span>
+                        <button class="btn-secondary admin-only-inline" style="padding:2px 8px; font-size:0.75rem; border-radius:4px;" onclick="addOptionValue('${p.id}', '${opt.id}')">+ Thêm loại mới</button>
                     </div>
                     <div class="opt-tags">`;
                 
@@ -1421,13 +1421,13 @@
                     
                     // Admin UI for Option Tag
                     const editSpan = isAdmin 
-                        ? `<span contenteditable="true" style="outline:none; min-width:20px; display:inline-block;" onblur="editOptionValue(${p.id}, '${opt.id}', '${v}', this.innerText)" onclick="event.stopPropagation()">${v}</span>` 
+                        ? `<span contenteditable="true" style="outline:none; min-width:20px; display:inline-block;" onblur="editOptionValue('${p.id}', '${opt.id}', '${v}', this.innerText)" onclick="event.stopPropagation()">${v}</span>` 
                         : v;
                     const delBtn = isAdmin 
-                        ? `<span style="color:var(--price-retail); margin-left:8px; cursor:pointer; font-weight:bold; font-size:1rem;" onclick="event.stopPropagation(); deleteOptionValue(${p.id}, '${opt.id}', '${v}')">&times;</span>` 
+                        ? `<span style="color:var(--price-retail); margin-left:8px; cursor:pointer; font-weight:bold; font-size:1rem;" onclick="event.stopPropagation(); deleteOptionValue('${p.id}', '${opt.id}', '${v}')">&times;</span>` 
                         : '';
                     
-                    optsHtml += `<button class="opt-tag-btn ${isSelected?'selected':''}" onclick="selectOption(${p.id}, '${opt.id}', '${v}', 'modal')">${editSpan}${delBtn}</button>`;
+                    optsHtml += `<button class="opt-tag-btn ${isSelected?'selected':''}" onclick="selectOption('${p.id}', '${opt.id}', '${v}', 'modal')">${editSpan}${delBtn}</button>`;
                 });
                 optsHtml += `</div></div>`;
             });
@@ -1439,14 +1439,14 @@
                 const border = idx===0 ? '#fca5a5' : '#6ee7b7';
                 
                 const conditionHtml = (idx > 0) 
-                    ? `(Từ <span ${editAttr} onblur="updateTierInfo(${p.id}, '${t.id}', 'condition', this.innerText)">${t.condition}</span> SP)` 
+                    ? `(Từ <span ${editAttr} onblur="updateTierInfo('${p.id}', '${t.id}', 'condition', this.innerText)">${t.condition}</span> SP)` 
                     : `(Mua lẻ)`;
                 
                 return `
                 <div style="background:${bg}; border:1px solid ${border}; border-radius:8px; padding:1rem; flex:1; text-align:center;">
-                    <div style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:5px;" ${editAttr} onblur="updateTierInfo(${p.id}, '${t.id}', 'name', this.innerText)">${t.name}</div>
+                    <div style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:5px;" ${editAttr} onblur="updateTierInfo('${p.id}', '${t.id}', 'name', this.innerText)">${t.name}</div>
                     <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:10px;">${conditionHtml}</div>
-                    <div class="price-value" style="color:${color}; font-size:1.3rem; font-weight:800;" ${editAttr} onblur="updateTierPrice(${p.id}, '${t.id}', this.innerText, '${activeV?activeV.id:''}')">
+                    <div class="price-value" style="color:${color}; font-size:1.3rem; font-weight:800;" ${editAttr} onblur="updateTierPrice('${p.id}', '${t.id}', this.innerText, '${activeV?activeV.id:''}')">
                         ${formatMoney(activeV?activeV.prices[t.id]:t.price)}
                     </div>
                 </div>
@@ -1461,18 +1461,18 @@
                     ${mainImgUrl ? `<img id="mainModalImg" src="${mainImgUrl}" alt="Ảnh SP" style="max-height:400px; width:100%; object-fit:contain; border-radius:8px;">` : `<div style="color:var(--text-muted); padding:50px;">Chưa có ảnh</div>`}
                     ${thumbnailsHtml}
                     <div class="admin-only-btn" style="margin-top:15px; width:100%; box-sizing:border-box;">
-                        <input type="text" placeholder="Dán link ảnh mới vào đây..." value="${mainImgUrl}" style="width:100%; font-size:0.8rem; padding:8px; box-sizing:border-box; border-radius:6px; border:1px solid #cbd5e1;" onchange="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'image', this.value); openDetailModal(${p.id});">
+                        <input type="text" placeholder="Dán link ảnh mới vào đây..." value="${mainImgUrl}" style="width:100%; font-size:0.8rem; padding:8px; box-sizing:border-box; border-radius:6px; border:1px solid #cbd5e1;" onchange="updateVariantInfo('${p.id}', '${activeV?activeV.id:''}', 'image', this.value); openDetailModal('${p.id}');">
                     </div>
                 </div>
                 <div class="detail-right">
                     <div>
-                        <div class="cat-badge" ${editAttr} onblur="updateProductInfo(${p.id}, 'category', this.innerText)">${p.category}</div>
-                        <h2 style="font-size: 1.8rem; color: var(--primary); margin-bottom: 0.5rem; line-height:1.2;" ${editAttr} onblur="updateProductInfo(${p.id}, 'name', this.innerText)">${p.name}</h2>
+                        <div class="cat-badge" ${editAttr} onblur="updateProductInfo('${p.id}', 'category', this.innerText)">${p.category}</div>
+                        <h2 style="font-size: 1.8rem; color: var(--primary); margin-bottom: 0.5rem; line-height:1.2;" ${editAttr} onblur="updateProductInfo('${p.id}', 'name', this.innerText)">${p.name}</h2>
                         
                         <div style="display:flex; gap:15px; border-bottom: 1px dashed var(--border); padding-bottom: 1rem; margin-bottom: 1rem; flex-wrap:wrap;">
-                            <div class="product-meta" style="border:none; margin:0; padding:0;">Mã SKU: <span class="meta-val" ${editAttr} onblur="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'sku', this.innerText)">${sku}</span></div>
-                            <div class="product-meta" style="border:none; margin:0; padding:0;">Trọng lượng: <span class="meta-val" ${editAttr} onblur="updateProductInfo(${p.id}, 'weight', this.innerText)">${p.weight || '0'}g</span></div>
-                            <div class="product-meta" style="border:none; margin:0; padding:0;">Tồn kho: <span class="meta-val" style="color:var(--accent);" ${editAttr} onblur="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'stock', this.innerText)">${stock}</span></div>
+                            <div class="product-meta" style="border:none; margin:0; padding:0;">Mã SKU: <span class="meta-val" ${editAttr} onblur="updateVariantInfo('${p.id}', '${activeV?activeV.id:''}', 'sku', this.innerText)">${sku}</span></div>
+                            <div class="product-meta" style="border:none; margin:0; padding:0;">Trọng lượng: <span class="meta-val" ${editAttr} onblur="updateProductInfo('${p.id}', 'weight', this.innerText)">${p.weight || '0'}g</span></div>
+                            <div class="product-meta" style="border:none; margin:0; padding:0;">Tồn kho: <span class="meta-val" style="color:var(--accent);" ${editAttr} onblur="updateVariantInfo('${p.id}', '${activeV?activeV.id:''}', 'stock', this.innerText)">${stock}</span></div>
                         </div>
                     </div>
                     
@@ -1486,7 +1486,7 @@
 
                     <div style="margin-top: 0.5rem;">
                         <div style="font-weight:600; margin-bottom:0.5rem;">Mô tả sản phẩm:</div>
-                        <p style="color:var(--text-muted); font-size:0.95rem; line-height:1.6; white-space:pre-wrap;" ${editAttr} onblur="updateProductInfo(${p.id}, 'description', this.innerText)">${p.description || "Đang cập nhật mô tả..."}</p>
+                        <p style="color:var(--text-muted); font-size:0.95rem; line-height:1.6; white-space:pre-wrap;" ${editAttr} onblur="updateProductInfo('${p.id}', 'description', this.innerText)">${p.description || "Đang cập nhật mô tả..."}</p>
                     </div>
 
                     <div style="display:flex; gap: 1rem; margin-top: auto; align-items:center; border-top: 1px solid var(--border); padding-top: 1.5rem;">
@@ -1494,14 +1494,14 @@
                             <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:5px;">Số lượng:</label>
                             <input type="number" id="qty-modal-${p.id}" value="1" min="1" style="width: 100px; padding: 0.8rem; border-radius: 8px; border: 2px solid var(--border); font-size:1.1rem; text-align:center;" ${!canBuy?'disabled':''}>
                         </div>
-                        <button class="btn btn-primary" style="flex:1; padding: 1.2rem; font-size: 1.2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(59,130,246,0.5);" onclick="addFromModal(${p.id})" ${!canBuy?'disabled':''}>
+                        <button class="btn btn-primary" style="flex:1; padding: 1.2rem; font-size: 1.2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(59,130,246,0.5);" onclick="addFromModal('${p.id}')" ${!canBuy?'disabled':''}>
                             ${canBuy?'🛒 Thêm vào Giỏ hàng':'Vui lòng chọn Phân loại'}
                         </button>
                     </div>
                     
                     <div class="admin-only-flex" style="margin-top:1rem; gap:10px;">
-                        <button class="btn btn-secondary" style="flex:1;" onclick="cloneProduct(${p.id})">📋 Nhân Bản SP Này</button>
-                        <button class="btn btn-danger" style="flex:1; margin-top:0;" onclick="deleteProduct(${p.id})">🗑 Xóa SP Này</button>
+                        <button class="btn btn-secondary" style="flex:1;" onclick="cloneProduct('${p.id}')">📋 Nhân Bản SP Này</button>
+                        <button class="btn btn-danger" style="flex:1; margin-top:0;" onclick="deleteProduct('${p.id}')">🗑 Xóa SP Này</button>
                     </div>
                 </div>
             `;
