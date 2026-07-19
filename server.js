@@ -207,24 +207,7 @@ async function initDB() {
     } catch(e) {}
 
     // Seed default products if not exists
-    const productsCountResult = await db.execute('SELECT COUNT(*) as count FROM products');
-    const productsCount = productsCountResult.rows[0]?.count || 0;
-    if (Number(productsCount) === 0) {
-        const seedProducts = [
-            { id: "1", name: "Băng dính trong 100 Yard", sku: "BD100Y", price: 12000, costPrice: 8000, imageUrl: "https://picsum.photos/200?random=1", category: "Băng dính", quantity: 150, status: "active", discountGroup: "Băng dính", details: "Độ dính cao, dai, không đứt quãng." },
-            { id: "2", name: "Cuộn xốp hơi 50cm x 100m", sku: "CUONXOP50CMX100M", price: 150000, costPrice: 110000, imageUrl: "https://picsum.photos/200?random=2", category: "Xốp bọc hàng", quantity: 32, status: "active", discountGroup: "Màng xốp", details: "Chống va đập tốt, bóng khí dai." },
-            { id: "3", name: "Hộp carton 10x10x10cm", sku: "CARTON10X10X10", price: 1500, costPrice: 900, imageUrl: "https://picsum.photos/200?random=3", category: "Hộp Carton", quantity: 1200, status: "active", discountGroup: "Hộp giấy", details: "Giấy 3 lớp sóng B cứng cáp." },
-            { id: "4", name: "Màng PE quấn hàng 2.4kg", sku: "MANGPE2.4KG", price: 85000, costPrice: 65000, imageUrl: "https://picsum.photos/200?random=4", category: "Màng PE", quantity: 80, status: "active", discountGroup: "Màng PE", details: "Độ co giãn 350%, bám dính tốt." }
-        ];
-
-        for (const p of seedProducts) {
-            await db.execute({
-                sql: 'INSERT INTO products (id, name, sku, price, costPrice, imageUrl, category, quantity, status, discountGroup, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                args: [p.id, p.name, p.sku, p.price, p.costPrice, p.imageUrl, p.category, p.quantity, p.status, p.discountGroup, p.details]
-            });
-        }
-        console.log('[DB] Seeding default products done.');
-    }
+    // DISABLED for production to avoid dummy data appearing when DB is emptied.
 }
 
 // --- MIDDLEWARES ---
