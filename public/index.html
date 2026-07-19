@@ -1009,25 +1009,42 @@
             else openDetailModal(pId);
         }
 
-        function renderProducts() {
-            const listEl = document.getElementById('productList'); listEl.innerHTML = '';
-            const searchQ = document.getElementById('searchInput').value.toLowerCase();
-            const sortMode = document.getElementById('sortSelect').value;
+        let currentFiltered = [];
+        let displayLimit = 0;
+        const PAGE_SIZE = 24;
+        let scrollObserver;
 
-            let filtered = products.filter(p => {
-                if(activeCategory !== 'all' && p.category !== activeCategory) return false;
-                if(searchQ && !p.name.toLowerCase().includes(searchQ) && !p.sku.toLowerCase().includes(searchQ)) return false;
-                return true;
-            });
+        function renderProducts(reset = true) {
+            const listEl = document.getElementById('productList'); 
+            
+            if (reset) {
+                listEl.innerHTML = '';
+                displayLimit = 0;
+                const searchQ = document.getElementById('searchInput').value.toLowerCase();
+                const sortMode = document.getElementById('sortSelect').value;
 
-            if(sortMode === 'price_asc') filtered.sort((a,b) => a.pricingTiers[0].price - b.pricingTiers[0].price);
-            if(sortMode === 'price_desc') filtered.sort((a,b) => b.pricingTiers[0].price - a.pricingTiers[0].price);
+                currentFiltered = products.filter(p => {
+                    if(activeCategory !== 'all' && p.category !== activeCategory) return false;
+                    if(searchQ && !p.name.toLowerCase().includes(searchQ) && !p.sku.toLowerCase().includes(searchQ)) return false;
+                    return true;
+                });
 
-            if(filtered.length === 0) { listEl.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: #94a3b8;">Không tìm thấy sản phẩm nào!</div>'; return; }
+                if(sortMode === 'price_asc') currentFiltered.sort((a,b) => a.pricingTiers[0].price - b.pricingTiers[0].price);
+                if(sortMode === 'price_desc') currentFiltered.sort((a,b) => b.pricingTiers[0].price - a.pricingTiers[0].price);
+
+                if(currentFiltered.length === 0) { 
+                    listEl.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: #94a3b8;">Không tìm thấy sản phẩm nào!</div>'; 
+                    return; 
+                }
+            }
+
+            const chunk = currentFiltered.slice(displayLimit, displayLimit + PAGE_SIZE);
+            if (chunk.length === 0) return; // No more products
 
             const editAttr = isAdmin ? 'contenteditable="true"' : '';
+            let htmlChunk = '';
 
-            filtered.forEach(p => {
+            chunk.forEach(p => {
                 const activeV = getActiveVariant(p.id);
                 let imgUrl = '';
                 if(activeV && activeV.image) imgUrl = activeV.image;
@@ -1052,7 +1069,7 @@
                 const sku = activeV?activeV.sku:p.sku;
                 const stock = activeV?activeV.stock:'?';
 
-                listEl.innerHTML += `
+                htmlChunk += `
                     <div class="product-card ${isAdmin?'admin-mode':''}">
                         <div class="product-image ${imgUrl?'':'no-img'}" style="${imgUrl?`background-image:url('${imgUrl}')`:''}" onclick="openDetailModal(${p.id})">
                             ${imgUrl?'':`<span>Ảnh ${p.name}</span>`}
@@ -1078,6 +1095,27 @@
                         </div>
                     </div>`;
             });
+
+            listEl.insertAdjacentHTML('beforeend', htmlChunk);
+            displayLimit += PAGE_SIZE;
+
+            setupInfiniteScroll();
+        }
+
+        function setupInfiniteScroll() {
+            if (scrollObserver) scrollObserver.disconnect();
+            
+            const listEl = document.getElementById('productList');
+            const lastCard = listEl.lastElementChild;
+            if (!lastCard) return;
+            
+            scrollObserver = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    renderProducts(false);
+                }
+            }, { rootMargin: '400px' });
+            
+            scrollObserver.observe(lastCard);
         }
 
         // --- UPDATE DATA FROM UI ---

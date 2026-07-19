@@ -525,7 +525,7 @@ app.post('/api/products/import', authenticateToken, async (req, res) => {
                     weight: p.weight || 0
                 });
                 return {
-                    sql: `INSERT INTO products (id, name, sku, price, costPrice, imageUrl, category, quantity, status, discountGroup, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    sql: `INSERT OR REPLACE INTO products (id, name, sku, price, costPrice, imageUrl, category, quantity, status, discountGroup, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     args: [
                         String(p.id), String(p.name || ''), String(p.sku || ''), parseInt(p.price) || 0, parseInt(p.costPrice) || 0,
                         String(p.imageUrl || (p.images && p.images[0]) || ''), String(p.category || ''), parseInt(p.quantity) || 0,
