@@ -736,30 +736,28 @@ async function pushOrderToPancake(customerInfo, processedItems) {
             return;
         }
 
-        const lineItems = processedItems.map(item => {
+        const items = processedItems.map(item => {
             const line = {
                 quantity: item.qty,
                 price: item.finalPrice
             };
             if (item.pos_product_id) line.product_id = item.pos_product_id;
             if (item.pos_variant_id) line.variation_id = item.pos_variant_id;
-            if (item.sku) line.sku = item.sku;
             return line;
         });
 
         const orderPayload = {
             order: {
                 source: 'Web Thỏ Hồng',
-                tags: ['Web Thỏ Hồng'],
-                warehouse_id: warehouseId ? Number(warehouseId) : undefined,
+                warehouse_id: warehouseId || undefined,
                 customer: {
                     name: customerInfo.name,
+                    phone_number: customerInfo.phone,
                     phone: customerInfo.phone,
                     address: customerInfo.address
                 },
                 note: customerInfo.note || '',
-                line_items: lineItems,
-                items: lineItems
+                items: items
             }
         };
 
