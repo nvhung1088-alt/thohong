@@ -1077,7 +1077,7 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
                             <div class="info-main">
                                 <div class="cat-badge" ${editAttr} onblur="updateProductInfo(${p.id}, 'category', this.innerText)">${p.category}</div>
                                 <h3 class="product-title" ${editAttr} onblur="updateProductInfo(${p.id}, 'name', this.innerText)">${p.name}</h3>
-                                <div class="product-meta">Mã: <span class="meta-val">${sku}</span> | Tồn kho: <span class="meta-val" style="color:var(--accent);">${stock}</span></div>
+                                <div class="product-meta">Mã: <span class="meta-val">${sku}</span> | Trọng lượng: <span class="meta-val">${p.weight}g</span> | Tồn kho: <span class="meta-val" style="color:var(--accent);">${stock}</span></div>
                                 ${optsHtml}
                             </div>
                             <div class="price-container">${pricesHtml}</div>
@@ -1273,10 +1273,27 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
             const p = products.find(x => x.id == id);
             if (!p) return;
             const activeV = getActiveVariant(p.id);
-            let imgUrl = '';
-            if (activeV && activeV.image) imgUrl = activeV.image;
-            else if (p.variants && p.variants.length > 0 && p.variants[0].image) imgUrl = p.variants[0].image;
-            else if (p.images && p.images.length > 0) imgUrl = p.images[0];
+            
+            let modalImages = [];
+            if (activeV && activeV.image) modalImages.push(activeV.image);
+            else if (p.variants && p.variants.length > 0 && p.variants[0].image) modalImages.push(p.variants[0].image);
+            
+            if (p.images && p.images.length > 0) {
+                p.images.forEach(img => {
+                    if (img && !modalImages.includes(img)) modalImages.push(img);
+                });
+            }
+
+            let mainImgUrl = modalImages[0] || '';
+            let thumbnailsHtml = '';
+            if (modalImages.length > 1) {
+                thumbnailsHtml = `<div style="display:flex; gap:8px; margin-top:10px; overflow-x:auto; padding-bottom:5px; width:100%;">`;
+                modalImages.forEach((img, idx) => {
+                    thumbnailsHtml += `<img src="${img}" style="width:60px; height:60px; min-width:60px; object-fit:cover; border-radius:4px; cursor:pointer; border: 2px solid ${idx===0?'var(--primary)':'transparent'}; transition: border-color 0.2s;" onclick="document.getElementById('mainModalImg').src='${img}'; Array.from(this.parentElement.children).forEach(c=>c.style.borderColor='transparent'); this.style.borderColor='var(--primary)';">`;
+                });
+                thumbnailsHtml += `</div>`;
+            }
+
             const canBuy = activeV !== null;
 
             const editAttr = isAdmin ? 'contenteditable="true"' : '';
@@ -1332,10 +1349,11 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
 
             const content = document.getElementById('detailModalContent');
             content.innerHTML = `
-                <div class="detail-left">
-                    ${imgUrl ? `<img src="${imgUrl}" alt="Ảnh SP">` : `<div style="color:var(--text-muted);">Chưa có ảnh</div>`}
-                    <div class="admin-only-btn" style="position:absolute; bottom:10px; left:10px; right:10px;">
-                        <input type="text" placeholder="Dán link ảnh mới vào đây..." value="${imgUrl}" style="width:100%; font-size:0.8rem;" onchange="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'image', this.value); openDetailModal(${p.id});">
+                <div class="detail-left" style="display:flex; flex-direction:column; justify-content:flex-start;">
+                    ${mainImgUrl ? `<img id="mainModalImg" src="${mainImgUrl}" alt="Ảnh SP">` : `<div style="color:var(--text-muted);">Chưa có ảnh</div>`}
+                    ${thumbnailsHtml}
+                    <div class="admin-only-btn" style="margin-top:15px; width:100%;">
+                        <input type="text" placeholder="Dán link ảnh mới vào đây..." value="${mainImgUrl}" style="width:100%; font-size:0.8rem;" onchange="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'image', this.value); openDetailModal(${p.id});">
                     </div>
                 </div>
                 <div class="detail-right">
@@ -1343,8 +1361,9 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
                         <div class="cat-badge" ${editAttr} onblur="updateProductInfo(${p.id}, 'category', this.innerText)">${p.category}</div>
                         <h2 style="font-size: 1.8rem; color: var(--primary); margin-bottom: 0.5rem; line-height:1.2;" ${editAttr} onblur="updateProductInfo(${p.id}, 'name', this.innerText)">${p.name}</h2>
                         
-                        <div style="display:flex; gap:15px; border-bottom: 1px dashed var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
+                        <div style="display:flex; gap:15px; border-bottom: 1px dashed var(--border); padding-bottom: 1rem; margin-bottom: 1rem; flex-wrap:wrap;">
                             <div class="product-meta" style="border:none; margin:0; padding:0;">Mã SKU: <span class="meta-val" ${editAttr} onblur="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'sku', this.innerText)">${sku}</span></div>
+                            <div class="product-meta" style="border:none; margin:0; padding:0;">Trọng lượng: <span class="meta-val" ${editAttr} onblur="updateProductInfo(${p.id}, 'weight', this.innerText)">${p.weight}g</span></div>
                             <div class="product-meta" style="border:none; margin:0; padding:0;">Tồn kho: <span class="meta-val" style="color:var(--accent);" ${editAttr} onblur="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'stock', this.innerText)">${stock}</span></div>
                         </div>
                     </div>
