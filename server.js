@@ -943,8 +943,8 @@ app.get('/api/pos/sync', (req, res, next) => {
         authHeaderValue: authHeader
     });
 
-    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-        return next(); // Bypass JWT - day la Vercel Cron hop le
+    if (cronSecret && (authHeader === `Bearer ${cronSecret}` || req.query.cron_secret === cronSecret)) {
+        return next(); // Bypass JWT - day la Vercel Cron hoac external cron hop le
     }
     authenticateToken(req, res, next); // Nguoi dung Admin binh thuong
 }, async (req, res) => {
