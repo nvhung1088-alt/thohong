@@ -819,14 +819,24 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
 
                 const description = String(r[2] || '').trim();
                 const imageStr = String(r[3] || '').trim();
-                const images = imageStr ? imageStr.split(',').map(x=>x.trim()).filter(x=>x) : [];
+                const images = imageStr ? imageStr.split(/[\n,]+/).map(x=>x.trim()).filter(x=>x) : [];
                 const cat = String(r[4] || '').trim() || 'Chưa phân loại';
                 const weight = String(r[5] || '').trim() || '0';
                 const costPrice = parseMoneyNumber(r[6]);
                 const retailPrice = parseMoneyNumber(r[7]);
 
-                // Smart Parser: Đọc giá sỉ từ cột 8 trở đi
+                // Khởi tạo mảng Tiers, luôn có Giá Bán Lẻ ở vị trí đầu tiên
                 let tiers = [];
+                if (retailPrice > 0 || costPrice > 0) {
+                    tiers.push({
+                        id: 't0',
+                        name: 'Giá Bán Lẻ',
+                        price: retailPrice > 0 ? retailPrice : costPrice,
+                        condition: 1
+                    });
+                }
+
+                // Smart Parser: Đọc giá sỉ từ cột 8 trở đi
                 for (let i = 8; i < r.length; i++) {
                     let cell = String(r[i] || '').trim();
                     if (!cell) continue;
@@ -848,16 +858,26 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
                         // Nếu chỉ là một con số, có thể ô tiếp theo là Điều kiện
                         tPrice = parseMoneyNumber(cell);
                         let nextCell = String(r[i+1] || '').trim();
-                        if (nextCell && !nextCell.includes('>') && !nextCell.includes('-')) {
-                            tCond = parseMoneyNumber(nextCell);
-                            i++; // Skip the condition cell
+                        if (nextCell) {
+                            let parsedCond = 0;
+                            if (nextCell.includes('>=')) parsedCond = parseMoneyNumber(nextCell.split('>=')[1]);
+                            else if (nextCell.includes('>')) parsedCond = parseMoneyNumber(nextCell.split('>')[1]) + 1;
+                            else if (nextCell.includes('-')) parsedCond = parseMoneyNumber(nextCell.split('-')[1]);
+                            else parsedCond = parseMoneyNumber(nextCell);
+                            
+                            // Nếu nextCell rõ ràng là một chuỗi điều kiện (có chứa dấu >, -)
+                            // HOẶC giá trị parsedCond nhỏ (ví dụ <= 1000) thì đó là điều kiện
+                            if (nextCell.match(/[>\-]/) || (parsedCond > 0 && parsedCond <= 1000)) {
+                                tCond = parsedCond;
+                                i++; // Skip the condition cell
+                            }
                         }
                     }
 
                     if (tPrice > 0) {
                         tiers.push({
                             id: 't' + tiers.length,
-                            name: 'Giá Sỉ ' + (tiers.length + 1),
+                            name: 'Giá Sỉ ' + tiers.length, // tiers.length vì Giá Bán Lẻ đã chiếm vị trí đầu
                             price: tPrice,
                             condition: tCond || 1
                         });
