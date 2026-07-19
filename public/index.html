@@ -229,23 +229,7 @@
             <div id="excelStep1">
                 <p style="font-size:0.9rem; color:#666; margin-bottom:10px;">Dán dữ liệu từ bảng Excel/Google Sheet (kèm dòng tiêu đề).</p>
                 <!-- Remove white-space:pre to prevent horizontal clipping visually, use wrap -->
-                <textarea id="excelRawData" rows="15" wrap="off" style="width:100%; font-family:monospace; font-size:0.8rem; padding:10px; overflow-x:auto; line-height:1.4;">
-Mã SP	Tên sản phẩm	Phân loại 1	Phân loại 2	DANH MỤC SP	ẢNH 1	Bán Lẻ	Sỉ 1	Sỉ 2
-BD03HDV250G	Băng Dính	dễ vỡ 0.25KG		Băng dính	https://content.pancake.vn/2-25/2025/1/7/57214cf5e5d20e3966d0583da11fa8cdf6722e91.png	15500	14400	13500
-BD03HDV350G	Băng Dính	dễ vỡ 0.35KG		Băng dính	https://content.pancake.vn/2-25/2025/1/7/57214cf5e5d20e3966d0583da11fa8cdf6722e91.png	21600	20200	18900
-BD0503DUCT	Băng Dính	đục 0.5kg		Băng dính	https://content.pancake.vn/2-25/2025/1/7/1f69d28c6bf42475bb1c145615e75cdb172de601.png	28400	26500	24900
-BD0503TRANG	Băng Dính	Trắng 0.5kg		Băng dính	https://content.pancake.vn/2-25/2025/1/7/34de6462c3835319fb0dded34e6928fa410c33f9.png	28400	26500	24900
-BD0503VANGC	Băng Dính	vàng 0.5kg		Băng dính	https://content.pancake.vn/2-25/2025/1/7/98a4feed9df959f08990e9da67fa77ec01d332b8.png	28400	26500	24900
-BD1030DUCT	Băng Dính	đục 1kg		Băng dính	https://content.pancake.vn/2-25/2025/1/7/1f69d28c6bf42475bb1c145615e75cdb172de601.png	60500	56500	53000
-BD1030TRANG	Băng Dính	trong 1kg		Băng dính	https://content.pancake.vn/2-25/2025/1/7/34de6462c3835319fb0dded34e6928fa410c33f9.png	60500	56500	53000
-BD1030VANGC	Băng Dính	vàng 1kg		Băng dính	https://content.pancake.vn/2-25/2025/1/7/98a4feed9df959f08990e9da67fa77ec01d332b8.png	60500	56500	53000
-CUON100X150x350	Giấy in	100X150x350		Giấy in nhiệt	https://content.pancake.vn/2-25/2025/1/7/1345d1c30e4fe654ed395ed61e6cdf00675db1df.png	57100	53300	50000
-CUON75X100X300	Giấy in	75X100X300		Giấy in nhiệt	https://content.pancake.vn/2-25/2025/1/7/1345d1c30e4fe654ed395ed61e6cdf00675db1df.png	27800	26000	24300
-TNPTRDEN15x25	Túi niêm phong 1kg	Đen	15x25	Túi gói hàng NP	https://content.pancake.vn/2-25/2025/3/19/2fbc3906ca1478c6d528758e604d9a9336c1a213.png	45000	43200	40500
-TNPTRHONG15x25	Túi niêm phong 1kg	Hồng	15x25	Túi gói hàng NP	https://content.pancake.vn/2-25/2025/3/19/1a0081a28cefee944a78b7890b07d5738e2847f6.png	50000	49000	45900
-TNPTRXAM15x25	Túi niêm phong 1kg	Xám	15x25	Túi gói hàng NP	https://content.pancake.vn/2-25/2025/3/19/6241cdb19f8cf373cb591fd6bdccc9e11d6eb352.png	50000	49000	45900
-ZIPKHOA2030	Zip khóa	mờ	20x30cm	Túi ZIP	https://content.pancake.vn/2-25/2025/1/7/3571594f3af5abfb26c87184f1ed533d61900ff3.png	75600	70600	66200
-ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025/1/7/3571594f3af5abfb26c87184f1ed533d61900ff3.png	75600	70600	66200</textarea>
+                <textarea id="excelRawData" rows="15" wrap="off" style="width:100%; font-family:monospace; font-size:0.8rem; padding:10px; overflow-x:auto; line-height:1.4;" placeholder="Dán nội dung từ Excel vào đây..."></textarea>
                 <button class="btn btn-primary" style="margin-top:10px; width:100%" onclick="processExcelRaw()">Tiếp theo (Phân tích cột)</button>
             </div>
 
@@ -1077,7 +1061,7 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
                             <div class="info-main">
                                 <div class="cat-badge" ${editAttr} onblur="updateProductInfo(${p.id}, 'category', this.innerText)">${p.category}</div>
                                 <h3 class="product-title" ${editAttr} onblur="updateProductInfo(${p.id}, 'name', this.innerText)">${p.name}</h3>
-                                <div class="product-meta">Mã: <span class="meta-val">${sku}</span> | Trọng lượng: <span class="meta-val">${p.weight}g</span> | Tồn kho: <span class="meta-val" style="color:var(--accent);">${stock}</span></div>
+                                <div class="product-meta">Mã: <span class="meta-val">${sku}</span> | Trọng lượng: <span class="meta-val">${p.weight || '0'}g</span> | Tồn kho: <span class="meta-val" style="color:var(--accent);">${stock}</span></div>
                                 ${optsHtml}
                             </div>
                             <div class="price-container">${pricesHtml}</div>
@@ -1363,7 +1347,7 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
                         
                         <div style="display:flex; gap:15px; border-bottom: 1px dashed var(--border); padding-bottom: 1rem; margin-bottom: 1rem; flex-wrap:wrap;">
                             <div class="product-meta" style="border:none; margin:0; padding:0;">Mã SKU: <span class="meta-val" ${editAttr} onblur="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'sku', this.innerText)">${sku}</span></div>
-                            <div class="product-meta" style="border:none; margin:0; padding:0;">Trọng lượng: <span class="meta-val" ${editAttr} onblur="updateProductInfo(${p.id}, 'weight', this.innerText)">${p.weight}g</span></div>
+                            <div class="product-meta" style="border:none; margin:0; padding:0;">Trọng lượng: <span class="meta-val" ${editAttr} onblur="updateProductInfo(${p.id}, 'weight', this.innerText)">${p.weight || '0'}g</span></div>
                             <div class="product-meta" style="border:none; margin:0; padding:0;">Tồn kho: <span class="meta-val" style="color:var(--accent);" ${editAttr} onblur="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'stock', this.innerText)">${stock}</span></div>
                         </div>
                     </div>
