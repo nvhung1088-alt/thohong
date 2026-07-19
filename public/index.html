@@ -877,7 +877,7 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
                     if (tPrice > 0) {
                         tiers.push({
                             id: 't' + tiers.length,
-                            name: 'Giá Sỉ ' + tiers.length, // tiers.length vì Giá Bán Lẻ đã chiếm vị trí đầu
+                            name: 'Giá Sỉ ' + tiers.length,
                             price: tPrice,
                             condition: tCond || 1
                         });
@@ -886,6 +886,22 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
 
                 const pId = Date.now() + Math.floor(Math.random()*10000) + idx;
                 
+                let prices = {};
+                tiers.forEach(t => {
+                    prices[t.id] = t.price;
+                });
+
+                let defaultVariant = {
+                    id: 'v_' + pId + '_0',
+                    label: 'Mặc định',
+                    optionValues: {},
+                    sku: sku || pName,
+                    weight: weight,
+                    stock: 9999,
+                    prices: prices,
+                    image: images.length > 0 ? images[0] : ''
+                };
+
                 let product = { 
                     id: pId, 
                     name: pName, 
@@ -899,7 +915,7 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
                     price: retailPrice,
                     pricingTiers: tiers, 
                     options: [], 
-                    variants: [] 
+                    variants: [defaultVariant] 
                 };
                 
                 const existingProdIdx = products.findIndex(x=>x.name.toLowerCase() === pName.toLowerCase());
@@ -1031,7 +1047,8 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
                 const activeV = getActiveVariant(p.id);
                 let imgUrl = '';
                 if(activeV && activeV.image) imgUrl = activeV.image;
-                else if(p.variants.length > 0 && p.variants[0].image) imgUrl = p.variants[0].image;
+                else if(p.variants && p.variants.length > 0 && p.variants[0].image) imgUrl = p.variants[0].image;
+                else if(p.images && p.images.length > 0) imgUrl = p.images[0];
 
                 const canBuy = activeV !== null;
 
@@ -1256,7 +1273,10 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
             const p = products.find(x => x.id == id);
             if (!p) return;
             const activeV = getActiveVariant(p.id);
-            let imgUrl = (activeV && activeV.image) ? activeV.image : (p.variants.length > 0 ? p.variants[0].image : '');
+            let imgUrl = '';
+            if (activeV && activeV.image) imgUrl = activeV.image;
+            else if (p.variants && p.variants.length > 0 && p.variants[0].image) imgUrl = p.variants[0].image;
+            else if (p.images && p.images.length > 0) imgUrl = p.images[0];
             const canBuy = activeV !== null;
 
             const editAttr = isAdmin ? 'contenteditable="true"' : '';
