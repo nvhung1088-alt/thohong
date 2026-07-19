@@ -880,16 +880,24 @@
                     });
                 }
 
-                let tierIndex = 1;
-                excelHeader.forEach((h, i) => {
-                    if (Object.values(map).includes(i)) return; // Skip mapped columns
-                    if (!h.includes('sỉ') && !h.includes('giá')) return; // Check if it looks like a wholesale column
+                let wholesaleCols = [];
+                for(let i=0; i<excelHeader.length; i++) {
+                    if (Object.values(map).includes(i)) continue;
+                    let h = normalizeStr(excelHeader[i]);
+                    if (h.includes('si') || h.includes('gia') || h.includes('dieu kien')) {
+                        wholesaleCols.push(i);
+                    }
+                }
 
-                    let cell = String(r[i] || '').trim();
-                    if (!cell) return;
+                let wIndex = 1;
+                for(let k = 0; k < wholesaleCols.length; k++) {
+                    let colIdx = wholesaleCols[k];
+                    let h = normalizeStr(excelHeader[colIdx]);
+                    let cell = String(r[colIdx] || '').trim();
+                    if(!cell) continue;
 
-                    let tPrice = 0, tCond = tierIndex * 10;
-                    
+                    let tPrice = 0, tCond = 0;
+
                     if (cell.includes('>=')) {
                         let parts = cell.split('>=');
                         tPrice = parseMoneyNumber(parts[0]);
@@ -903,17 +911,46 @@
                         tPrice = parseMoneyNumber(parts[0]);
                         tCond = parseMoneyNumber(parts[1]);
                     } else {
+                        if (h.includes('dieu kien') || h.includes('sl')) continue;
+
                         tPrice = parseMoneyNumber(cell);
+                        if (tPrice > 0) {
+                            tCond = wIndex * 10; 
+
+                            if (k + 1 < wholesaleCols.length) {
+                                let nextColIdx = wholesaleCols[k+1];
+                                let nextCell = String(r[nextColIdx] || '').trim();
+                                let nextH = normalizeStr(excelHeader[nextColIdx]);
+
+                                if (nextH.includes('dieu kien') || nextH.includes('sl')) {
+                                    let cStr = nextCell.replace('>=', '').replace('>', '').replace('=', '').trim();
+                                    let cNum = parseMoneyNumber(cStr);
+                                    if (cNum > 0) {
+                                        tCond = nextCell.includes('>') && !nextCell.includes('=') ? cNum + 1 : cNum;
+                                        k++;
+                                    }
+                                } else if (nextCell.startsWith('>=') || nextCell.startsWith('>')) {
+                                    let cStr = nextCell.replace('>=', '').replace('>', '').replace('=', '').trim();
+                                    let cNum = parseMoneyNumber(cStr);
+                                    if (cNum > 0) {
+                                        tCond = nextCell.includes('>') && !nextCell.includes('=') ? cNum + 1 : cNum;
+                                        k++;
+                                    }
+                                }
+                            }
+                        }
                     }
-                    if (tPrice > 0) {
+
+                    if (tPrice > 0 && tCond > 0) {
                         tiers.push({
                             id: 't' + tiers.length,
                             name: 'Giá Sỉ ' + tiers.length,
                             price: tPrice,
                             condition: tCond || 1
                         });
+                        wIndex++;
                     }
-                });
+                }
 
                 const pId = Date.now() + Math.floor(Math.random()*10000) + idx;
                 
