@@ -792,14 +792,14 @@
             let map = { sku: -1, name: -1, desc: -1, image: -1, cat: -1, weight: -1, retail: -1, cost: -1 };
             excelHeader.forEach((origH, i) => {
                 let h = normalizeStr(origH);
-                if(h.includes('ma')) map.sku = i;
-                else if(h.includes('ten')) map.name = i;
-                else if(h.includes('anh') || h.includes('hinh') || h.includes('image') || h.includes('img')) map.image = i;
-                else if(h.includes('danh muc') || h.includes('nhom')) map.cat = i;
-                else if(h.includes('trong luong') || h.includes('can nang') || h.includes('weight')) map.weight = i;
-                else if(h.includes('von') || h.includes('nhap')) map.cost = i;
-                else if(h.includes('ban le') || h.includes('gia le')) map.retail = i;
-                else if(h.includes('mo ta') && map.desc === -1) map.desc = i; 
+                if (map.sku === -1 && (h.match(/\bma\b/) || h.includes('sku'))) map.sku = i;
+                else if (map.name === -1 && h.match(/\bten\b/)) map.name = i;
+                else if (map.image === -1 && (h.match(/\banh\b/) || h.match(/\bhinh\b/) || h.includes('image') || h.includes('img'))) map.image = i;
+                else if (map.cat === -1 && (h.includes('danh muc') || h.includes('nhom'))) map.cat = i;
+                else if (map.weight === -1 && (h.includes('trong luong') || h.includes('can nang') || h.includes('weight'))) map.weight = i;
+                else if (map.cost === -1 && (h.includes('von') || h.includes('nhap'))) map.cost = i;
+                else if (map.retail === -1 && (h.includes('ban le') || h.includes('gia le'))) map.retail = i;
+                else if (map.desc === -1 && h.includes('mo ta')) map.desc = i; 
             });
 
             // Generate UI
