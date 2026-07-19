@@ -84,10 +84,43 @@ async function executeTurso(sql, args = []) {
     return { rows };
 }
 
+async function executeBatchTurso(stmts) {
+    let url = (process.env.TURSO_DATABASE_URL || 'https://fallback.turso.io').trim();
+    if (url.startsWith('libsql://')) url = url.replace('libsql://', 'https://');
+    const token = (process.env.TURSO_AUTH_TOKEN || '').trim();
+
+    const requests = stmts.map(stmt => ({
+        type: "execute",
+        stmt: { sql: stmt.sql, args: stmt.args.map(a => ({ type: "text", value: String(a) })) }
+    }));
+    requests.push({ type: "close" });
+
+    const reqBody = { requests };
+    const res = await fetch(`${url}/v2/pipeline`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(reqBody)
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Turso Batch Error: ${res.status} ${res.statusText} - ${text}`);
+    }
+
+    const data = await res.json();
+    return data;
+}
+
 const db = { 
     execute: (obj) => {
         if (typeof obj === 'string') return executeTurso(obj, []);
         return executeTurso(obj.sql, obj.args || []);
+    },
+    executeBatch: (stmts) => {
+        return executeBatchTurso(stmts);
     }
 };
 
@@ -477,12 +510,10 @@ app.post('/api/products/import', authenticateToken, async (req, res) => {
     try {
         await db.execute('DELETE FROM products');
 
-        const CHUNK_SIZE = 1000;
+        const CHUNK_SIZE = 500;
         for (let i = 0; i < products.length; i += CHUNK_SIZE) {
             const chunk = products.slice(i, i + CHUNK_SIZE);
-            const placeholders = chunk.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
-            let args = [];
-            chunk.forEach(p => {
+            const stmts = chunk.map(p => {
                 const detailsJson = JSON.stringify({
                     images: p.images || [],
                     pricingTiers: p.pricingTiers || [],
@@ -491,17 +522,16 @@ app.post('/api/products/import', authenticateToken, async (req, res) => {
                     description: p.description || '',
                     weight: p.weight || 0
                 });
-                args.push(
-                    String(p.id), String(p.name || ''), String(p.sku || ''), parseInt(p.price) || 0, parseInt(p.costPrice) || 0,
-                    String(p.imageUrl || (p.images && p.images[0]) || ''), String(p.category || ''), parseInt(p.quantity) || 0,
-                    String(p.status || 'active'), String(p.discountGroup || ''), detailsJson
-                );
+                return {
+                    sql: `INSERT INTO products (id, name, sku, price, costPrice, imageUrl, category, quantity, status, discountGroup, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    args: [
+                        String(p.id), String(p.name || ''), String(p.sku || ''), parseInt(p.price) || 0, parseInt(p.costPrice) || 0,
+                        String(p.imageUrl || (p.images && p.images[0]) || ''), String(p.category || ''), parseInt(p.quantity) || 0,
+                        String(p.status || 'active'), String(p.discountGroup || ''), detailsJson
+                    ]
+                };
             });
-            
-            await db.execute({
-                sql: `INSERT INTO products (id, name, sku, price, costPrice, imageUrl, category, quantity, status, discountGroup, details) VALUES ${placeholders}`,
-                args: args
-            });
+            await db.executeBatch(stmts);
         }
         res.json({ success: true, count: products.length });
     } catch (e) {
