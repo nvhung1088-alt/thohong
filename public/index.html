@@ -236,7 +236,15 @@
             <div id="excelStep2" style="display:none;">
                 <p style="font-size:0.95rem; color:#1e293b; margin-bottom: 10px;">✅ Đã đọc thành công <strong id="importCount" style="color:#10b981;">0</strong> sản phẩm từ file Excel.</p>
                 <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px; margin-bottom:1rem; font-size:0.85rem; color:#1e40af;">
-                    ℹ️ Hệ thống sẽ tự động tách Giá và Điều kiện mua sỉ (Ví dụ: <strong>8000 >= 10</strong> sẽ tách thành 8000đ khi mua từ 10).
+                    ℹ️ Vui lòng kiểm tra và <strong>khớp đúng các cột</strong> dưới đây. Hệ thống đã tự động nhận diện dựa trên tiêu đề cột!
+                </div>
+
+                <div id="columnMappingUI" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; font-size:0.85rem; background:#f8fafc; padding:10px; border-radius:6px; border: 1px solid #e2e8f0;">
+                    <!-- Auto generated mapping selectors -->
+                </div>
+                
+                <div style="background:#fff7ed; border:1px solid #ffedd5; border-radius:8px; padding:8px; margin-bottom:1rem; font-size:0.8rem; color:#c2410c;">
+                    💡 <strong>Giá Sỉ:</strong> Các cột không được chọn ở trên sẽ được tự động nhận diện làm Giá Sỉ nếu tiêu đề có chữ "sỉ" hoặc "giá". Hệ thống tự tách điều kiện (Ví dụ: 8000 >= 10).
                 </div>
                 
                 <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
@@ -778,6 +786,48 @@
             excelRows = allRows.slice(1);
             
             document.getElementById('importCount').innerText = excelRows.length;
+            
+            // Auto-detect columns
+            const normalizeStr = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            let map = { sku: -1, name: -1, desc: -1, image: -1, cat: -1, weight: -1, retail: -1, cost: -1 };
+            excelHeader.forEach((origH, i) => {
+                let h = normalizeStr(origH);
+                if(h.includes('ma')) map.sku = i;
+                else if(h.includes('ten')) map.name = i;
+                else if(h.includes('anh') || h.includes('hinh') || h.includes('image') || h.includes('img')) map.image = i;
+                else if(h.includes('danh muc') || h.includes('nhom')) map.cat = i;
+                else if(h.includes('trong luong') || h.includes('can nang') || h.includes('weight')) map.weight = i;
+                else if(h.includes('von') || h.includes('nhap')) map.cost = i;
+                else if(h.includes('ban le') || h.includes('gia le')) map.retail = i;
+                else if(h.includes('mo ta') && map.desc === -1) map.desc = i; 
+            });
+
+            // Generate UI
+            const fields = [
+                { id: 'sku', label: 'Mã SP' }, { id: 'name', label: 'Tên Sản phẩm (*)' },
+                { id: 'image', label: 'Link Ảnh' }, { id: 'cat', label: 'Danh mục' },
+                { id: 'weight', label: 'Trọng lượng (g)' }, { id: 'desc', label: 'Mô tả ngắn' },
+                { id: 'cost', label: 'Giá Vốn' }, { id: 'retail', label: 'Giá Bán Lẻ' }
+            ];
+
+            let html = '';
+            fields.forEach(f => {
+                let options = `<option value="-1">-- Bỏ qua --</option>`;
+                allRows[0].forEach((origH, i) => {
+                    let selected = (map[f.id] === i) ? 'selected' : '';
+                    options += `<option value="${i}" ${selected}>Cột ${i+1}: ${origH}</option>`;
+                });
+                html += `
+                    <div>
+                        <label style="font-weight:600; display:block; margin-bottom:3px; color:#334155;">${f.label}</label>
+                        <select id="map_${f.id}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.85rem;">
+                            ${options}
+                        </select>
+                    </div>
+                `;
+            });
+            document.getElementById('columnMappingUI').innerHTML = html;
+
             document.getElementById('excelStep1').style.display = 'none';
             document.getElementById('excelStep2').style.display = 'block';
         }
@@ -795,20 +845,16 @@
                 return isNaN(num) ? 0 : num;
             };
 
-            const normalizeStr = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
-            let map = { sku: -1, name: -1, desc: -1, image: -1, cat: -1, weight: -1, retail: -1, cost: -1 };
-            excelHeader.forEach((origH, i) => {
-                let h = normalizeStr(origH);
-                if(h.includes('ma')) map.sku = i;
-                else if(h.includes('ten')) map.name = i;
-                else if(h.includes('anh') || h.includes('hinh') || h.includes('image')) map.image = i;
-                else if(h.includes('danh muc') || h.includes('nhom')) map.cat = i;
-                else if(h.includes('trong luong') || h.includes('can nang')) map.weight = i;
-                else if(h.includes('von') || h.includes('nhap')) map.cost = i;
-                else if(h.includes('ban le') || h.includes('gia le')) map.retail = i;
-                else if(h.includes('mo ta') && map.desc === -1) map.desc = i; 
-            });
+            let map = {
+                sku: parseInt(document.getElementById('map_sku').value),
+                name: parseInt(document.getElementById('map_name').value),
+                desc: parseInt(document.getElementById('map_desc').value),
+                image: parseInt(document.getElementById('map_image').value),
+                cat: parseInt(document.getElementById('map_cat').value),
+                weight: parseInt(document.getElementById('map_weight').value),
+                retail: parseInt(document.getElementById('map_retail').value),
+                cost: parseInt(document.getElementById('map_cost').value)
+            };
 
             excelRows.forEach((r, idx) => {
                 const sku = map.sku !== -1 ? String(r[map.sku] || '').trim() : `SP${Date.now()}${idx}`;
