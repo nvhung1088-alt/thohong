@@ -440,6 +440,18 @@
                             <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Mô tả / Điều kiện Banner:</label>
                             <textarea id="ap_banner_subtitle" rows="3" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; font-size:0.9rem;" placeholder="Nhập mô tả hoặc điều kiện mua sỉ..."></textarea>
                         </div>
+
+                        <div style="display:flex; align-items:center; justify-content:space-between; background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:10px 14px;">
+                            <div>
+                                <div style="font-size:0.85rem; font-weight:700; color:#9a3412;">🚫 Tự ẩn sản phẩm hết hàng</div>
+                                <div style="font-size:0.75rem; color:#c2410c; margin-top:2px;">Kích hoạt để tự ẩn các sản phẩm có tồn kho &lt;= 0 khỏi gian hàng</div>
+                            </div>
+                            <label style="position:relative; display:inline-block; width:46px; height:24px; flex-shrink:0;">
+                                <input type="checkbox" id="ap_hide_out_of_stock" style="opacity:0; width:0; height:0;" onchange="toggleHideOutOfStock(this.checked)">
+                                <span id="ap_hide_oos_slider" style="position:absolute; cursor:pointer; inset:0; background:#cbd5e1; border-radius:24px; transition:0.3s;"></span>
+                                <span id="ap_hide_oos_knob" style="position:absolute; content:''; height:18px; width:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:0.3s;"></span>
+                            </label>
+                        </div>
                     </div>
 
                     <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:1.2rem; display:flex; flex-direction:column; gap:12px; margin-bottom:1.5rem;">
@@ -1115,6 +1127,13 @@
                 currentFiltered = products.filter(p => {
                     if(activeCategory !== 'all' && p.category !== activeCategory) return false;
                     if(searchQ && !p.name.toLowerCase().includes(searchQ) && !p.sku.toLowerCase().includes(searchQ)) return false;
+                    // Auto-hide out-of-stock products (admin always sees all)
+                    if (!isAdmin && storeSettings.hideOutOfStock) {
+                        const totalStock = p.variants.length > 0
+                            ? p.variants.reduce((s, v) => s + (Number(v.stock) || 0), 0)
+                            : (Number(p.quantity) || 0);
+                        if (totalStock <= 0) return false;
+                    }
                     return true;
                 });
 
@@ -1983,6 +2002,14 @@
             document.getElementById('ap_seo_desc').value = storeSettings.metaDescription || '';
             document.getElementById('ap_contact_hotline').value = storeSettings.contact_hotline || '';
             document.getElementById('ap_contact_zalo').value = storeSettings.contact_zalo || '';
+            // Load hide out-of-stock toggle
+            const hideOOS = storeSettings.hideOutOfStock === true || storeSettings.hideOutOfStock === 'true';
+            const cb = document.getElementById('ap_hide_out_of_stock');
+            cb.checked = hideOOS;
+            const slider = document.getElementById('ap_hide_oos_slider');
+            const knob = document.getElementById('ap_hide_oos_knob');
+            slider.style.background = hideOOS ? '#f97316' : '#cbd5e1';
+            knob.style.transform = hideOOS ? 'translateX(22px)' : 'translateX(0)';
 
             let hasTg = false;
             let hasPos = false;
@@ -2024,10 +2051,21 @@
             storeSettings.metaDescription = document.getElementById('ap_seo_desc').value.trim();
             storeSettings.contact_hotline = document.getElementById('ap_contact_hotline').value.trim();
             storeSettings.contact_zalo = document.getElementById('ap_contact_zalo').value.trim();
+            storeSettings.hideOutOfStock = document.getElementById('ap_hide_out_of_stock').checked;
             
             await saveSettings();
             renderUI();
             alert('✅ Đã lưu cấu hình Giao diện & SEO thành công!');
+        }
+
+        function toggleHideOutOfStock(checked) {
+            const slider = document.getElementById('ap_hide_oos_slider');
+            const knob = document.getElementById('ap_hide_oos_knob');
+            slider.style.background = checked ? '#f97316' : '#cbd5e1';
+            knob.style.transform = checked ? 'translateX(22px)' : 'translateX(0)';
+            storeSettings.hideOutOfStock = checked;
+            saveSettings();
+            renderProducts();
         }
 
         function closeAdminPanel() {
