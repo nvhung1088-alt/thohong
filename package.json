@@ -1,7 +1,7 @@
 {
-  "name": "dhtk-store-backend",
+  "name": "thohong-store-backend",
   "version": "1.0.0",
-  "description": "Backend for DHTK Store Mockup",
+  "description": "Backend for Thỏ Hồng Store",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@libsql/client": "^0.6.2",
+    "acorn": "^8.17.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
