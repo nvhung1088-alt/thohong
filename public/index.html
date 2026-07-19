@@ -747,16 +747,53 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
             document.getElementById('excelModal').classList.add('active');
         }
 
+        function parseCSV(raw, delimiter) {
+            let rows = [];
+            let row = [];
+            let cell = '';
+            let inQuotes = false;
+            for (let i = 0; i < raw.length; i++) {
+                let c = raw[i];
+                if (c === '"') {
+                    if (inQuotes && raw[i + 1] === '"') {
+                        cell += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (c === delimiter && !inQuotes) {
+                    row.push(cell.trim());
+                    cell = '';
+                } else if ((c === '\n' || c === '\r') && !inQuotes) {
+                    if (c === '\r' && raw[i + 1] === '\n') i++;
+                    row.push(cell.trim());
+                    if (row.some(x => x)) rows.push(row); // bỏ qua dòng trống
+                    row = [];
+                    cell = '';
+                } else {
+                    cell += c;
+                }
+            }
+            if (cell || row.length > 0) {
+                row.push(cell.trim());
+                if (row.some(x => x)) rows.push(row);
+            }
+            return rows;
+        }
+
         function processExcelRaw() {
             const raw = document.getElementById('excelRawData').value.trim();
             if(!raw) return alert("Vui lòng dán dữ liệu!");
-            const lines = raw.split('\n');
-            const delimiter = lines[0].includes('\t') ? '\t' : (lines[0].includes(',') ? ',' : '|');
-            excelRows = [];
-            for(let i=1; i<lines.length; i++) { // Bỏ qua dòng tiêu đề
-                if(!lines[i].trim()) continue;
-                excelRows.push(lines[i].split(delimiter).map(s => s.trim().replace(/^"|"$/g, '')));
-            }
+            
+            // Tìm delimiter từ dòng đầu tiên
+            const firstLine = raw.split('\n')[0];
+            const delimiter = firstLine.includes('\t') ? '\t' : (firstLine.includes(',') ? ',' : '|');
+            
+            const allRows = parseCSV(raw, delimiter);
+            
+            // Bỏ qua dòng tiêu đề (dòng 0)
+            excelRows = allRows.slice(1);
+            
             document.getElementById('importCount').innerText = excelRows.length;
             document.getElementById('excelStep1').style.display = 'none';
             document.getElementById('excelStep2').style.display = 'block';
