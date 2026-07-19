@@ -182,7 +182,7 @@
         <div id="policyContainer"></div>
 
         <div class="admin-top-bar">
-            <button class="btn btn-secondary" style="background:#10b981; color:white;" onclick="openExcelImport()">📥 Import từ Excel (Khớp cột)</button>
+            <button class="btn btn-secondary" style="background:#10b981; color:white;" onclick="openExcelImport()">📥 Import Excel (Smart Parser V12.2)</button>
             <button class="btn btn-secondary" style="background:#8b5cf6; color:white;" onclick="openPosSync()">🔄 Đồng bộ Tồn Kho POS</button>
             <button class="btn btn-danger" onclick="resetDatabase()" style="margin:0; width:auto;">Làm Mới Data (Xoá Trắng)</button>
         </div>
@@ -224,7 +224,7 @@
     <div class="modal-overlay" id="excelModal" onclick="if(event.target === this) closeModal('excelModal')">
         <div class="admin-modal">
             <button class="close-btn" onclick="closeModal('excelModal')" style="position:absolute; top:10px; right:15px;">&times;</button>
-            <h2>Import & Khớp Cột (V12.1)</h2>
+            <h2>Import Excel (Smart Parser V12.2)</h2>
             
             <div id="excelStep1">
                 <p style="font-size:0.9rem; color:#666; margin-bottom:10px;">Dán dữ liệu từ bảng Excel/Google Sheet (kèm dòng tiêu đề).</p>
@@ -1349,11 +1349,11 @@ ZIPKHOA3040	Zip khóa	mờ	30x40cm	Túi ZIP	https://content.pancake.vn/2-25/2025
 
             const content = document.getElementById('detailModalContent');
             content.innerHTML = `
-                <div class="detail-left" style="display:flex; flex-direction:column; justify-content:flex-start;">
-                    ${mainImgUrl ? `<img id="mainModalImg" src="${mainImgUrl}" alt="Ảnh SP">` : `<div style="color:var(--text-muted);">Chưa có ảnh</div>`}
+                <div class="detail-left" style="display:flex; flex-direction:column; justify-content:center; align-items:center; padding:1.5rem; box-sizing:border-box;">
+                    ${mainImgUrl ? `<img id="mainModalImg" src="${mainImgUrl}" alt="Ảnh SP" style="max-height:400px; width:100%; object-fit:contain; border-radius:8px;">` : `<div style="color:var(--text-muted); padding:50px;">Chưa có ảnh</div>`}
                     ${thumbnailsHtml}
-                    <div class="admin-only-btn" style="margin-top:15px; width:100%;">
-                        <input type="text" placeholder="Dán link ảnh mới vào đây..." value="${mainImgUrl}" style="width:100%; font-size:0.8rem;" onchange="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'image', this.value); openDetailModal(${p.id});">
+                    <div class="admin-only-btn" style="margin-top:15px; width:100%; box-sizing:border-box;">
+                        <input type="text" placeholder="Dán link ảnh mới vào đây..." value="${mainImgUrl}" style="width:100%; font-size:0.8rem; padding:8px; box-sizing:border-box; border-radius:6px; border:1px solid #cbd5e1;" onchange="updateVariantInfo(${p.id}, '${activeV?activeV.id:''}', 'image', this.value); openDetailModal(${p.id});">
                     </div>
                 </div>
                 <div class="detail-right">
