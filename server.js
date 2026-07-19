@@ -21,6 +21,9 @@ const ALLOWED_ORIGINS = [
     'https://dhtk.vercel.app',
     'https://donghangtietkiem.com',
     'https://www.donghangtietkiem.com',
+    'https://thohong.vercel.app',
+    'https://thohong.top',
+    'https://www.thohong.top',
     'http://localhost:3000'
 ];
 app.use(cors({
