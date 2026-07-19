@@ -1,7 +1,7 @@
 {
-  "name": "dhtk-store-backend",
+  "name": "thohong-store-backend",
   "version": "1.0.0",
-  "description": "Backend for DHTK Store Mockup",
+  "description": "Backend for Thỏ Hồng Store",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
