@@ -632,7 +632,7 @@ app.post('/api/orders', (req, res, next) => {
             try {
                 const details = JSON.parse(originalProduct.details || '{}');
                 if (details.variants && details.variants.length > 0) {
-                    const matchedVar = details.variants.find(v => (v.sku || '').trim().toUpperCase() === (item.sku || originalProduct.sku || '').trim().toUpperCase());
+                    const matchedVar = details.variants.find(v => String(v.id) === String(item.variantId) || (v.sku && item.sku && (v.sku || '').trim().toUpperCase() === (item.sku || '').trim().toUpperCase()));
                     if (matchedVar) {
                         posProductId = matchedVar.pos_product_id;
                         posVariantId = matchedVar.pos_variant_id;
