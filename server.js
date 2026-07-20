@@ -1171,6 +1171,19 @@ app.get('/api/db-test', authenticateToken, async (req, res) => {
     }
 });
 
+// 14. DỌN DẸP DỮ LIỆU TEST RÁC
+app.get('/api/clean-test-data', async (req, res) => {
+    if (req.query.secret !== 'xoatatcatest') {
+        return res.status(403).json({ error: 'Sai mã bí mật!' });
+    }
+    try {
+        const result = await db.execute("DELETE FROM products WHERE name LIKE 'Test %' OR sku LIKE 'SKU%'");
+        res.json({ success: true, message: 'Đã dọn dẹp sạch sẽ toàn bộ các sản phẩm rác (Test 0, Test 1...) khỏi CSDL!' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // START EXPRESS SERVER OR EXPORT FOR VERCEL
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     initDB().then(() => {
