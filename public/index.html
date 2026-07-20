@@ -1920,7 +1920,13 @@
 
                 btn.style.background = '#10b981';
                 btn.textContent = '✅ Đã gửi đơn thành công!';
-                alert(`✅ Đơn hàng đã được gửi thành công!\nTổng tiền thanh toán: ${formatMoney(json.totalAmount)}\nChúng tôi sẽ liên hệ bạn sớm nhé!`);
+                
+                let posMsg = json.posSuccess 
+                    ? '✅ Đơn hàng đã được gửi thành công về hệ thống POS và Telegram!'
+                    : '⚠️ Đơn hàng đã gửi về Telegram (POS đang chờ xử lý).';
+                
+                alert(`✅ ĐẶT HÀNG THÀNH CÔNG!\n\nMã đơn hàng của bạn: #${json.posOrderId || json.orderId}\n${posMsg}\n\nTổng tiền thanh toán: ${formatMoney(json.totalAmount)}\nChúng tôi sẽ liên hệ bạn sớm nhé!`);
+
 
                 cart = [];
                 updateCartUI();

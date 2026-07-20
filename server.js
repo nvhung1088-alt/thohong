@@ -704,12 +704,26 @@ app.post('/api/orders', (req, res, next) => {
             }
         }
 
-        // Tự động đẩy đơn hàng sang Pancake POS ngầm (Background Async)
-        pushOrderToPancake(customerInfo, processedItems).catch(err => console.error('[PANCAKE SYNC ERROR]', err));
+        let posSuccess = false;
+        let posOrderId = null;
+        try {
+            // Đẩy đơn hàng sang Pancake POS đồng bộ
+            const posResult = await pushOrderToPancake(customerInfo, processedItems);
+            if (posResult && posResult.success) {
+                posSuccess = true;
+                posOrderId = posResult.data ? (posResult.data.id || posResult.data.system_id) : null;
+            }
+        } catch(err) {
+            console.error('[PANCAKE SYNC ERROR]', err);
+        }
+
+        const finalOrderId = Date.now();
 
         res.json({
             success: true,
-            orderId: Date.now(),
+            orderId: finalOrderId,
+            posSuccess: posSuccess,
+            posOrderId: posOrderId,
             totalAmount,
             totalDiscount,
             telegramSent
@@ -748,12 +762,14 @@ async function pushOrderToPancake(customerInfo, processedItems) {
 
         const orderPayload = {
             order: {
-                source: process.env.PANCAKE_ORDER_SOURCE || 'ĐHTK Store',
+                order_sources: process.env.PANCAKE_ORDER_SOURCE || 'ĐHTK Store',
                 warehouse_id: warehouseId || undefined,
-                customer: {
-                    name: customerInfo.name,
+                bill_full_name: customerInfo.name,
+                bill_phone_number: customerInfo.phone,
+                shipping_address: {
+                    full_name: customerInfo.name,
                     phone_number: customerInfo.phone,
-                    phone: customerInfo.phone,
+                    full_address: customerInfo.address,
                     address: customerInfo.address
                 },
                 note: customerInfo.note || '',
@@ -772,8 +788,10 @@ async function pushOrderToPancake(customerInfo, processedItems) {
 
         const result = await resp.json();
         console.log('[PANCAKE ORDER SYNC RESULT]:', JSON.stringify(result));
+        return result;
     } catch (err) {
         console.error('[PANCAKE ORDER SYNC ERROR]:', err.message);
+        return { success: false, error: err.message };
     }
 }
 
