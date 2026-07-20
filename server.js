@@ -758,7 +758,9 @@ async function pushOrderToPancake(customerInfo, processedItems) {
         const items = processedItems.map(item => {
             const line = {
                 quantity: item.qty,
-                price: item.finalPrice
+                price: item.finalPrice,
+                retail_price: item.finalPrice,
+                is_custom_price: true
             };
             if (item.pos_product_id) line.product_id = item.pos_product_id;
             if (item.pos_variant_id) line.variation_id = item.pos_variant_id;
