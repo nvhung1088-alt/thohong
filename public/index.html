@@ -1895,6 +1895,8 @@
             if (!name) return alert('Vui lòng nhập họ tên!');
             if (!phone) return alert('Vui lòng nhập số điện thoại!');
 
+            localStorage.setItem('dhtk_customer', JSON.stringify({ name, phone, address, note }));
+
             const btn = document.getElementById('checkoutBtn');
             btn.disabled = true;
             btn.textContent = '⏳ Đang gửi đơn...';
@@ -2214,6 +2216,17 @@
             } catch(e) {}
             
             renderUI();
+
+            try {
+                const savedCustomer = localStorage.getItem('dhtk_customer');
+                if (savedCustomer) {
+                    const info = JSON.parse(savedCustomer);
+                    if (info.name) document.getElementById('orderName').value = info.name;
+                    if (info.phone) document.getElementById('orderPhone').value = info.phone;
+                    if (info.address) document.getElementById('orderAddress').value = info.address;
+                    if (info.note) document.getElementById('orderNote').value = info.note;
+                }
+            } catch(e) {}
 
             const loader = document.getElementById('globalLoader');
             if(loader) {
