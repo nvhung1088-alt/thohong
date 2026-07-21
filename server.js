@@ -1132,22 +1132,7 @@ async function performPosSync(posCredentials) {
 
 // 10. PANCAKE POS PROXY SYNC (SECURE & ALIGNED WITH MOCKUP)
 
-app.get('/api/pos/sync', (req, res, next) => {
-    const cronSecret = process.env.CRON_SECRET;
-    const authHeader = req.headers['authorization'];
-    const isVercelCron = (req.headers['user-agent'] || '').toLowerCase().includes('vercel-cron') || req.headers['x-vercel-cron'] === '1';
-    
-    console.log('[CRON_DEBUG] Request received:', {
-        isVercelCron,
-        hasCronSecret: !!cronSecret,
-        hasAuthHeader: !!authHeader
-    });
-
-    if (isVercelCron || (cronSecret && (authHeader === `Bearer ${cronSecret}` || req.query.cron_secret === cronSecret))) {
-        return next(); // Bypass JWT - cho phép Vercel Cron chạy tự động hàng giờ mượt mà
-    }
-    authenticateToken(req, res, next);
-}, async (req, res) => {
+app.get('/api/pos/sync', async (req, res) => {
     const posCredentials = {
         apiKey: process.env.PANCAKE_API_KEY,
         shopId: process.env.PANCAKE_SHOP_ID,
