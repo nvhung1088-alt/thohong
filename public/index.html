@@ -1746,6 +1746,11 @@
             if(cart.length===0) cartItemsEl.innerHTML = '<div style="text-align:center; color:#888;">Giỏ trống</div>';
             document.getElementById('cartCount').innerText = cart.reduce((s, c) => s + c.qty, 0);
             document.getElementById('cartTotalSum').innerText = formatMoney(finalSum);
+
+            // Lưu giỏ hàng mỗi khi cập nhật UI xong
+            if (typeof saveCartToStorage === 'function') {
+                saveCartToStorage();
+            }
         }
 
         function changeCartQty(i, delta) {
@@ -1806,10 +1811,7 @@
             } catch(e) {}
         }
 
-        function updateCartUI() {
-            renderCart();
-            saveCartToStorage();
-        }
+
 
         function removeFromCart(i) { cart.splice(i,1); updateCartUI(); }
         function toggleCart() { 
