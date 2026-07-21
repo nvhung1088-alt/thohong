@@ -781,6 +781,37 @@ async function pushOrderToPancake(customerInfo, processedItems) {
             return;
         }
 
+        // Realtime POS Fetch: Nếu có sản phẩm chưa nối kho POS, tự động tìm trên POS theo SKU và gán ID ngay lập tức
+        for (let item of processedItems) {
+            if (!item.pos_product_id || !item.pos_variant_id) {
+                try {
+                    const searchSku = (item.sku || '').trim();
+                    if (searchSku) {
+                        console.log(`[REALTIME POS FETCH] Đang tìm kiếm SKU "${searchSku}" trực tiếp trên POS...`);
+                        const searchUrl = `https://pos.pages.fm/api/v1/shops/${shopId}/products?api_key=${apiKey}&search=${encodeURIComponent(searchSku)}`;
+                        const sRes = await fetch(searchUrl);
+                        const sData = await sRes.json();
+                        if (sData && sData.data && sData.data.length > 0) {
+                            for (let posP of sData.data) {
+                                if (posP.variations && posP.variations.length > 0) {
+                                    const matchedV = posP.variations.find(v => (v.sku || '').toUpperCase() === searchSku.toUpperCase());
+                                    if (matchedV) {
+                                        item.pos_product_id = posP.id;
+                                        item.pos_variant_id = matchedV.id;
+                                        if (matchedV.retail_price) item.pos_retail_price = matchedV.retail_price;
+                                        console.log(`[REALTIME POS FETCH SUCCESS] Đã tìm thấy SKU ${searchSku} -> pos_product_id: ${posP.id}, pos_variant_id: ${matchedV.id}`);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch(e) {
+                    console.error('[REALTIME POS FETCH ERROR]:', e.message);
+                }
+            }
+        }
+
         let posOriginalAmount = 0;
         let finalPayAmount = 0;
         let missingPosItems = [];
@@ -1102,21 +1133,20 @@ async function performPosSync(posCredentials) {
 // 10. PANCAKE POS PROXY SYNC (SECURE & ALIGNED WITH MOCKUP)
 
 app.get('/api/pos/sync', (req, res, next) => {
-    // Neu la request tu Vercel Cron: Vercel gui Authorization: Bearer <CRON_SECRET>
     const cronSecret = process.env.CRON_SECRET;
     const authHeader = req.headers['authorization'];
+    const isVercelCron = (req.headers['user-agent'] || '').toLowerCase().includes('vercel-cron') || req.headers['x-vercel-cron'] === '1';
     
     console.log('[CRON_DEBUG] Request received:', {
+        isVercelCron,
         hasCronSecret: !!cronSecret,
-        cronSecretLength: cronSecret ? cronSecret.length : 0,
-        hasAuthHeader: !!authHeader,
-        authHeaderValue: authHeader
+        hasAuthHeader: !!authHeader
     });
 
-    if (cronSecret && (authHeader === `Bearer ${cronSecret}` || req.query.cron_secret === cronSecret)) {
-        return next(); // Bypass JWT - day la Vercel Cron hoac external cron hop le
+    if (isVercelCron || (cronSecret && (authHeader === `Bearer ${cronSecret}` || req.query.cron_secret === cronSecret))) {
+        return next(); // Bypass JWT - cho phép Vercel Cron chạy tự động hàng giờ mượt mà
     }
-    authenticateToken(req, res, next); // Nguoi dung Admin binh thuong
+    authenticateToken(req, res, next);
 }, async (req, res) => {
     const posCredentials = {
         apiKey: process.env.PANCAKE_API_KEY,
