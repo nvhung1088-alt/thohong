@@ -1766,6 +1766,51 @@
             updateCartUI();
         }
 
+        function saveCartToStorage() {
+            try {
+                localStorage.setItem('dhtk_cart', JSON.stringify(cart));
+            } catch(e) {}
+        }
+
+        function loadCartFromStorage() {
+            try {
+                const savedCart = localStorage.getItem('dhtk_cart');
+                if (savedCart) {
+                    cart = JSON.parse(savedCart);
+                }
+            } catch(e) {}
+        }
+
+        function saveCustomerInfoToStorage() {
+            try {
+                const info = {
+                    name: document.getElementById('orderName')?.value || '',
+                    phone: document.getElementById('orderPhone')?.value || '',
+                    address: document.getElementById('orderAddress')?.value || '',
+                    note: document.getElementById('orderNote')?.value || ''
+                };
+                localStorage.setItem('dhtk_customer_info', JSON.stringify(info));
+            } catch(e) {}
+        }
+
+        function loadCustomerInfoFromStorage() {
+            try {
+                const saved = localStorage.getItem('dhtk_customer_info');
+                if (saved) {
+                    const info = JSON.parse(saved);
+                    if (info.name && document.getElementById('orderName')) document.getElementById('orderName').value = info.name;
+                    if (info.phone && document.getElementById('orderPhone')) document.getElementById('orderPhone').value = info.phone;
+                    if (info.address && document.getElementById('orderAddress')) document.getElementById('orderAddress').value = info.address;
+                    if (info.note && document.getElementById('orderNote')) document.getElementById('orderNote').value = info.note;
+                }
+            } catch(e) {}
+        }
+
+        function updateCartUI() {
+            renderCart();
+            saveCartToStorage();
+        }
+
         function removeFromCart(i) { cart.splice(i,1); updateCartUI(); }
         function toggleCart() { 
             document.getElementById('cartModal').classList.toggle('active'); 
