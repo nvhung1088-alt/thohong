@@ -2191,11 +2191,11 @@
 
                 cart = [];
                 updateCartUI();
-                document.getElementById('orderName').value = '';
-                document.getElementById('orderPhone').value = '';
-                document.getElementById('orderAddress').value = '';
+                
+                // Chỉ xóa phần ghi chú cho đơn sau, giữ nguyên Tên, SĐT, Địa chỉ
                 document.getElementById('orderNote').value = '';
-                localStorage.removeItem('dhtk_customer_info');
+                saveCustomerInfoToStorage();
+                
                 closeModal('cartModal');
 
             } catch(e) {
