@@ -40,7 +40,7 @@
         .view-btn.active { background: white; color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
         /* Categories */
-        .category-scroll { width: 100%; overflow-x: auto; white-space: nowrap; padding-bottom: 10px; margin-bottom: 1rem; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .category-scroll { width: 100%; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
         .category-scroll::-webkit-scrollbar { display: none; }
         .category-tabs { display: flex; gap: 0.6rem; align-items: center; }
         .cat-tab { padding: 8px 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 25px; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--text-muted); transition: all 0.25s ease; display: inline-flex; align-items: center; gap: 6px; user-select: none; flex-shrink: 0; }
@@ -48,6 +48,15 @@
         .cat-tab.active { background: linear-gradient(135deg, var(--primary), #1e293b); color: white; border-color: var(--primary); box-shadow: 0 4px 12px rgba(15,23,42,0.25); }
         .cat-badge-count { background: rgba(0,0,0,0.08); padding: 2px 7px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
         .cat-tab.active .cat-badge-count { background: rgba(255,255,255,0.25); color: white; }
+
+        .cat-nav-btn { background: var(--card-bg); border: 1px solid var(--border); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: bold; color: var(--text-muted); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: all 0.2s; flex-shrink: 0; }
+        .cat-nav-btn:hover { background: var(--primary); color: white; border-color: var(--primary); transform: scale(1.08); }
+        .cat-all-btn { background: linear-gradient(135deg, #0f172a, #1e293b); color: white; border: none; padding: 8px 14px; border-radius: 20px; cursor: pointer; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(15,23,42,0.2); transition: all 0.2s; white-space: nowrap; }
+        .cat-all-btn:hover { background: linear-gradient(135deg, #3b82f6, #1d4ed8); transform: translateY(-1px); }
+
+        .cat-grid-item { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 12px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; justify-content: center; text-align: center; }
+        .cat-grid-item:hover { border-color: var(--accent); background: #f0f7ff; transform: translateY(-2px); }
+        .cat-grid-item.active { background: linear-gradient(135deg, var(--primary), #1e293b); color: white; border-color: var(--primary); box-shadow: 0 4px 12px rgba(15,23,42,0.2); }
 
         /* Product Grid */
         .product-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; }
@@ -198,9 +207,17 @@
             <span id="adminBadge" style="display:none; font-size:1rem; background:red; color:white; padding: 2px 10px; border-radius:20px;">Chế độ Admin</span>
         </h2>
 
-        <!-- Dải Category Tabs -->
-        <div class="category-scroll">
-            <div class="category-tabs" id="categoryTabs"></div>
+        <!-- Dải Category Slide Tabs -->
+        <div class="category-wrapper" style="position:relative; margin-bottom:1.2rem; display:flex; align-items:center; gap:8px;">
+            <button class="cat-nav-btn" onclick="scrollCatSlide(-250)" title="Lướt sang trái">‹</button>
+            <div class="category-scroll" id="catScrollWrapper" style="margin-bottom:0; flex:1;">
+                <div class="category-tabs" id="categoryTabs"></div>
+            </div>
+            <button class="cat-nav-btn" onclick="scrollCatSlide(250)" title="Lướt sang phải">›</button>
+
+            <button class="cat-all-btn" onclick="openAllCategoriesModal()" title="Mở danh sách tất cả danh mục">
+                📂 Tất cả (<span id="catTotalBadge">0</span>)
+            </button>
         </div>
 
         <!-- Toolbar Lọc & Chế độ xem -->
@@ -341,7 +358,21 @@
         </div>
     </div>
 
-    <!-- Modal Thông Báo Đặt Hàng Thành Công -->
+    <!-- Modal Danh Sách Tất Cả Danh Mục -->
+    <div class="modal-overlay" id="allCategoriesModal" onclick="if(event.target===this) closeModal('allCategoriesModal')">
+        <div style="background:white; width:92%; max-width:600px; border-radius:20px; padding:1.5rem; position:relative; box-shadow: 0 25px 60px rgba(0,0,0,0.3); max-height:85vh; display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:1rem; margin-bottom:1rem;">
+                <h3 style="font-size:1.2rem; font-weight:800; color:#0f172a; margin:0;">📂 Tất Cả Danh Mục Sản Phẩm</h3>
+                <button class="close-btn" onclick="closeModal('allCategoriesModal')">&times;</button>
+            </div>
+            
+            <div style="overflow-y:auto; flex:1; padding-right:5px;">
+                <div id="allCategoriesGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap:10px;">
+                    <!-- Render động danh mục -->
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal-overlay" id="orderSuccessModal" onclick="if(event.target===this) closeModal('orderSuccessModal')">
         <div style="background:white; width:92%; max-width:480px; border-radius:20px; padding:2rem; position:relative; box-shadow: 0 25px 60px rgba(0,0,0,0.3); text-align:center;">
             <div style="width:64px; height:64px; background:#dcfce7; color:#166534; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 1rem; box-shadow:0 4px 12px rgba(22,101,52,0.15);">✓</div>
@@ -1096,6 +1127,57 @@
 
         function setCategory(cat) { activeCategory = cat; renderProducts(); renderCategories(); }
 
+        function scrollCatSlide(direction) {
+            const container = document.getElementById('catScrollWrapper');
+            if (container) {
+                container.scrollBy({ left: direction, behavior: 'smooth' });
+            }
+        }
+
+        function openAllCategoriesModal() {
+            renderAllCategoriesGrid();
+            document.getElementById('allCategoriesModal').classList.add('active');
+        }
+
+        function renderAllCategoriesGrid() {
+            const catCounts = {};
+            let totalCount = 0;
+            
+            products.forEach(p => {
+                if (!isAdmin && storeSettings.hideOutOfStock) {
+                    const totalStock = p.variants && p.variants.length > 0
+                        ? p.variants.reduce((s, v) => s + (Number(v.stock) || 0), 0)
+                        : (Number(p.quantity) || 0);
+                    if (totalStock <= 0) return;
+                }
+                
+                const cat = (p.category || 'Khác').trim();
+                if (cat) {
+                    catCounts[cat] = (catCounts[cat] || 0) + 1;
+                    totalCount++;
+                }
+            });
+
+            const sortedCats = Object.keys(catCounts).sort((a, b) => catCounts[b] - catCounts[a]);
+            const catArr = ['all', ...sortedCats];
+
+            const html = catArr.map(c => {
+                const isAll = c === 'all';
+                const label = isAll ? 'Tất cả sản phẩm' : c;
+                const count = isAll ? totalCount : catCounts[c];
+                const isActive = activeCategory === c;
+                return `
+                    <div class="cat-grid-item ${isActive ? 'active' : ''}" onclick="setCategory('${c}'); closeModal('allCategoriesModal');">
+                        <div style="font-weight:700; font-size:0.95rem;">${label}</div>
+                        <div style="font-size:0.8rem; opacity:0.8; margin-top:4px;">${count} sản phẩm</div>
+                    </div>
+                `;
+            }).join('');
+
+            const grid = document.getElementById('allCategoriesGrid');
+            if (grid) grid.innerHTML = html;
+        }
+
         function renderCategories() {
             const catCounts = {};
             let totalCount = 0;
@@ -1133,6 +1215,9 @@
 
             const container = document.getElementById('categoryTabs');
             if (container) container.innerHTML = html;
+
+            const badge = document.getElementById('catTotalBadge');
+            if (badge) badge.textContent = sortedCats.length;
         }
 
         function getActiveVariant(pId) {
@@ -2346,7 +2431,7 @@
     </script>
 
     <!-- Floating Contact & Scroll To Top Widget -->
-    <button id="scrollTopBtn" onclick="scrollToTop()" title="Lên đầu trang" style="position:fixed; bottom:85px; right:20px; width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:white; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(59,130,246,0.4); opacity:0; pointer-events:none; transition:all 0.3s cubic-bezier(0.175,0.885,0.32,1.275); z-index:998; font-size:1.4rem; font-weight:bold;">
+    <button id="scrollTopBtn" onclick="scrollToTop()" title="Lên đầu trang" style="position:fixed; bottom:20px; left:20px; width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:white; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(59,130,246,0.4); opacity:0; pointer-events:none; transition:all 0.3s cubic-bezier(0.175,0.885,0.32,1.275); z-index:998; font-size:1.3rem; font-weight:bold;">
         ↑
     </button>
 
