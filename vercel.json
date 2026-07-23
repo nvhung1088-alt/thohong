@@ -6,6 +6,8 @@
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "server.js" },
+    { "src": "/danh-muc/(.*)", "dest": "server.js" },
+    { "src": "/san-pham/(.*)", "dest": "server.js" },
     { "src": "/(.*)", "dest": "public/$1" }
   ],
   "crons": [

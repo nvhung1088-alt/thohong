@@ -1872,42 +1872,75 @@
             }
         }
 
+        function toSlug(str) {
+            if (!str) return '';
+            return String(str)
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[đĐ]/g, 'd')
+                .replace(/([^0-9a-z-\s])/g, '')
+                .replace(/(\s+)/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+
         function updateURLParams(params = {}) {
             try {
-                const url = new URL(window.location.href);
+                let newPath = window.location.pathname;
+                let searchParams = new URLSearchParams(window.location.search);
+
                 if (params.cat !== undefined) {
                     if (params.cat && params.cat !== 'all') {
-                        url.searchParams.set('cat', params.cat);
+                        newPath = `/danh-muc/${toSlug(params.cat)}`;
+                        searchParams.delete('cat');
+                        searchParams.delete('p');
                     } else {
-                        url.searchParams.delete('cat');
+                        newPath = '/';
+                        searchParams.delete('cat');
                     }
                 }
+
                 if (params.p !== undefined) {
                     if (params.p) {
-                        url.searchParams.set('p', params.p);
-                    } else {
-                        url.searchParams.delete('p');
+                        const pObj = products.find(x => String(x.id) === String(params.p));
+                        const pSlug = pObj ? `${toSlug(pObj.name)}-p${pObj.id}` : `p${params.p}`;
+                        newPath = `/san-pham/${pSlug}`;
+                        searchParams.delete('p');
+                    } else if (params.cat === undefined) {
+                        if (activeCategory && activeCategory !== 'all') {
+                            newPath = `/danh-muc/${toSlug(activeCategory)}`;
+                        } else {
+                            newPath = '/';
+                        }
                     }
                 }
-                window.history.replaceState({}, '', url.toString());
+
+                const searchStr = searchParams.toString();
+                const finalUrl = newPath + (searchStr ? `?${searchStr}` : '');
+                window.history.replaceState({}, '', finalUrl);
             } catch(e) {}
         }
 
         function copyShareLink(target, type) {
-            let shareUrl = window.location.origin + window.location.pathname;
+            let shareUrl = window.location.origin;
             if (type === 'product' && target) {
-                shareUrl += `?p=${encodeURIComponent(target)}`;
+                const pObj = products.find(x => String(x.id) === String(target));
+                const pSlug = pObj ? `${toSlug(pObj.name)}-p${pObj.id}` : `p${target}`;
+                shareUrl += `/san-pham/${pSlug}`;
             } else if (type === 'category' && target && target !== 'all') {
-                shareUrl += `?cat=${encodeURIComponent(target)}`;
+                shareUrl += `/danh-muc/${toSlug(target)}`;
+            } else {
+                shareUrl += '/';
             }
 
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(shareUrl).then(() => {
-                    showToast('🔗 Đã sao chép liên kết chia sẻ!');
+                    showToast('🔗 Đã sao chép liên kết chia sẻ chuẩn SEO!');
                 }).catch(() => fallbackCopy(shareUrl));
             } else {
                 fallbackCopy(shareUrl);
-                showToast('🔗 Đã sao chép liên kết chia sẻ!');
+                showToast('🔗 Đã sao chép liên kết chia sẻ chuẩn SEO!');
             }
         }
 
@@ -2597,19 +2630,39 @@
             
             renderUI();
 
-            // Xử lý link trực tiếp (Deep Linking URL: ?cat=... hoặc ?p=...)
+            // Xử lý link trực tiếp chuẩn SEO (Deep Linking URL: /danh-muc/slug, /san-pham/slug-pID hoặc ?cat=... hay ?p=...)
             try {
+                const pathName = window.location.pathname;
                 const urlParams = new URLSearchParams(window.location.search);
-                const paramCat = urlParams.get('cat');
-                const paramProduct = urlParams.get('p') || urlParams.get('product');
 
-                if (paramCat) {
-                    activeCategory = paramCat;
+                let targetCategory = urlParams.get('cat');
+                let targetProduct = urlParams.get('p') || urlParams.get('product');
+
+                if (pathName.startsWith('/danh-muc/')) {
+                    const catSlug = pathName.replace('/danh-muc/', '').trim();
+                    if (catSlug) {
+                        const foundCat = products.map(p => (p.category || '').trim()).find(c => toSlug(c) === catSlug || c.toLowerCase() === catSlug.toLowerCase());
+                        if (foundCat) targetCategory = foundCat;
+                    }
+                } else if (pathName.startsWith('/san-pham/')) {
+                    const pSlug = pathName.replace('/san-pham/', '').trim();
+                    const pIdMatch = pSlug.match(/-p([a-zA-Z0-9_-]+)$/) || pSlug.match(/p([a-zA-Z0-9_-]+)$/);
+                    if (pIdMatch) {
+                        targetProduct = pIdMatch[1];
+                    }
+                }
+
+                if (targetCategory) {
+                    activeCategory = targetCategory;
                     renderCategories();
                     renderProducts();
+                    const catTitle = `Danh Mục ${targetCategory} | ${storeSettings.storeName || 'Thỏ Hồng'}`;
+                    const catDesc = `Khám phá các sản phẩm thuộc danh mục ${targetCategory} tại ${storeSettings.storeName || 'Thỏ Hồng'} với giá sỉ/lẻ tốt nhất, chiết khấu tự động.`;
+                    updateSEO(catTitle, catDesc);
                 }
-                if (paramProduct) {
-                    openDetailModal(paramProduct);
+
+                if (targetProduct) {
+                    openDetailModal(targetProduct);
                 }
             } catch(e) {}
 

@@ -1265,6 +1265,72 @@ app.get('/api/clean-test-data', async (req, res) => {
     }
 });
 
+// 15. SEO SERVER-SIDE RENDERING FOR CATEGORIES & PRODUCTS (ZALO / FB SHARE PREVIEW)
+const escapeHtmlServer = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+app.get(['/danh-muc/:slug', '/san-pham/:slug'], async (req, res) => {
+    try {
+        const indexPath = path.join(__dirname, 'public', 'index.html');
+        if (!fs.existsSync(indexPath)) return res.status(404).send('Not Found');
+        let html = fs.readFileSync(indexPath, 'utf8');
+
+        const isCategory = req.path.startsWith('/danh-muc/');
+        const slug = req.params.slug;
+
+        let title = 'Tổng Kho Sỉ Lẻ Thỏ Hồng - Hệ Thống Đặt Hàng Thông Minh';
+        let desc = 'Hệ thống đặt hàng sỉ lẻ thông minh Thỏ Hồng / ĐHTK, tự động tính toán chiết khấu, đồng bộ tồn kho POS trực tuyến.';
+        let image = 'https://thohong.top/media__1784598666512.png';
+        const fullUrl = `https://${req.headers.host || 'thohong.top'}${req.originalUrl}`;
+
+        // Get Store Settings from DB
+        const settingsRes = await db.execute("SELECT key, value FROM settings WHERE key IN ('storeName', 'metaTitle', 'metaDescription', 'logoUrl')");
+        const storeSettings = {};
+        settingsRes.rows.forEach(r => storeSettings[r.key] = r.value);
+
+        const storeName = storeSettings.storeName || 'Thỏ Hồng';
+
+        if (isCategory) {
+            const categoryName = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            title = `Danh Mục ${categoryName} | ${storeName}`;
+            desc = `Khám phá các sản phẩm thuộc danh mục ${categoryName} tại ${storeName} với giá sỉ/lẻ tốt nhất, chiết khấu tự động.`;
+        } else {
+            const pIdMatch = slug.match(/-p([a-zA-Z0-9_-]+)$/) || slug.match(/p([a-zA-Z0-9_-]+)$/);
+            const pId = pIdMatch ? pIdMatch[1] : slug;
+
+            const pResult = await db.execute({ sql: 'SELECT * FROM products WHERE id = ? LIMIT 1', args: [pId] });
+            if (pResult.rows && pResult.rows.length > 0) {
+                const p = pResult.rows[0];
+                let details = {};
+                try { details = JSON.parse(p.details || '{}'); } catch(e) {}
+
+                title = `${p.name} | ${storeName}`;
+                const formatPrice = p.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price) : 'Giá ưu đãi';
+                desc = `${p.name} giá chỉ từ ${formatPrice}. ${p.description || details.description || 'Chất lượng đảm bảo, chiết khấu tự động theo số lượng.'}`.substring(0, 160);
+                
+                if (p.imageUrl) image = p.imageUrl;
+                else if (details.images && details.images[0]) image = details.images[0];
+            }
+        }
+
+        // Inject dynamic Meta and Open Graph tags into HTML response
+        html = html.replace(/<title>.*?<\/title>/i, `<title>${escapeHtmlServer(title)}</title>`);
+        html = html.replace(/<meta name="description" id="seoDescription" content=".*?">/i, `<meta name="description" id="seoDescription" content="${escapeHtmlServer(desc)}">`);
+        html = html.replace(/<meta property="og:title" id="ogTitle" content=".*?">/i, `<meta property="og:title" id="ogTitle" content="${escapeHtmlServer(title)}">`);
+        html = html.replace(/<meta property="og:description" id="ogDescription" content=".*?">/i, `<meta property="og:description" id="ogDescription" content="${escapeHtmlServer(desc)}">`);
+        html = html.replace(/<meta property="og:image" id="ogImage" content=".*?">/i, `<meta property="og:image" id="ogImage" content="${escapeHtmlServer(image)}">`);
+        html = html.replace(/<meta property="og:url" id="ogUrl" content=".*?">/i, `<meta property="og:url" id="ogUrl" content="${escapeHtmlServer(fullUrl)}">`);
+        html = html.replace(/<meta name="twitter:title" id="twitterTitle" content=".*?">/i, `<meta name="twitter:title" id="twitterTitle" content="${escapeHtmlServer(title)}">`);
+        html = html.replace(/<meta name="twitter:description" id="twitterDescription" content=".*?">/i, `<meta name="twitter:description" id="twitterDescription" content="${escapeHtmlServer(desc)}">`);
+        html = html.replace(/<meta name="twitter:image" id="twitterImage" content=".*?">/i, `<meta name="twitter:image" id="twitterImage" content="${escapeHtmlServer(image)}">`);
+
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+    } catch(err) {
+        console.error('[SEO SSR ERROR]', err);
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    }
+});
+
 // START EXPRESS SERVER OR EXPORT FOR VERCEL
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     initDB().then(() => {
