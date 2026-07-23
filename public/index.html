@@ -1685,7 +1685,15 @@
 
         // --- PRODUCT DETAIL MODAL ---
         function openDetailModal(id) {
-            const p = products.find(x => x.id == id);
+            const cleanId = String(id || '').trim();
+            const p = products.find(x => 
+                String(x.id) === cleanId || 
+                String(x.id) === `SP${cleanId}` || 
+                `SP${x.id}` === cleanId ||
+                (cleanId.startsWith('SP') && String(x.id) === cleanId.substring(2)) ||
+                (x.name && toSlug(x.name) === cleanId) ||
+                (x.name && toSlug(x.name).includes(cleanId))
+            );
             if (!p) return;
             const activeV = getActiveVariant(p.id);
             
@@ -2888,62 +2896,66 @@
             document.getElementById('adminLoginBtn').textContent = '⚙️ Admin Panel';
         }
         async function loadInitialData() {
-            loadCartFromStorage();
-            loadCustomerInfoFromStorage();
             try {
-                const settingsRes = await fetchAPI('/api/settings');
-                if (settingsRes) storeSettings = { ...storeSettings, ...settingsRes };
-            } catch(e) {}
-            
-            try {
-                const productsRes = await fetchAPI('/api/products');
-                if (productsRes && Array.isArray(productsRes)) products = productsRes;
-            } catch(e) {}
-            
-            renderUI();
+                loadCartFromStorage();
+                loadCustomerInfoFromStorage();
+                try {
+                    const settingsRes = await fetchAPI('/api/settings');
+                    if (settingsRes) storeSettings = { ...storeSettings, ...settingsRes };
+                } catch(e) {}
+                
+                try {
+                    const productsRes = await fetchAPI('/api/products');
+                    if (productsRes && Array.isArray(productsRes)) products = productsRes;
+                } catch(e) {}
+                
+                renderUI();
 
-            // Xử lý link trực tiếp chuẩn SEO (Deep Linking URL: /danh-muc/slug, /san-pham/slug-pID hoặc ?cat=... hay ?p=...)
-            try {
-                const pathName = window.location.pathname;
-                const urlParams = new URLSearchParams(window.location.search);
+                // Xử lý link trực tiếp chuẩn SEO (Deep Linking URL: /danh-muc/slug, /san-pham/slug-pID hoặc ?cat=... hay ?p=...)
+                try {
+                    const pathName = decodeURIComponent(window.location.pathname);
+                    const urlParams = new URLSearchParams(window.location.search);
 
-                let targetCategory = urlParams.get('cat');
-                let targetProduct = urlParams.get('p') || urlParams.get('product');
+                    let targetCategory = urlParams.get('cat');
+                    let targetProduct = urlParams.get('p') || urlParams.get('product');
 
-                if (pathName.startsWith('/danh-muc/')) {
-                    const catSlug = pathName.replace('/danh-muc/', '').trim();
-                    if (catSlug) {
-                        const foundCat = products.map(p => (p.category || '').trim()).find(c => toSlug(c) === catSlug || c.toLowerCase() === catSlug.toLowerCase());
-                        if (foundCat) targetCategory = foundCat;
+                    if (pathName.startsWith('/danh-muc/')) {
+                        const catSlug = pathName.replace('/danh-muc/', '').trim();
+                        if (catSlug) {
+                            const foundCat = products.map(p => (p.category || '').trim()).find(c => toSlug(c) === toSlug(catSlug) || c.toLowerCase() === catSlug.toLowerCase());
+                            if (foundCat) targetCategory = foundCat;
+                            else targetCategory = catSlug;
+                        }
+                    } else if (pathName.startsWith('/san-pham/')) {
+                        const pSlug = pathName.replace('/san-pham/', '').trim();
+                        const pIdMatch = pSlug.match(/-p([a-zA-Z0-9_-]+)$/) || pSlug.match(/p([a-zA-Z0-9_-]+)$/);
+                        if (pIdMatch) {
+                            targetProduct = pIdMatch[1];
+                        } else if (pSlug) {
+                            const foundP = products.find(x => toSlug(x.name) === toSlug(pSlug) || toSlug(pSlug).includes(toSlug(x.name)));
+                            if (foundP) targetProduct = foundP.id;
+                        }
                     }
-                } else if (pathName.startsWith('/san-pham/')) {
-                    const pSlug = pathName.replace('/san-pham/', '').trim();
-                    const pIdMatch = pSlug.match(/-p([a-zA-Z0-9_-]+)$/) || pSlug.match(/p([a-zA-Z0-9_-]+)$/);
-                    if (pIdMatch) {
-                        targetProduct = pIdMatch[1];
+
+                    if (targetCategory) {
+                        setCategory(targetCategory);
                     }
+
+                    if (targetProduct) {
+                        openDetailModal(targetProduct);
+                    }
+                } catch(e) {
+                    console.error("Deep link parse error:", e);
                 }
-
-                if (targetCategory) {
-                    activeCategory = targetCategory;
-                    renderCategories();
-                    renderProducts();
-                    const catTitle = `Danh Mục ${targetCategory} | ${storeSettings.storeName || 'Thỏ Hồng'}`;
-                    const catDesc = `Khám phá các sản phẩm thuộc danh mục ${targetCategory} tại ${storeSettings.storeName || 'Thỏ Hồng'} với giá sỉ/lẻ tốt nhất, chiết khấu tự động.`;
-                    updateSEO(catTitle, catDesc);
+            } catch(err) {
+                console.error("loadInitialData error:", err);
+            } finally {
+                // ĐẢM BẢO LOADER LUÔN ĐƯỢC TẮT 100%
+                const loader = document.getElementById('globalLoader');
+                if (loader) {
+                    loader.classList.add('hidden');
+                    setTimeout(() => loader.remove(), 500);
                 }
-
-                if (targetProduct) {
-                    openDetailModal(targetProduct);
-                }
-            } catch(e) {}
-
-            // NOTE: Customer info is now loaded via loadCustomerInfoFromStorage() at start of loadInitialData()
-
-            const loader = document.getElementById('globalLoader');
-            if(loader) {
-                loader.classList.add('hidden');
-                setTimeout(() => loader.remove(), 500);
             }
         }
 
