@@ -2499,22 +2499,31 @@
             if (isAdmin) {
                 openAdminPanel();
             } else {
-                document.getElementById('adminUsername').value = '';
-                document.getElementById('adminPassword').value = '';
-                document.getElementById('loginError').style.display = 'none';
-                document.getElementById('adminLoginModal').classList.add('active');
-                setTimeout(() => document.getElementById('adminUsername').focus(), 100);
+                const u = document.getElementById('adminUsername');
+                const p = document.getElementById('adminPassword');
+                const err = document.getElementById('loginError');
+                const m = document.getElementById('adminLoginModal');
+                if (u) u.value = '';
+                if (p) p.value = '';
+                if (err) err.style.display = 'none';
+                if (m) m.classList.add('active');
+                setTimeout(() => { if (u) u.focus(); }, 100);
             }
         }
 
         async function doAdminLogin() {
-            const username = document.getElementById('adminUsername').value.trim();
-            const password = document.getElementById('adminPassword').value;
+            const usernameEl = document.getElementById('adminUsername');
+            const passwordEl = document.getElementById('adminPassword');
             const errEl = document.getElementById('loginError');
 
+            const username = usernameEl ? usernameEl.value.trim() : '';
+            const password = passwordEl ? passwordEl.value : '';
+
             if (!username || !password) {
-                errEl.textContent = 'Vui lòng nhập đầy đủ thông tin!';
-                errEl.style.display = 'block';
+                if (errEl) {
+                    errEl.textContent = 'Vui lòng nhập đầy đủ thông tin!';
+                    errEl.style.display = 'block';
+                }
                 return;
             }
 
@@ -2535,16 +2544,21 @@
                 localStorage.setItem('dhtk_jwt', json.token);
 
                 closeModal('adminLoginModal');
-                document.getElementById('bodyWrap').classList.add('admin-mode-active');
-                document.getElementById('adminBadge').style.display = 'inline-block';
-                document.getElementById('adminLoginBtn').textContent = '⚙️ Admin Panel';
+                const bw = document.getElementById('bodyWrap');
+                if (bw) bw.classList.add('admin-mode-active');
+                const ab = document.getElementById('adminBadge');
+                if (ab) ab.style.display = 'inline-block';
+                const alb = document.getElementById('adminLoginBtn');
+                if (alb) alb.textContent = '⚙️ Admin Panel';
                 
                 await initApp();
                 openAdminPanel();
             } catch (e) {
-                errEl.textContent = `❌ ${e.message}`;
-                errEl.style.display = 'block';
-                document.getElementById('adminPassword').value = '';
+                if (errEl) {
+                    errEl.textContent = `❌ ${e.message}`;
+                    errEl.style.display = 'block';
+                }
+                if (passwordEl) passwordEl.value = '';
             }
         }
 
