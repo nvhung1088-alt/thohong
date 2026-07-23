@@ -1270,9 +1270,23 @@ const escapeHtmlServer = (s) => String(s || '').replace(/&/g, '&amp;').replace(/
 
 app.get(['/danh-muc/:slug', '/san-pham/:slug'], async (req, res) => {
     try {
-        const indexPath = path.join(__dirname, 'public', 'index.html');
-        if (!fs.existsSync(indexPath)) return res.status(404).send('Not Found');
-        let html = fs.readFileSync(indexPath, 'utf8');
+        let html = '';
+        const possiblePaths = [
+            path.join(process.cwd(), 'public', 'index.html'),
+            path.join(__dirname, 'public', 'index.html'),
+            path.join(__dirname, 'index.html')
+        ];
+        for (const p of possiblePaths) {
+            if (fs.existsSync(p)) {
+                html = fs.readFileSync(p, 'utf8');
+                break;
+            }
+        }
+
+        if (!html) {
+            console.error('[SEO SSR WARN] Could not read public/index.html file on disk.');
+            return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+        }
 
         const isCategory = req.path.startsWith('/danh-muc/');
         const slug = req.params.slug;
@@ -1290,22 +1304,40 @@ app.get(['/danh-muc/:slug', '/san-pham/:slug'], async (req, res) => {
         const storeName = storeSettings.storeName || 'Thỏ Hồng';
 
         if (isCategory) {
-            const categoryName = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-            title = `Danh Mục ${categoryName} | ${storeName}`;
-            desc = `Khám phá các sản phẩm thuộc danh mục ${categoryName} tại ${storeName} với giá sỉ/lẻ tốt nhất, chiết khấu tự động.`;
+            const rawCatName = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            
+            // Query DB for products matching category to get clean category name & image
+            const catProdRes = await db.execute({
+                sql: "SELECT category, imageUrl, details FROM products WHERE LOWER(category) LIKE ? OR category LIKE ? LIMIT 1",
+                args: [`%${rawCatName}%`, `%${rawCatName}%`]
+            });
+
+            let realCatName = rawCatName;
+            if (catProdRes.rows && catProdRes.rows.length > 0) {
+                const p = catProdRes.rows[0];
+                if (p.category) realCatName = p.category;
+                let details = {};
+                try { details = JSON.parse(p.details || '{}'); } catch(e) {}
+                if (p.imageUrl) image = p.imageUrl;
+                else if (details.images && details.images[0]) image = details.images[0];
+            }
+
+            title = `Danh Mục ${realCatName} | ${storeName}`;
+            desc = `Tổng hợp các sản phẩm thuộc danh mục ${realCatName} tại ${storeName} với giá sỉ/lẻ tốt nhất, chiết khấu tự động theo số lượng.`;
         } else {
+            // Product slug format: name-slug-pPRODUCT_ID or pPRODUCT_ID
             const pIdMatch = slug.match(/-p([a-zA-Z0-9_-]+)$/) || slug.match(/p([a-zA-Z0-9_-]+)$/);
             const pId = pIdMatch ? pIdMatch[1] : slug;
 
-            const pResult = await db.execute({ sql: 'SELECT * FROM products WHERE id = ? LIMIT 1', args: [pId] });
+            const pResult = await db.execute({ sql: 'SELECT * FROM products WHERE id = ? OR id = ? OR id LIKE ? LIMIT 1', args: [pId, `SP${pId}`, `%${pId}%`] });
             if (pResult.rows && pResult.rows.length > 0) {
                 const p = pResult.rows[0];
                 let details = {};
                 try { details = JSON.parse(p.details || '{}'); } catch(e) {}
 
                 title = `${p.name} | ${storeName}`;
-                const formatPrice = p.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price) : 'Giá ưu đãi';
-                desc = `${p.name} giá chỉ từ ${formatPrice}. ${p.description || details.description || 'Chất lượng đảm bảo, chiết khấu tự động theo số lượng.'}`.substring(0, 160);
+                const formatPrice = p.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price) : 'Giá sỉ tốt nhất';
+                desc = `${p.name} giá chỉ từ ${formatPrice}. ${p.description || details.description || 'Hàng sẵn kho, giao nhanh, chiết khấu tự động.'}`.substring(0, 160);
                 
                 if (p.imageUrl) image = p.imageUrl;
                 else if (details.images && details.images[0]) image = details.images[0];
