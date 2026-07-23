@@ -1373,8 +1373,34 @@ app.use(async (req, res, next) => {
         return res.send(html);
     } catch(err) {
         console.error('[SEO SSR ERROR]', err);
-        next();
+        const possiblePaths = [
+            path.join(process.cwd(), 'public', 'index.html'),
+            path.join(__dirname, 'public', 'index.html'),
+            path.join(__dirname, 'index.html')
+        ];
+        for (const p of possiblePaths) {
+            if (fs.existsSync(p)) {
+                return res.sendFile(p);
+            }
+        }
+        return res.status(200).send('<!DOCTYPE html><html><head><title>Thỏ Hồng</title></head><body><div id="app"></div></body></html>');
     }
+});
+
+// 16. SPA FALLBACK ROUTE (GUARANTEES 200 OK FOR ALL FRONTEND ROUTES)
+app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next();
+    const possiblePaths = [
+        path.join(process.cwd(), 'public', 'index.html'),
+        path.join(__dirname, 'public', 'index.html'),
+        path.join(__dirname, 'index.html')
+    ];
+    for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+            return res.sendFile(p);
+        }
+    }
+    res.status(200).send('<!DOCTYPE html><html><head><title>Thỏ Hồng</title></head><body><div id="app"></div></body></html>');
 });
 
 // START EXPRESS SERVER OR EXPORT FOR VERCEL
