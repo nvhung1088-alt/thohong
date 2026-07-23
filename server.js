@@ -1285,6 +1285,7 @@ app.get('/api/clean-test-data', async (req, res) => {
 
 // 15. SEO SERVER-SIDE RENDERING FOR CATEGORIES & PRODUCTS (ZALO / FB SHARE PREVIEW)
 const escapeHtmlServer = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const ssrSeoCache = {}; // Memory cache for warm starts
 
 app.use(async (req, res, next) => {
     const fullPath = req.headers['x-matched-path'] || req.originalUrl || req.url || '';
@@ -1300,6 +1301,14 @@ app.use(async (req, res, next) => {
         return next();
     }
 
+    let slug = req.query.seo_slug || '';
+    if (!slug) {
+        const parts = fullPath.split('?')[0].split('/');
+        slug = parts[parts.length - 1] || parts[parts.length - 2] || '';
+    }
+
+    const cacheKey = `${isCat ? 'cat' : 'prod'}_${slug}`;
+
     let title = 'Tổng Kho Sỉ Lẻ Thỏ Hồng - Hệ Thống Đặt Hàng Thông Minh';
     let desc = 'Hệ thống đặt hàng sỉ lẻ thông minh Thỏ Hồng / ĐHTK, tự động tính toán chiết khấu, đồng bộ tồn kho POS trực tuyến.';
     let image = 'https://thohong.top/media__1784598666512.png';
@@ -1307,87 +1316,87 @@ app.use(async (req, res, next) => {
     const protocol = req.headers['x-forwarded-proto'] || 'https';
     const fullUrl = `${protocol}://${host}${fullPath}`;
 
-    let slug = req.query.seo_slug || '';
-    if (!slug) {
-        const parts = fullPath.split('?')[0].split('/');
-        slug = parts[parts.length - 1] || parts[parts.length - 2] || '';
-    }
+    if (ssrSeoCache[cacheKey]) {
+        const c = ssrSeoCache[cacheKey];
+        title = c.title || title;
+        desc = c.desc || desc;
+        image = c.image || image;
+    } else {
+        try {
+            // Timeout wrapper: increased to 8.5s (Vercel max is 10s) to survive cold starts better
+            const DB_TIMEOUT = 8500;
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('DB_TIMEOUT')), DB_TIMEOUT));
 
-    try {
-        // Timeout wrapper: if DB takes > 5s, fallback to static HTML immediately
-        const DB_TIMEOUT = 5000;
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('DB_TIMEOUT')), DB_TIMEOUT));
+            const dbQueryPromise = (async () => {
+                const decodedSlug = decodeURIComponent(slug);
+                let storeName = 'Thỏ Hồng';
 
-        const dbQueryPromise = (async () => {
-            const decodedSlug = decodeURIComponent(slug);
-            let storeName = 'Thỏ Hồng';
+                if (isCat) {
+                    const rawCatName = decodedSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    const batchRes = await db.executeBatch([
+                        { sql: "SELECT key, value FROM settings WHERE key IN ('storeName')", args: [] },
+                        { sql: "SELECT category, imageUrl, details FROM products WHERE LOWER(category) LIKE ? LIMIT 1", args: [`%${rawCatName.toLowerCase()}%`] }
+                    ]);
+                    const settingsRows = batchRes.results?.[0]?.response?.result?.rows || [];
+                    settingsRows.forEach(r => { if (r[0]?.value === 'storeName') storeName = r[1]?.value || storeName; });
 
-            if (isCat) {
-                const rawCatName = decodedSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                // Batch: settings + category product in one pipeline call
-                const batchRes = await db.executeBatch([
-                    { sql: "SELECT key, value FROM settings WHERE key IN ('storeName')", args: [] },
-                    { sql: "SELECT category, imageUrl, details FROM products WHERE LOWER(category) LIKE ? LIMIT 1", args: [`%${rawCatName.toLowerCase()}%`] }
-                ]);
-                const settingsRows = batchRes.results?.[0]?.response?.result?.rows || [];
-                settingsRows.forEach(r => { if (r[0]?.value === 'storeName') storeName = r[1]?.value || storeName; });
+                    const catRows = batchRes.results?.[1]?.response?.result?.rows || [];
+                    let realCatName = rawCatName;
+                    if (catRows.length > 0) {
+                        const catRow = catRows[0];
+                        if (catRow[0]?.value) realCatName = catRow[0].value;
+                        if (catRow[1]?.value) image = catRow[1].value;
+                        else {
+                            try {
+                                const details = JSON.parse(catRow[2]?.value || '{}');
+                                if (details.images?.[0]) image = details.images[0];
+                            } catch(e) {}
+                        }
+                    }
+                    title = `Danh Mục ${realCatName} | ${storeName}`;
+                    desc = `Tổng hợp sản phẩm danh mục ${realCatName} tại ${storeName}. Giá sỉ/lẻ tốt nhất, chiết khấu tự động theo số lượng.`;
+                } else if (isProd) {
+                    const pIdMatch = decodedSlug.match(/-p([a-zA-Z0-9_-]+)$/) || decodedSlug.match(/^p([a-zA-Z0-9_-]+)$/);
+                    const pId = pIdMatch ? pIdMatch[1] : decodedSlug;
+                    const batchRes = await db.executeBatch([
+                        { sql: "SELECT key, value FROM settings WHERE key IN ('storeName')", args: [] },
+                        { sql: "SELECT id, name, price, imageUrl, details, description FROM products WHERE id = ? OR id = ? LIMIT 1", args: [pId, `SP${pId}`] }
+                    ]);
+                    const settingsRows = batchRes.results?.[0]?.response?.result?.rows || [];
+                    settingsRows.forEach(r => { if (r[0]?.value === 'storeName') storeName = r[1]?.value || storeName; });
 
-                const catRows = batchRes.results?.[1]?.response?.result?.rows || [];
-                let realCatName = rawCatName;
-                if (catRows.length > 0) {
-                    const catRow = catRows[0];
-                    if (catRow[0]?.value) realCatName = catRow[0].value;
-                    if (catRow[1]?.value) image = catRow[1].value;
-                    else {
-                        try {
-                            const details = JSON.parse(catRow[2]?.value || '{}');
-                            if (details.images?.[0]) image = details.images[0];
-                        } catch(e) {}
+                    const prodRows = batchRes.results?.[1]?.response?.result?.rows || [];
+                    if (prodRows.length > 0) {
+                        const row = prodRows[0];
+                        const pName = row[1]?.value || '';
+                        const pPrice = parseInt(row[2]?.value || 0);
+                        if (row[3]?.value) image = row[3].value;
+                        else {
+                            try {
+                                const details = JSON.parse(row[4]?.value || '{}');
+                                if (details.images?.[0]) image = details.images[0];
+                            } catch(e) {}
+                        }
+                        const pDesc = row[5]?.value || '';
+                        title = `${pName} | ${storeName}`;
+                        const formatPrice = pPrice ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pPrice) : 'Giá sỉ tốt nhất';
+                        desc = `${pName} giá chỉ từ ${formatPrice}. ${pDesc || 'Hàng sẵn kho, giao nhanh, chiết khấu tự động.'}`.substring(0, 160);
                     }
                 }
-                title = `Danh Mục ${realCatName} | ${storeName}`;
-                desc = `Tổng hợp sản phẩm danh mục ${realCatName} tại ${storeName}. Giá sỉ/lẻ tốt nhất, chiết khấu tự động theo số lượng.`;
-            } else if (isProd) {
-                const pIdMatch = decodedSlug.match(/-p([a-zA-Z0-9_-]+)$/) || decodedSlug.match(/^p([a-zA-Z0-9_-]+)$/);
-                const pId = pIdMatch ? pIdMatch[1] : decodedSlug;
-                // Batch: settings + product in one pipeline call
-                const batchRes = await db.executeBatch([
-                    { sql: "SELECT key, value FROM settings WHERE key IN ('storeName')", args: [] },
-                    { sql: "SELECT id, name, price, imageUrl, details, description FROM products WHERE id = ? OR id = ? LIMIT 1", args: [pId, `SP${pId}`] }
-                ]);
-                const settingsRows = batchRes.results?.[0]?.response?.result?.rows || [];
-                settingsRows.forEach(r => { if (r[0]?.value === 'storeName') storeName = r[1]?.value || storeName; });
+                
+                // Save to Cache
+                ssrSeoCache[cacheKey] = { title, desc, image };
+            })();
 
-                const prodRows = batchRes.results?.[1]?.response?.result?.rows || [];
-                if (prodRows.length > 0) {
-                    const row = prodRows[0];
-                    const pName = row[1]?.value || '';
-                    const pPrice = parseInt(row[2]?.value || 0);
-                    if (row[3]?.value) image = row[3].value;
-                    else {
-                        try {
-                            const details = JSON.parse(row[4]?.value || '{}');
-                            if (details.images?.[0]) image = details.images[0];
-                        } catch(e) {}
-                    }
-                    const pDesc = row[5]?.value || '';
-                    title = `${pName} | ${storeName}`;
-                    const formatPrice = pPrice ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pPrice) : 'Giá sỉ tốt nhất';
-                    desc = `${pName} giá chỉ từ ${formatPrice}. ${pDesc || 'Hàng sẵn kho, giao nhanh, chiết khấu tự động.'}`.substring(0, 160);
-                }
+            await Promise.race([dbQueryPromise, timeoutPromise]);
+        } catch(err) {
+            if (err.message === 'DB_TIMEOUT') {
+                console.warn('[SEO SSR] DB query timed out after 8.5s, serving static HTML fallback.');
+            } else {
+                console.error('[SEO SSR ERROR]', err.message);
             }
-        })();
-
-        await Promise.race([dbQueryPromise, timeoutPromise]);
-    } catch(err) {
-        if (err.message === 'DB_TIMEOUT') {
-            console.warn('[SEO SSR] DB query timed out after 5s, serving static HTML.');
-        } else {
-            console.error('[SEO SSR ERROR]', err.message);
+            // Ignore error, will serve default static metadata
         }
-        // Fallback: serve unmodified cached HTML immediately (no block)
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        return res.send(html);
     }
 
     // Inject dynamic Meta and Open Graph tags into HTML response
