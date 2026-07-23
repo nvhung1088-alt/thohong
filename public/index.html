@@ -473,8 +473,9 @@
                 </div>
             </div>
             <!-- Tabs -->
-            <div style="display:flex; border-bottom:2px solid #e2e8f0; background:#f8fafc;">
+            <div style="display:flex; border-bottom:2px solid #e2e8f0; background:#f8fafc; overflow-x:auto;">
                 <button class="apanel-tab active" onclick="switchTab('tab-store')" id="t-store">🏪 Cửa hàng</button>
+                <button class="apanel-tab" onclick="switchTab('tab-seo')" id="t-seo">🚀 SEO & iSocial</button>
                 <button class="apanel-tab" onclick="switchTab('tab-telegram')" id="t-telegram">📨 Telegram</button>
                 <button class="apanel-tab" onclick="switchTab('tab-pos')" id="t-pos">🔄 POS Sync</button>
                 <button class="apanel-tab" onclick="switchTab('tab-import')" id="t-import">📥 Import</button>
@@ -524,7 +525,10 @@
                     </div>
 
                     <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:1.2rem; display:flex; flex-direction:column; gap:12px; margin-bottom:1.5rem;">
-                        <div style="font-weight:700; color:#1e40af; border-bottom:1px solid #bfdbfe; padding-bottom:6px;">🔍 Tối ưu SEO cho Website</div>
+                        <div style="font-weight:700; color:#1e40af; border-bottom:1px solid #bfdbfe; padding-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>🔍 Tối ưu SEO cho Website</span>
+                            <button class="btn btn-secondary" style="font-size:0.75rem; padding:4px 10px; background:white; color:#1d4ed8; border:1px solid #93c5fd;" onclick="switchTab('tab-seo')">🚀 Mở Tool SEO & iSocial Pro</button>
+                        </div>
                         
                         <div>
                             <label style="font-size:0.85rem; font-weight:600; color:#1e40af; display:block; margin-bottom:4px;">Meta Title (Tiêu đề SEO):</label>
@@ -2441,6 +2445,18 @@
             document.getElementById('ap_banner_subtitle').value = storeSettings.bannerSubtitle || '';
             document.getElementById('ap_seo_title').value = storeSettings.metaTitle || '';
             document.getElementById('ap_seo_desc').value = storeSettings.metaDescription || '';
+
+            // Load SEO & iSocial Pro Settings
+            document.getElementById('seo_home_title').value = storeSettings.metaTitle || '';
+            document.getElementById('seo_home_desc').value = storeSettings.metaDescription || '';
+            document.getElementById('seo_social_img').value = storeSettings.ogImage || '';
+
+            document.getElementById('seo_cat_title_tpl').value = storeSettings.seoCatTitleTpl || 'Danh Mục {category} | {store}';
+            document.getElementById('seo_cat_desc_tpl').value = storeSettings.seoCatDescTpl || 'Tổng hợp các sản phẩm thuộc danh mục {category} tại {store} với giá sỉ/lẻ tốt nhất, chiết khấu tự động.';
+            document.getElementById('seo_prod_title_tpl').value = storeSettings.seoProdTitleTpl || '{title} | {store}';
+            document.getElementById('seo_prod_desc_tpl').value = storeSettings.seoProdDescTpl || '{title} giá chỉ từ {price}. {description}';
+
+            updateSeoCounters();
             document.getElementById('ap_contact_hotline').value = storeSettings.contact_hotline || '';
             document.getElementById('ap_contact_zalo').value = storeSettings.contact_zalo || '';
             // Load hide out-of-stock toggle
@@ -2517,8 +2533,123 @@
             document.querySelectorAll('.apanel-content').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.apanel-tab').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).style.display = 'block';
-            const tabMap = { 'tab-store': 't-store', 'tab-telegram': 't-telegram', 'tab-pos': 't-pos', 'tab-import': 't-import', 'tab-account': 't-account' };
-            document.getElementById(tabMap[tabId]).classList.add('active');
+            const tabMap = { 'tab-store': 't-store', 'tab-seo': 't-seo', 'tab-telegram': 't-telegram', 'tab-pos': 't-pos', 'tab-import': 't-import', 'tab-account': 't-account' };
+            if (tabMap[tabId] && document.getElementById(tabMap[tabId])) {
+                document.getElementById(tabMap[tabId]).classList.add('active');
+            }
+        }
+
+        function switchSeoPreview(mode) {
+            const btnG = document.getElementById('seoPrevBtnGoogle');
+            const btnS = document.getElementById('seoPrevBtnSocial');
+            const prevG = document.getElementById('seoPreviewGoogle');
+            const prevS = document.getElementById('seoPreviewSocial');
+
+            if (mode === 'google') {
+                btnG.style.background = '#3b82f6'; btnG.style.color = 'white';
+                btnS.style.background = '#e2e8f0'; btnS.style.color = '#475569';
+                prevG.style.display = 'block'; prevS.style.display = 'none';
+            } else {
+                btnS.style.background = '#3b82f6'; btnS.style.color = 'white';
+                btnG.style.background = '#e2e8f0'; btnG.style.color = '#475569';
+                prevS.style.display = 'block'; prevG.style.display = 'none';
+            }
+        }
+
+        function updateSeoCounters() {
+            const titleInput = document.getElementById('seo_home_title');
+            const descInput = document.getElementById('seo_home_desc');
+            const imgInput = document.getElementById('seo_social_img');
+
+            if (!titleInput || !descInput) return;
+
+            const tVal = titleInput.value || 'Tổng Kho Sỉ Lẻ Thỏ Hồng - Hệ Thống Đặt Hàng Thông Minh';
+            const dVal = descInput.value || 'Hệ thống đặt hàng sỉ lẻ thông minh Thỏ Hồng / ĐHTK, tự động tính toán chiết khấu...';
+            const imgVal = (imgInput && imgInput.value) ? imgInput.value : (storeSettings.logoUrl || 'https://thohong.top/media__1784598666512.png');
+
+            const tLen = tVal.length;
+            const dLen = dVal.length;
+
+            const tCounter = document.getElementById('titleCounter');
+            const dCounter = document.getElementById('descCounter');
+            const tProg = document.getElementById('titleProgress');
+            const dProg = document.getElementById('descProgress');
+
+            if (tCounter) {
+                tCounter.textContent = `${tLen} / 60 ký tự`;
+                tCounter.style.color = (tLen >= 35 && tLen <= 65) ? '#10b981' : (tLen > 65 ? '#ef4444' : '#f59e0b');
+            }
+            if (dCounter) {
+                dCounter.textContent = `${dLen} / 160 ký tự`;
+                dCounter.style.color = (dLen >= 110 && dLen <= 165) ? '#10b981' : (dLen > 165 ? '#ef4444' : '#f59e0b');
+            }
+
+            if (tProg) {
+                tProg.style.width = `${Math.min(100, (tLen / 60) * 100)}%`;
+                tProg.style.background = (tLen >= 35 && tLen <= 65) ? '#10b981' : (tLen > 65 ? '#ef4444' : '#f59e0b');
+            }
+            if (dProg) {
+                dProg.style.width = `${Math.min(100, (dLen / 160) * 100)}%`;
+                dProg.style.background = (dLen >= 110 && dLen <= 165) ? '#10b981' : (dLen > 165 ? '#ef4444' : '#f59e0b');
+            }
+
+            const prevGTitle = document.getElementById('prevGoogleTitle');
+            const prevGDesc = document.getElementById('prevGoogleDesc');
+            const prevSTitle = document.getElementById('prevSocialTitle');
+            const prevSDesc = document.getElementById('prevSocialDesc');
+            const prevSImg = document.getElementById('prevSocialImg');
+
+            if (prevGTitle) prevGTitle.textContent = tVal;
+            if (prevGDesc) prevGDesc.textContent = dVal;
+            if (prevSTitle) prevSTitle.textContent = tVal;
+            if (prevSDesc) prevSDesc.textContent = dVal;
+            if (prevSImg) prevSImg.style.backgroundImage = `url('${imgVal}')`;
+            
+            // Sync with Store Tab SEO inputs
+            const apSeoTitle = document.getElementById('ap_seo_title');
+            const apSeoDesc = document.getElementById('ap_seo_desc');
+            if (apSeoTitle) apSeoTitle.value = tVal;
+            if (apSeoDesc) apSeoDesc.value = dVal;
+        }
+
+        async function apSaveSeoConfig() {
+            const hTitle = document.getElementById('seo_home_title').value.trim() || 'Tổng Kho Sỉ Lẻ Thỏ Hồng - Hệ Thống Đặt Hàng Thông Minh';
+            const hDesc = document.getElementById('seo_home_desc').value.trim();
+            const sImg = document.getElementById('seo_social_img').value.trim();
+
+            const catTpl = document.getElementById('seo_cat_title_tpl').value.trim() || 'Danh Mục {category} | {store}';
+            const catDescTpl = document.getElementById('seo_cat_desc_tpl').value.trim();
+            const prodTpl = document.getElementById('seo_prod_title_tpl').value.trim() || '{title} | {store}';
+            const prodDescTpl = document.getElementById('seo_prod_desc_tpl').value.trim();
+
+            storeSettings.metaTitle = hTitle;
+            storeSettings.metaDescription = hDesc;
+            storeSettings.ogImage = sImg;
+            storeSettings.seoCatTitleTpl = catTpl;
+            storeSettings.seoCatDescTpl = catDescTpl;
+            storeSettings.seoProdTitleTpl = prodTpl;
+            storeSettings.seoProdDescTpl = prodDescTpl;
+
+            try {
+                await fetchAPI('/api/settings', {
+                    method: 'POST',
+                    body: {
+                        metaTitle: hTitle,
+                        metaDescription: hDesc,
+                        ogImage: sImg,
+                        seoCatTitleTpl: catTpl,
+                        seoCatDescTpl: catDescTpl,
+                        seoProdTitleTpl: prodTpl,
+                        seoProdDescTpl: prodDescTpl
+                    }
+                });
+
+                await saveSettings();
+                updateSEO();
+                alert('✅ Đã lưu cấu hình SEO & iSocial Pro thành công!');
+            } catch(e) {
+                alert('Lỗi khi lưu SEO: ' + e.message);
+            }
         }
 
         async function apSaveTelegram() {
