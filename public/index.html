@@ -563,6 +563,130 @@
                     </div>
                 </div>
 
+                <!-- Tab: SEO & iSocial Tool (Rank Math / Yoast Style) -->
+                <div id="tab-seo" class="apanel-content" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                        <h3 style="margin:0; font-size:1.15rem; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                            🚀 Quản Lý SEO & iSocial <span style="font-size:0.7rem; background:#3b82f6; color:white; padding:2px 8px; border-radius:12px; font-weight:600;">Rank Math / Yoast Style</span>
+                        </h3>
+                        <button class="btn btn-primary" style="background:#10b981; font-size:0.85rem; padding:6px 14px;" onclick="apSaveSeoConfig()">💾 Lưu Cấu Hình SEO</button>
+                    </div>
+
+                    <!-- Live Snippet Preview Box -->
+                    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1.2rem; margin-bottom:1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <span style="font-weight:700; font-size:0.9rem; color:#0f172a;">👁 Xem Trước Khung Hiển Thị (Live Snippet Preview)</span>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="btn" id="seoPrevBtnGoogle" onclick="switchSeoPreview('google')" style="padding:4px 10px; font-size:0.75rem; background:#3b82f6; color:white;">🌐 Google Search</button>
+                                <button type="button" class="btn" id="seoPrevBtnSocial" onclick="switchSeoPreview('social')" style="padding:4px 10px; font-size:0.75rem; background:#e2e8f0; color:#475569;">💬 Zalo / Facebook Share</button>
+                            </div>
+                        </div>
+
+                        <!-- Google Snippet Card -->
+                        <div id="seoPreviewGoogle" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:1rem; text-align:left;">
+                            <div style="font-size:0.8rem; color:#202124; display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                                <span style="width:18px; height:18px; background:#4285f4; color:white; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:bold;">G</span>
+                                <span id="prevGoogleHost" style="color:#202124; font-size:0.8rem; font-weight:600;">thohong.top</span>
+                                <span style="color:#5f6368; font-size:0.75rem;">https://www.thohong.top</span>
+                            </div>
+                            <div id="prevGoogleTitle" style="color:#1a0dab; font-size:1.1rem; font-weight:600; cursor:pointer; line-height:1.3; margin-bottom:4px;">Tiêu đề hiển thị chuẩn trên Google...</div>
+                            <div id="prevGoogleDesc" style="color:#4d5156; font-size:0.85rem; line-height:1.4;">Nội dung mô tả ngắn hiển thị trên kết quả tìm kiếm Google search...</div>
+                        </div>
+
+                        <!-- Social Share Card (Zalo / FB) -->
+                        <div id="seoPreviewSocial" style="display:none; background:#ffffff; border:1px solid #dadce0; border-radius:10px; overflow:hidden; max-width:480px; margin:0 auto; text-align:left;">
+                            <div id="prevSocialImg" style="width:100%; height:200px; background:#e2e8f0 url('https://thohong.top/media__1784598666512.png') center/cover no-repeat; position:relative;">
+                                <span style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.6); color:white; font-size:0.7rem; padding:2px 6px; border-radius:4px;">1200 x 630</span>
+                            </div>
+                            <div style="padding:12px; background:#f0f2f5;">
+                                <div id="prevSocialDomain" style="font-size:0.75rem; color:#65676b; text-transform:uppercase; font-weight:600; margin-bottom:4px;">THOHONG.TOP</div>
+                                <div id="prevSocialTitle" style="font-weight:700; font-size:0.95rem; color:#050505; margin-bottom:4px; line-height:1.3;">Tiêu đề thẻ chia sẻ MXH (Open Graph)</div>
+                                <div id="prevSocialDesc" style="font-size:0.82rem; color:#65676b; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">Mô tả nội dung thẻ Open Graph chia sẻ qua Zalo, Facebook, Messenger...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEO Input Controls with Character Counters & Progress Bars -->
+                    <div style="display:flex; flex-direction:column; gap:1.2rem;">
+
+                        <!-- 1. SEO Trang Chủ -->
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1.2rem;">
+                            <div style="font-weight:700; color:#0f172a; border-bottom:1px solid #e2e8f0; padding-bottom:6px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                                <span>🌐 1. SEO & iSocial Trang Chủ (Home Page)</span>
+                                <span style="font-size:0.75rem; color:#64748b;">(Meta & Open Graph)</span>
+                            </div>
+
+                            <div style="margin-bottom:12px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <label style="font-size:0.85rem; font-weight:600; color:#475569;">Tiêu đề SEO Trang chủ (Meta Title):</label>
+                                    <span id="titleCounter" style="font-size:0.75rem; font-weight:700; color:#10b981;">0 / 60 ký tự</span>
+                                </div>
+                                <input type="text" id="seo_home_title" oninput="updateSeoCounters()" style="width:100%;" placeholder="VD: Tổng Kho Sỉ Lẻ Thỏ Hồng - Giá Tốt Nhất">
+                                <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;">
+                                    <div id="titleProgress" style="height:100%; width:0%; background:#10b981; transition:0.3s;"></div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom:12px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <label style="font-size:0.85rem; font-weight:600; color:#475569;">Mô tả SEO Trang chủ (Meta Description):</label>
+                                    <span id="descCounter" style="font-size:0.75rem; font-weight:700; color:#10b981;">0 / 160 ký tự</span>
+                                </div>
+                                <textarea id="seo_home_desc" oninput="updateSeoCounters()" rows="3" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; font-size:0.9rem;" placeholder="Nhập câu mô tả ngắn cuốn hút hiển thị trên kết quả tìm kiếm Google..."></textarea>
+                                <div style="height:4px; background:#e2e8f0; border-radius:2px; margin-top:4px; overflow:hidden;">
+                                    <div id="descProgress" style="height:100%; width:0%; background:#10b981; transition:0.3s;"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Ảnh đại diện khi chia sẻ Zalo/FB (og:image URL):</label>
+                                <input type="text" id="seo_social_img" oninput="updateSeoCounters()" style="width:100%;" placeholder="Dán link ảnh đại diện (khuyên dùng 1200x630px)...">
+                            </div>
+                        </div>
+
+                        <!-- 2. SEO Template Danh Mục -->
+                        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:1.2rem;">
+                            <div style="font-weight:700; color:#1e40af; border-bottom:1px solid #bfdbfe; padding-bottom:6px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                                <span>📂 2. Cấu Hình SEO Mẫu Cho Danh Mục (Category SEO Template)</span>
+                                <span style="font-size:0.75rem; color:#3b82f6;">(Tự động biến đổi)</span>
+                            </div>
+
+                            <div style="margin-bottom:12px;">
+                                <label style="font-size:0.85rem; font-weight:600; color:#1e40af; display:block; margin-bottom:4px;">Mẫu Tiêu đề Danh Mục (Title Template):</label>
+                                <input type="text" id="seo_cat_title_tpl" style="width:100%;" placeholder="VD: Danh Mục {category} | {store}">
+                                <span style="font-size:0.75rem; color:#64748b; margin-top:2px; display:block;">Biến hỗ trợ: <code>{category}</code> (Tên danh mục), <code>{store}</code> (Tên cửa hàng)</span>
+                            </div>
+
+                            <div>
+                                <label style="font-size:0.85rem; font-weight:600; color:#1e40af; display:block; margin-bottom:4px;">Mẫu Mô tả Danh Mục (Description Template):</label>
+                                <textarea id="seo_cat_desc_tpl" rows="2" style="width:100%; padding:8px; border:1px solid #bfdbfe; border-radius:6px; font-size:0.9rem;" placeholder="VD: Tổng hợp tất cả các sản phẩm thuộc danh mục {category} tại {store} với giá sỉ/lẻ tốt nhất."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 3. SEO Template Chi Tiết Sản Phẩm -->
+                        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:1.2rem;">
+                            <div style="font-weight:700; color:#166534; border-bottom:1px solid #bbf7d0; padding-bottom:6px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                                <span>📦 3. Cấu Hình SEO Mẫu Cho Sản Phẩm (Product SEO Template)</span>
+                                <span style="font-size:0.75rem; color:#10b981;">(Tự động biến đổi)</span>
+                            </div>
+
+                            <div style="margin-bottom:12px;">
+                                <label style="font-size:0.85rem; font-weight:600; color:#166534; display:block; margin-bottom:4px;">Mẫu Tiêu đề Sản Phẩm (Product Title Template):</label>
+                                <input type="text" id="seo_prod_title_tpl" style="width:100%;" placeholder="VD: {title} | {store}">
+                                <span style="font-size:0.75rem; color:#64748b; margin-top:2px; display:block;">Biến hỗ trợ: <code>{title}</code> (Tên sản phẩm), <code>{store}</code> (Tên cửa hàng)</span>
+                            </div>
+
+                            <div>
+                                <label style="font-size:0.85rem; font-weight:600; color:#166534; display:block; margin-bottom:4px;">Mẫu Mô tả Sản Phẩm (Product Description Template):</label>
+                                <textarea id="seo_prod_desc_tpl" rows="2" style="width:100%; padding:8px; border:1px solid #bbf7d0; border-radius:6px; font-size:0.9rem;" placeholder="VD: {title} giá chỉ từ {price}. {description}"></textarea>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" style="background:#10b981; font-size:1rem; padding:12px;" onclick="apSaveSeoConfig()">💾 Lưu Tất Cả Cấu Hình SEO & iSocial</button>
+
+                    </div>
+                </div>
+
                 <!-- Tab: Telegram -->
                 <div id="tab-telegram" class="apanel-content" style="display:none;">
                     <h3 style="margin-bottom:1rem;">📨 Cài đặt thông báo Telegram</h3>
@@ -2437,48 +2561,51 @@
         }
 
         async function openAdminPanel() {
-            document.getElementById('adminWelcome').textContent = `Xin chào, Admin! | ${new Date().toLocaleString('vi-VN')}`;
-            document.getElementById('ap_new_username').value = 'admin';
+            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+            const setTxt = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
 
-            document.getElementById('ap_store_logo').value = storeSettings.logoText || 'ĐHTK';
-            document.getElementById('ap_banner_title').value = storeSettings.bannerTitle || 'Tổng Kho Sỉ Lẻ ĐHTK';
-            document.getElementById('ap_banner_subtitle').value = storeSettings.bannerSubtitle || '';
-            document.getElementById('ap_seo_title').value = storeSettings.metaTitle || '';
-            document.getElementById('ap_seo_desc').value = storeSettings.metaDescription || '';
+            setTxt('adminWelcome', `Xin chào, Admin! | ${new Date().toLocaleString('vi-VN')}`);
+            setVal('ap_new_username', 'admin');
+
+            setVal('ap_store_logo', storeSettings.logoText || 'ĐHTK');
+            setVal('ap_banner_title', storeSettings.bannerTitle || 'Tổng Kho Sỉ Lẻ ĐHTK');
+            setVal('ap_banner_subtitle', storeSettings.bannerSubtitle || '');
+            setVal('ap_seo_title', storeSettings.metaTitle || '');
+            setVal('ap_seo_desc', storeSettings.metaDescription || '');
 
             // Load SEO & iSocial Pro Settings
-            document.getElementById('seo_home_title').value = storeSettings.metaTitle || '';
-            document.getElementById('seo_home_desc').value = storeSettings.metaDescription || '';
-            document.getElementById('seo_social_img').value = storeSettings.ogImage || '';
+            setVal('seo_home_title', storeSettings.metaTitle || '');
+            setVal('seo_home_desc', storeSettings.metaDescription || '');
+            setVal('seo_social_img', storeSettings.ogImage || '');
 
-            document.getElementById('seo_cat_title_tpl').value = storeSettings.seoCatTitleTpl || 'Danh Mục {category} | {store}';
-            document.getElementById('seo_cat_desc_tpl').value = storeSettings.seoCatDescTpl || 'Tổng hợp các sản phẩm thuộc danh mục {category} tại {store} với giá sỉ/lẻ tốt nhất, chiết khấu tự động.';
-            document.getElementById('seo_prod_title_tpl').value = storeSettings.seoProdTitleTpl || '{title} | {store}';
-            document.getElementById('seo_prod_desc_tpl').value = storeSettings.seoProdDescTpl || '{title} giá chỉ từ {price}. {description}';
+            setVal('seo_cat_title_tpl', storeSettings.seoCatTitleTpl || 'Danh Mục {category} | {store}');
+            setVal('seo_cat_desc_tpl', storeSettings.seoCatDescTpl || 'Tổng hợp các sản phẩm thuộc danh mục {category} tại {store} với giá sỉ/lẻ tốt nhất, chiết khấu tự động.');
+            setVal('seo_prod_title_tpl', storeSettings.seoProdTitleTpl || '{title} | {store}');
+            setVal('seo_prod_desc_tpl', storeSettings.seoProdDescTpl || '{title} giá chỉ từ {price}. {description}');
 
             updateSeoCounters();
-            document.getElementById('ap_contact_hotline').value = storeSettings.contact_hotline || '';
-            document.getElementById('ap_contact_zalo').value = storeSettings.contact_zalo || '';
+            setVal('ap_contact_hotline', storeSettings.contact_hotline || '');
+            setVal('ap_contact_zalo', storeSettings.contact_zalo || '');
             // Load hide out-of-stock toggle
             const hideOOS = storeSettings.hideOutOfStock === true || storeSettings.hideOutOfStock === 'true';
             const cb = document.getElementById('ap_hide_out_of_stock');
-            cb.checked = hideOOS;
+            if (cb) cb.checked = hideOOS;
             const slider = document.getElementById('ap_hide_oos_slider');
             const knob = document.getElementById('ap_hide_oos_knob');
-            slider.style.background = hideOOS ? '#f97316' : '#cbd5e1';
-            knob.style.transform = hideOOS ? 'translateX(22px)' : 'translateX(0)';
+            if (slider) slider.style.background = hideOOS ? '#f97316' : '#cbd5e1';
+            if (knob) knob.style.transform = hideOOS ? 'translateX(22px)' : 'translateX(0)';
 
             let hasTg = false;
             let hasPos = false;
             try {
                 const privateSettings = await fetchAPI('/api/settings/private');
-                document.getElementById('ap_tg_token').value = privateSettings.telegramToken || '';
-                document.getElementById('ap_tg_chatid').value = privateSettings.telegramChatId || '';
-                document.getElementById('ap_tg_name').value = privateSettings.storeName || '';
+                setVal('ap_tg_token', privateSettings.telegramToken || '');
+                setVal('ap_tg_chatid', privateSettings.telegramChatId || '');
+                setVal('ap_tg_name', privateSettings.storeName || '');
 
-                document.getElementById('ap_pos_key').value = privateSettings.pos_api_key || '';
-                document.getElementById('ap_pos_shop').value = privateSettings.pos_shop_id || '';
-                document.getElementById('ap_pos_wh').value = privateSettings.pos_warehouse_id || '';
+                setVal('ap_pos_key', privateSettings.pos_api_key || '');
+                setVal('ap_pos_shop', privateSettings.pos_shop_id || '');
+                setVal('ap_pos_wh', privateSettings.pos_warehouse_id || '');
                 
                 hasTg = !!privateSettings.telegramToken;
                 hasPos = !!privateSettings.pos_api_key;
