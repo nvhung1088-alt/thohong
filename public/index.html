@@ -766,6 +766,10 @@
                             <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Xác nhận mật khẩu mới:</label>
                             <input type="password" id="ap_confirm_password" placeholder="Nhập lại mật khẩu mới" style="width:100%;">
                         </div>
+                        <button class="btn btn-primary" onclick="apChangePassword()">🔐 Đổi mật khẩu</button>
+                    </div>
+                </div>
+
                 <!-- Tab: Thống kê -->
                 <div id="tab-analytics" class="apanel-content" style="display:none;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
@@ -2723,7 +2727,7 @@
             document.querySelectorAll('.apanel-content').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.apanel-tab').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).style.display = 'block';
-            const tabMap = { 'tab-store': 't-store', 'tab-seo': 't-seo', 'tab-telegram': 't-telegram', 'tab-pos': 't-pos', 'tab-import': 't-import', 'tab-account': 't-account' };
+            const tabMap = { 'tab-store': 't-store', 'tab-analytics': 't-analytics', 'tab-seo': 't-seo', 'tab-telegram': 't-telegram', 'tab-pos': 't-pos', 'tab-import': 't-import', 'tab-account': 't-account' };
             if (tabMap[tabId] && document.getElementById(tabMap[tabId])) {
                 document.getElementById(tabMap[tabId]).classList.add('active');
             }
