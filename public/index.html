@@ -1735,18 +1735,31 @@
             }
         }
 
+        function findProductByAnyId(rawId) {
+            if (!rawId || !products || !Array.isArray(products)) return null;
+            const cleanId = String(rawId).trim();
+            const pureId = cleanId.replace(/^SP/i, '');
+            const baseId = pureId.split('_')[0];
+
+            return products.find(x => {
+                if (!x) return false;
+                const xId = String(x.id || '').trim();
+                const xPure = xId.replace(/^SP/i, '');
+
+                if (xId === cleanId || xPure === pureId || xId === pureId || xPure === cleanId) return true;
+                if (xPure === baseId || xId === baseId || (`SP${xPure}` === baseId)) return true;
+                if (x.name && (toSlug(x.name) === cleanId || toSlug(x.name) === pureId)) return true;
+                if (x.variants && Array.isArray(x.variants)) {
+                    if (x.variants.some(v => String(v.id || '').trim() === cleanId || String(v.id || '').trim().replace(/^SP/i, '') === pureId)) return true;
+                }
+                return false;
+            }) || null;
+        }
+
         // --- PRODUCT DETAIL MODAL ---
         function openDetailModal(id) {
             trackPageView(id);
-            const cleanId = String(id || '').trim();
-            const p = products.find(x => 
-                String(x.id) === cleanId || 
-                String(x.id) === `SP${cleanId}` || 
-                `SP${x.id}` === cleanId ||
-                (cleanId.startsWith('SP') && String(x.id) === cleanId.substring(2)) ||
-                (x.name && toSlug(x.name) === cleanId) ||
-                (x.name && toSlug(x.name).includes(cleanId))
-            );
+            const p = findProductByAnyId(id);
             if (!p) return;
             const activeV = getActiveVariant(p.id);
             
@@ -3154,37 +3167,27 @@
                 let pdrHtml = '<div style="display:flex; flex-direction:column; gap:8px;">';
                 (data.topProducts || []).slice(0, 10).forEach(function(p, idx) {
                     const rawId = String(p.product_id || '').trim();
-                    const cleanId = rawId.replace(/^SP/i, '');
+                    const prod = findProductByAnyId(rawId);
 
-                    // Thuật toán match sản phẩm thông minh
-                    const prod = (window.products || []).find(function(x) {
-                        if (!x || !x.id) return false;
-                        const xId = String(x.id).trim();
-                        const xClean = xId.replace(/^SP/i, '');
-                        if (xId === rawId || xClean === cleanId || xId === cleanId || xClean === rawId) return true;
-                        if (rawId.includes('_') && rawId.split('_')[0].replace(/^SP/i, '') === xClean) return true;
-                        return false;
-                    });
-
-                    const name = prod ? prod.name : ('Sản phẩm #' + (cleanId || rawId));
+                    const name = prod ? prod.name : ('Sản phẩm #' + rawId.replace(/^SP/i, ''));
                     const imgUrl = (prod && prod.imageUrl) ? prod.imageUrl : '';
                     const imgHtml = imgUrl ? 
-                        '<img src="' + imgUrl + '" style="width:34px; height:34px; object-fit:cover; border-radius:6px; margin-right:10px; flex-shrink:0;">' : 
-                        '<div style="width:34px; height:34px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; margin-right:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#3b82f6; font-size:11px;">#' + (idx+1) + '</div>';
+                        '<img src="' + imgUrl + '" style="width:36px; height:36px; object-fit:cover; border-radius:6px; margin-right:10px; flex-shrink:0;">' : 
+                        '<div style="width:36px; height:36px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; margin-right:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#3b82f6; font-size:11px;">#' + (idx+1) + '</div>';
 
-                    const targetId = prod ? prod.id : (cleanId || rawId);
-                    const clickAttr = 'onclick="closeModal(\'adminModal\'); openDetailModal(\'' + targetId + '\');" style="cursor:pointer;"';
+                    const targetId = prod ? prod.id : rawId;
+                    const clickAttr = 'onclick="closeModal(\'adminModal\'); setTimeout(function(){ openDetailModal(\'' + targetId + '\'); }, 120);" style="cursor:pointer;"';
 
-                    pdrHtml += '<div ' + clickAttr + ' style="display:flex; justify-content:space-between; align-items:center; font-size:14px; border-bottom:1px dashed #f1f5f9; padding:6px 8px; border-radius:6px; transition:0.2s;" onmouseover="this.style.background=\'#eff6ff\'" onmouseout="this.style.background=\'transparent\'">' +
+                    pdrHtml += '<div ' + clickAttr + ' style="display:flex; justify-content:space-between; align-items:center; font-size:14px; border-bottom:1px dashed #e2e8f0; padding:8px 10px; border-radius:8px; background:#ffffff; border:1px solid #f1f5f9; transition:all 0.2s;" onmouseover="this.style.background=\'#eff6ff\'; this.style.borderColor=\'#93c5fd\';" onmouseout="this.style.background=\'#ffffff\'; this.style.borderColor=\'#f1f5f9\';">' +
                         '<div style="display:flex; align-items:center; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:10px;">' +
-                            '<span style="font-weight:bold; color:#94a3b8; width:20px; font-size:12px; flex-shrink:0;">' + (idx+1) + '.</span>' +
+                            '<span style="font-weight:bold; color:#94a3b8; width:22px; font-size:12px; flex-shrink:0;">' + (idx+1) + '.</span>' +
                             imgHtml + 
                             '<div style="display:flex; flex-direction:column; overflow:hidden;">' +
-                                '<span style="font-weight:600; color:#1e293b; overflow:hidden; text-overflow:ellipsis;" title="' + name + '">' + name + '</span>' +
-                                '<span style="font-size:11px; color:#2563eb; font-weight:500;">🔗 Bấm để xem chi tiết</span>' +
+                                '<span style="font-weight:600; color:#0f172a; overflow:hidden; text-overflow:ellipsis;" title="' + name + '">' + name + '</span>' +
+                                '<span style="font-size:11px; color:#2563eb; font-weight:500;">🔗 Click xem chi tiết sản phẩm</span>' +
                             '</div>' +
                         '</div>' +
-                        '<div style="font-weight:bold; color:#2563eb; white-space:nowrap; background:#eff6ff; padding:3px 8px; border-radius:12px; font-size:13px; flex-shrink:0;">' + new Intl.NumberFormat().format(p.total_views) + ' lượt xem</div>' +
+                        '<div style="font-weight:bold; color:#1d4ed8; white-space:nowrap; background:#eff6ff; border:1px solid #dbeafe; padding:4px 10px; border-radius:12px; font-size:12px; flex-shrink:0;">' + new Intl.NumberFormat().format(p.total_views) + ' lượt xem</div>' +
                     '</div>';
                 });
                 pdrHtml += '</div>';
