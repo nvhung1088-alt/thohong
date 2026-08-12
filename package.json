@@ -1,0 +1,19 @@
+{
+  "name": "thohong-store-backend",
+  "version": "1.0.0",
+  "description": "Backend for Thỏ Hồng Store",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "echo 'No build needed'"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.6.2",
+    "acorn": "^8.17.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

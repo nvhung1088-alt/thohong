@@ -1,0 +1,7 @@
+node_modules/
+.env
+dhtk_store.db
+*.log
+.system_generated/
+*.metadata.json
+scratch/
