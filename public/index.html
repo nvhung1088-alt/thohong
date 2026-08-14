@@ -3017,52 +3017,6 @@
             }
         }
 
-        async function loadGoogleIndexingConfig() {
-            const token = localStorage.getItem('dhtk_jwt');
-            if (!token) return;
-            try {
-                const res = await fetch('/api/admin/indexing/config', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                const data = await res.json();
-                if (data.status === 'configured') {
-                    document.getElementById('gi_status').innerHTML = '✅ Đã thiết lập';
-                    document.getElementById('gi_status').style.color = '#15803d';
-                } else {
-                    document.getElementById('gi_status').innerHTML = '❌ Chưa thiết lập';
-                    document.getElementById('gi_status').style.color = '#b91c1c';
-                }
-            } catch(e) {
-                console.error("Error loading indexing config:", e);
-            }
-        }
-
-        async function saveGoogleIndexingConfig() {
-            const keyFile = document.getElementById('gi_key_file').files[0];
-            if (!keyFile) return alert('Vui lòng chọn file JSON key!');
-            
-            const formData = new FormData();
-            formData.append('json', keyFile);
-            
-            const token = localStorage.getItem('dhtk_jwt');
-            try {
-                const res = await fetch('/api/admin/indexing/config', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token },
-                    body: formData
-                });
-                const data = await res.json();
-                if (data.success) {
-                    alert('✅ Đã tải lên và cấu hình thành công!');
-                    loadGoogleIndexingConfig();
-                } else {
-                    alert('Lỗi: ' + data.error);
-                }
-            } catch(e) {
-                alert('Lỗi server.');
-            }
-        }
-
         function openTelegramSettings() {
             document.getElementById('tg_bot_token').value = storeSettings.telegramToken || '';
             document.getElementById('tg_chat_id').value = storeSettings.telegramChatId || '';
