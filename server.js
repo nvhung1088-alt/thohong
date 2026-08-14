@@ -227,9 +227,13 @@ async function initDB() {
             cover_image TEXT DEFAULT '',
             status TEXT DEFAULT 'draft',
             created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
+            updated_at TEXT NOT NULL,
+            indexed_at TEXT DEFAULT ''
         )
     `);
+    try {
+        await db.execute("ALTER TABLE blog_posts ADD COLUMN indexed_at TEXT DEFAULT ''");
+    } catch(e) {}
 
     await db.execute(`
         CREATE TABLE IF NOT EXISTS seo_keywords (
@@ -1586,6 +1590,17 @@ app.post('/api/admin/blog', authenticateToken, async (req, res) => {
             args: [id, title, slug, finalSummary, content, keyword || '', cover_image || '', status || 'draft', now, now]
         });
 
+        if (status === 'published') {
+            const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
+            const protocol = req.headers['x-forwarded-proto'] || 'https';
+            const fullBlogUrl = `${protocol}://${host}/blog/${slug}`;
+            pushToGoogleIndexingApi(fullBlogUrl).then(async (res) => {
+                if (res && res.success) {
+                    try { await db.execute({ sql: "UPDATE blog_posts SET indexed_at = ? WHERE id = ?", args: [new Date().toISOString(), id] }); } catch(err) {}
+                }
+            }).catch(e => console.error('[AUTO-INDEX POST ERROR]', e.message));
+        }
+
         res.json({ success: true, id, slug });
     } catch (e) {
         if (e.message && e.message.includes('UNIQUE')) {
@@ -1610,6 +1625,17 @@ app.put('/api/admin/blog/:id', authenticateToken, async (req, res) => {
             sql: `UPDATE blog_posts SET title = ?, slug = ?, summary = ?, content = ?, keyword = ?, cover_image = ?, status = ?, updated_at = ? WHERE id = ?`,
             args: [title, slug, finalSummary, content, keyword || '', cover_image || '', status || 'draft', now, id]
         });
+
+        if (status === 'published') {
+            const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
+            const protocol = req.headers['x-forwarded-proto'] || 'https';
+            const fullBlogUrl = `${protocol}://${host}/blog/${slug}`;
+            pushToGoogleIndexingApi(fullBlogUrl).then(async (res) => {
+                if (res && res.success) {
+                    try { await db.execute({ sql: "UPDATE blog_posts SET indexed_at = ? WHERE id = ?", args: [new Date().toISOString(), id] }); } catch(err) {}
+                }
+            }).catch(e => console.error('[AUTO-INDEX UPDATE ERROR]', e.message));
+        }
 
         res.json({ success: true, id, slug });
     } catch (e) {
@@ -2230,15 +2256,38 @@ app.post('/api/admin/seo/indexing-config', authenticateToken, async (req, res) =
     }
 });
 
+app.get('/api/admin/seo/indexing-posts', authenticateToken, async (req, res) => {
+    try {
+        const result = await db.execute("SELECT id, title, slug, status, created_at, indexed_at FROM blog_posts ORDER BY created_at DESC LIMIT 50");
+        res.json({ posts: result.rows || [] });
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.post('/api/admin/seo/google-index-now', authenticateToken, async (req, res) => {
     try {
-        const { targetUrl } = req.body;
+        const { targetUrl, blogId } = req.body;
         if (!targetUrl || !targetUrl.startsWith('http')) {
             return res.status(400).json({ error: 'URL nộp Google Indexing không hợp lệ (phải bắt đầu bằng http:// hoặc https://)!' });
         }
 
         const result = await pushToGoogleIndexingApi(targetUrl.trim());
         if (result.error) return res.status(400).json({ error: result.error });
+
+        const nowIso = new Date().toISOString();
+        try {
+            if (blogId) {
+                await db.execute({ sql: "UPDATE blog_posts SET indexed_at = ? WHERE id = ?", args: [nowIso, blogId] });
+            } else if (targetUrl.includes('/blog/')) {
+                const urlParts = targetUrl.split('/blog/');
+                if (urlParts.length > 1) {
+                    const slugPart = urlParts[1].split('?')[0].split('#')[0];
+                    await db.execute({ sql: "UPDATE blog_posts SET indexed_at = ? WHERE slug = ?", args: [nowIso, slugPart] });
+                }
+            }
+        } catch(err) {}
+
         res.json(result);
     } catch(e) {
         res.status(500).json({ error: e.message });
