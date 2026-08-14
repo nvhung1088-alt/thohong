@@ -5017,7 +5017,103 @@ YÊU CẦU SEO CHI TIẾT:
                         logsEl.innerHTML = html;
                     }
                 }
+
+                loadIndexingPosts();
             } catch(e) {}
+        }
+
+        async function loadIndexingPosts() {
+            const token = localStorage.getItem('dhtk_jwt');
+            if (!token) return;
+            try {
+                const res = await fetch('/api/admin/seo/indexing-posts', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                const posts = data.posts || [];
+
+                const select = document.getElementById('indexingBlogSelect');
+                if (select) {
+                    if (posts.length === 0) {
+                        select.innerHTML = '<option value="">-- Chưa có bài viết blog nào --</option>';
+                    } else {
+                        select.innerHTML = '<option value="">-- Chọn một bài viết blog để nộp Index --</option>' + 
+                            posts.map(p => `<option value="${p.id}" data-slug="${p.slug}">[${p.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}] ${escapeHtml(p.title)}</option>`).join('');
+                    }
+                }
+
+                const tbody = document.getElementById('indexingPostsTableBody');
+                if (tbody) {
+                    if (posts.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" style="padding:15px; text-align:center; color:#94a3b8;">Chưa có bài viết blog nào</td></tr>';
+                    } else {
+                        tbody.innerHTML = posts.map(p => {
+                            const isPub = p.status === 'published';
+                            const pubBadge = isPub ? '<span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">📢 Đã xuất bản</span>'
+                                                   : '<span style="background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">📋 Bản nháp</span>';
+                            
+                            const hasIndexed = Boolean(p.indexed_at);
+                            const idxBadge = hasIndexed 
+                                ? `<span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">🟢 Đã nộp Google Bot (${new Date(p.indexed_at).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})} ${new Date(p.indexed_at).toLocaleDateString('vi-VN')})</span>`
+                                : '<span style="background:#f1f5f9; color:#64748b; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">⏳ Chưa nộp Google Bot</span>';
+
+                            const fullUrl = `${window.location.origin}/blog/${p.slug}`;
+
+                            return `
+                                <tr style="border-bottom:1px solid #f1f5f9;">
+                                    <td style="padding:10px 12px;">
+                                        <div style="font-weight:700; color:#0f172a;">${escapeHtml(p.title)}</div>
+                                        <a href="/blog/${p.slug}" target="_blank" style="font-size:0.75rem; color:#2563eb; text-decoration:underline;">/blog/${p.slug}</a>
+                                    </td>
+                                    <td style="padding:10px 12px;">${pubBadge}</td>
+                                    <td style="padding:10px 12px;">${idxBadge}</td>
+                                    <td style="padding:10px 12px; text-align:right;">
+                                        <button class="btn" style="background:#0284c7; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="triggerGoogleIndexByItem('${p.id}', '${fullUrl}')">⚡ Nộp Index Ngay</button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+                }
+            } catch(e) {}
+        }
+
+        function syncManualIndexInputWithSelect() {
+            const select = document.getElementById('indexingBlogSelect');
+            const input = document.getElementById('manualGoogleIndexUrl');
+            if (!select || !input) return;
+            const selectedOpt = select.options[select.selectedIndex];
+            const slug = selectedOpt ? selectedOpt.getAttribute('data-slug') : '';
+            if (slug) {
+                input.value = `${window.location.origin}/blog/${slug}`;
+            }
+        }
+
+        async function triggerGoogleIndexSelectedBlog() {
+            const select = document.getElementById('indexingBlogSelect');
+            if (!select || !select.value) return showToast('Vui lòng chọn một bài viết blog!', 'error');
+            const selectedOpt = select.options[select.selectedIndex];
+            const slug = selectedOpt ? selectedOpt.getAttribute('data-slug') : '';
+            if (!slug) return showToast('Bài viết không hợp lệ!', 'error');
+            const fullUrl = `${window.location.origin}/blog/${slug}`;
+            await triggerGoogleIndexByItem(select.value, fullUrl);
+        }
+
+        async function triggerGoogleIndexByItem(blogId, fullUrl) {
+            showToast('⏳ Đang gửi yêu cầu ép Google Bot Index...', 'info');
+
+            const token = localStorage.getItem('dhtk_jwt');
+            try {
+                const res = await fetch('/api/admin/seo/google-index-now', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ targetUrl: fullUrl, blogId })
+                });
+                const data = await res.json();
+                if (data.error) return showToast(data.error, 'error');
+                showToast('🚀 Đã gửi nộp URL tới Google Indexing API thành công!', 'success');
+                loadGoogleIndexingConfig();
+            } catch(e) {
+                showToast('Lỗi: ' + e.message, 'error');
+            }
         }
 
         async function saveGoogleIndexingConfig() {
