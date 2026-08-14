@@ -4922,6 +4922,11 @@ YÊU CẦU SEO CHI TIẾT:
             });
         });
 
+        // GLOBAL ESCAPE HTML HELPER
+        function escapeHtml(str) {
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
         async function loadGoogleIndexingConfig() {
             const token = localStorage.getItem('dhtk_jwt');
             if (!token) return;
@@ -4959,21 +4964,23 @@ YÊU CẦU SEO CHI TIẾT:
                             const time = l.created_at ? new Date(l.created_at).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}) : '';
                             html += `<div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:6px 10px; border-radius:4px; border:1px solid #e2e8f0; font-size:0.78rem;">
                                 <div style="flex:1; overflow:hidden; margin-right:8px; white-space:nowrap; text-overflow:ellipsis;">
-                                    <strong>${l.url}</strong>
+                                    <strong>${escapeHtml(l.url)}</strong>
                                     <span style="color:#64748b; font-size:0.72rem; margin-left:6px;">(${time})</span>
                                 </div>
                                 <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
                                     ${tag}
-                                    <span style="color:#475569; font-size:0.75rem;">${l.response_message || ''}</span>
+                                    <span style="color:#475569; font-size:0.75rem;">${escapeHtml(l.response_message || '')}</span>
                                 </div>
                             </div>`;
                         });
                         logsEl.innerHTML = html;
                     }
                 }
-
-                loadIndexingPosts();
-            } catch(e) {}
+            } catch(e) {
+                console.error('[loadGoogleIndexingConfig error]', e);
+            }
+            // Luôn gọi loadIndexingPosts bất kể config API thành công hay thất bại
+            loadIndexingPosts();
         }
 
         async function loadIndexingPosts() {
