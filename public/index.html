@@ -1035,9 +1035,15 @@
                             <div style="font-size:0.75rem; font-weight:bold; color:#92400e; text-transform:uppercase;">📝 Bài nháp ↗</div>
                             <div style="font-size:1.6rem; font-weight:900; color:#78350f; margin-top:2px;" id="statDraftPosts">0</div>
                         </div>
-                        <div style="background:linear-gradient(135deg, #f5f3ff, #ede9fe); border:1px solid #ddd6fe; border-radius:10px; padding:12px 16px; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;" onclick="openSEOManagerModal('keywords')" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                            <div style="font-size:0.75rem; font-weight:bold; color:#5b21b6; text-transform:uppercase;">⏳ Từ khóa chờ AI ↗</div>
-                            <div style="font-size:1.6rem; font-weight:900; color:#4c1d95; margin-top:2px;" id="statPendingKeywords">0</div>
+                        <div style="background:linear-gradient(135deg, #f5f3ff, #ede9fe); border:1px solid #ddd6fe; border-radius:10px; padding:12px 16px; transition:transform 0.2s, box-shadow 0.2s;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
+                                <div style="font-size:0.75rem; font-weight:bold; color:#5b21b6; text-transform:uppercase; cursor:pointer;" onclick="openSEOManagerModal('keywords')">⏳ Từ khóa chờ AI ↗</div>
+                                <div style="display:flex; gap:4px;">
+                                    <button onclick="openPromptModal('suggest')" title="Mở & Sửa Prompt Gợi Ý Từ Khóa" style="background:#7c3aed; color:white; border:none; border-radius:4px; padding:3px 8px; font-size:0.7rem; font-weight:bold; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.1);">✨ Prompt Từ Khóa</button>
+                                    <button onclick="openPromptModal('post')" title="Mở & Sửa Prompt Viết Bài AI" style="background:#6d28d9; color:white; border:none; border-radius:4px; padding:3px 8px; font-size:0.7rem; font-weight:bold; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.1);">✍️ Prompt Viết Bài</button>
+                                </div>
+                            </div>
+                            <div style="font-size:1.6rem; font-weight:900; color:#4c1d95; cursor:pointer;" id="statPendingKeywords" onclick="openSEOManagerModal('keywords')">0</div>
                         </div>
                     </div>
 
@@ -1121,6 +1127,28 @@
                                 <div style="font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:6px;">📜 3 BÀI ĐĂNG GẦN ĐÂY NHẤT:</div>
                                 <div id="recentAutoPostsList" style="display:flex; flex-direction:column; gap:6px;">
                                     <div style="font-size:0.78rem; color:#94a3b8;">Chưa có lịch sử bài đăng</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Chỉnh Sửa Prompt AI Nhanh -->
+                    <div id="promptEditModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px);">
+                        <div style="background:white; border-radius:12px; max-width:650px; width:92%; margin:50px auto; padding:20px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+                                <h4 style="margin:0; color:#4c1d95; font-size:1.05rem;" id="promptModalTitle">⚙️ Chỉnh Sửa Câu Lệnh Prompt AI</h4>
+                                <button class="btn btn-secondary" style="padding:2px 8px; font-size:0.8rem;" onclick="closePromptModal()">✕ Đóng</button>
+                            </div>
+                            <div style="margin-bottom:12px;">
+                                <label style="font-size:0.8rem; font-weight:700; color:#334155; display:block; margin-bottom:6px;" id="promptModalLabel">Nội dung Prompt:</label>
+                                <textarea id="promptModalTextarea" rows="11" style="width:100%; font-size:0.82rem; font-family:monospace; padding:10px; border:1px solid #cbd5e1; border-radius:8px; line-height:1.4;"></textarea>
+                                <div style="font-size:0.75rem; color:#64748b; margin-top:6px;" id="promptModalHelpText">Biến hỗ trợ...</div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                                <button class="btn" style="background:#64748b; color:white; font-size:0.8rem;" onclick="resetCurrentPromptInModal()">🔄 Nạp Mặc Định</button>
+                                <div style="display:flex; gap:8px;">
+                                    <button class="btn btn-secondary" style="padding:6px 14px; font-size:0.8rem;" onclick="closePromptModal()">Hủy</button>
+                                    <button class="btn" style="background:#7c3aed; color:white; font-weight:bold; padding:6px 16px; font-size:0.8rem;" onclick="savePromptFromModal()">💾 Lưu Prompt Ngay</button>
                                 </div>
                             </div>
                         </div>
@@ -4665,6 +4693,94 @@ YÊU CẦU SEO CHI TIẾT:
             const el2 = document.getElementById('customPostPromptText');
             if (el2) el2.value = defaultPost;
             showToast('Đã nạp câu lệnh Prompt mặc định lên giao diện! Bạn có thể tùy chỉnh lại theo ý muốn.', 'info');
+        }
+
+        let currentEditingPromptType = 'suggest';
+
+        function openPromptModal(type) {
+            currentEditingPromptType = type;
+            const modal = document.getElementById('promptEditModal');
+            const title = document.getElementById('promptModalTitle');
+            const label = document.getElementById('promptModalLabel');
+            const textarea = document.getElementById('promptModalTextarea');
+            const help = document.getElementById('promptModalHelpText');
+
+            if (type === 'suggest') {
+                if (title) title.innerText = '✨ Chỉnh Sửa Prompt Gợi Ý 10 Từ Khóa';
+                if (label) label.innerText = 'Câu lệnh cho DeepSeek AI tìm từ khóa SEO mới dựa trên sản phẩm cửa hàng:';
+                if (help) help.innerHTML = 'Biến hỗ trợ: <code style="color:#7c3aed;">\${storeName}</code> (Tên shop), <code style="color:#7c3aed;">\${categories}</code> (Danh mục sản phẩm)';
+                const currentVal = document.getElementById('customSuggestPromptText')?.value || '';
+                if (textarea) textarea.value = currentVal || getDefaultSuggestPrompt();
+            } else {
+                if (title) title.innerText = '✍️ Chỉnh Sửa Prompt Viết Bài Blog SEO 1000-1500 Từ';
+                if (label) label.innerText = 'Câu lệnh cho DeepSeek AI sáng tạo bài viết blog chất lượng cao & chèn link/ảnh:';
+                if (help) help.innerHTML = 'Biến hỗ trợ: <code style="color:#7c3aed;">\${storeName}</code>, <code style="color:#7c3aed;">\${keyword}</code>, <code style="color:#7c3aed;">\${productsList}</code>, <code style="color:#7c3aed;">\${imagesListPrompt}</code>';
+                const currentVal = document.getElementById('customPostPromptText')?.value || '';
+                if (textarea) textarea.value = currentVal || getDefaultPostPrompt();
+            }
+
+            if (modal) modal.style.display = 'block';
+        }
+
+        function closePromptModal() {
+            const modal = document.getElementById('promptEditModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function resetCurrentPromptInModal() {
+            const textarea = document.getElementById('promptModalTextarea');
+            if (textarea) {
+                textarea.value = currentEditingPromptType === 'suggest' ? getDefaultSuggestPrompt() : getDefaultPostPrompt();
+                showToast('Đã nạp lại Prompt mẫu mặc định lên ô nhập!', 'info');
+            }
+        }
+
+        function savePromptFromModal() {
+            const val = document.getElementById('promptModalTextarea')?.value || '';
+            if (currentEditingPromptType === 'suggest') {
+                const target = document.getElementById('customSuggestPromptText');
+                if (target) target.value = val;
+            } else {
+                const target = document.getElementById('customPostPromptText');
+                if (target) target.value = val;
+            }
+            saveAutoBlogConfig();
+            closePromptModal();
+        }
+
+        function getDefaultSuggestPrompt() {
+            return `Bạn là chuyên gia SEO hàng đầu cho website e-commerce Việt Nam.
+Cửa hàng "\${storeName}" chuyên kinh doanh các nhóm ngành hàng: \${categories}.
+Hãy gợi ý 10 từ khóa SEO tiềm năng nhất cho blog của cửa hàng.
+Trả về kết quả duy nhất 1 mảng JSON array: [{"keyword": "...", "reason": "...", "difficulty": "Dễ|Trung bình|Khó"}]`;
+        }
+
+        function getDefaultPostPrompt() {
+            return `Bạn là nhà báo chuyên nghiệp và chuyên gia SEO thương mại điện tử Việt Nam.
+Hãy viết 1 bài blog chất lượng cao chuẩn SEO cho cửa hàng "\${storeName}" dựa trên từ khóa chính: "\${keyword}".
+
+DANH SÁCH SẢN PHẨM HIỆN CÓ TẠI CỬA HÀNG ĐỂ CHÈN INTERNAL LINK:
+\${productsList}
+
+DANH SÁCH HÌNH ẢNH SẢN PHẨM KHẢ DỤNG ĐỂ CHÈN VÀO BÀI VIẾT:
+\${imagesListPrompt}
+
+YÊU CẦU SEO CHI TIẾT:
+1. ĐỘ DÀI & ĐOẠN VĂN: Bài viết từ 1000 - 1500 từ. Chia thành các đoạn văn từ 3-4 câu giúp người đọc dễ theo dõi trên di động.
+2. THẺ HEADING: Tiêu đề H1 chứa từ khóa chính, 3-5 thẻ H2 (##) và H3 (###).
+3. MẬT ĐỘ TỪ KHÓA: Từ khóa "\${keyword}" xuất hiện 3-5 lần một cách tự nhiên.
+4. CHÈN INTERNAL LINK SẢN PHẨM: Bắt buộc chọn 2-3 sản phẩm phù hợp nhất và chèn ĐÚNG NGUYÊN VẸN cú pháp Markdown link: [Tên sản phẩm](Link) được cấp ở trên.
+5. CHÈN 3 HÌNH ẢNH SẢN PHẨM VÀO BÀI VIẾT (BẮT BUỘC): Bắt buộc lấy đúng 3 URL hình ảnh từ danh sách hình ảnh khả dụng ở trên và chèn rải rác vào bài viết bằng cú pháp Markdown: ![Mô tả ảnh sinh động chứa từ khóa SEO](URL_ảnh). KHÔNG TỰ BỊA LINK ẢNH KHÁC.
+6. ĐỊNH DẠNG MARKDOWN: Dùng **in đậm**, gạch đầu dòng (-).
+7. LỜI KÊU GỌI HÀNG (CTA): Đoạn cuối kết bài kêu gọi khách hàng mua hàng tại \${storeName}.
+
+ĐỊNH DẠNG TRẢ VỀ BẮT BUỘC:
+##TITLE##
+[Viết tiêu đề bài viết hấp dẫn, chứa từ khóa, dưới 65 ký tự]
+##SUMMARY##
+[Viết đoạn tóm tắt Meta Description chuẩn SEO từ 120-150 ký tự chứa từ khóa]
+##CONTENT##
+[Nội dung bài viết chi tiết bằng định dạng Markdown chứa 3 hình ảnh sản phẩm]`;
         }
 
         async function triggerAutoBlogNow() {
