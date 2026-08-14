@@ -2258,9 +2258,18 @@ app.post('/api/admin/seo/indexing-config', authenticateToken, async (req, res) =
 
 app.get('/api/admin/seo/indexing-posts', authenticateToken, async (req, res) => {
     try {
-        const result = await db.execute("SELECT id, title, slug, status, created_at, indexed_at FROM blog_posts ORDER BY created_at DESC LIMIT 50");
-        res.json({ posts: result.rows || [] });
+        const result = await db.execute("SELECT * FROM blog_posts ORDER BY created_at DESC LIMIT 50");
+        const posts = (result.rows || []).map(r => ({
+            id: r.id,
+            title: r.title,
+            slug: r.slug,
+            status: r.status || 'draft',
+            created_at: r.created_at,
+            indexed_at: r.indexed_at || ''
+        }));
+        res.json({ posts });
     } catch(e) {
+        console.error('[INDEXING POSTS API ERROR]', e.message);
         res.status(500).json({ error: e.message });
     }
 });
