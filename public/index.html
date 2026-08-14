@@ -3850,7 +3850,11 @@
                     }
 
                     if (targetProduct) {
-                        openDetailModal(targetProduct, targetProductSlug || '');
+                        setTimeout(() => {
+                            if (typeof openDetailModal === 'function') {
+                                openDetailModal(targetProduct, targetProductSlug || '');
+                            }
+                        }, 150);
                     }
                 } catch(e) {
                     console.error("Deep link parse error:", e);
@@ -4923,6 +4927,58 @@ YÊU CẦU SEO CHI TIẾT:
                     modal.style.display = 'none';
                 }
             });
+        });
+
+        // BẮT SỰ KIỆN CLICK VÀO LINK NỘI BỘ (SẢN PHẨM & BLOG) TRÊN TOÀN TRANG (NỘI DUNG BÀI BLOG, SIDEBAR, BÀI LIÊN QUAN)
+        document.addEventListener('click', function(e) {
+            const linkEl = e.target.closest('a');
+            if (!linkEl) return;
+
+            const href = linkEl.getAttribute('href') || '';
+            if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+
+            let targetUrl = null;
+            try {
+                targetUrl = new URL(href, window.location.origin);
+            } catch(err) {
+                return;
+            }
+
+            // Chỉ xử lý nếu link cùng tên miền website (Internal Link)
+            if (targetUrl.origin !== window.location.origin) return;
+
+            const pathName = targetUrl.pathname;
+
+            // 1. CLICK LINK SẢN PHẨM (/san-pham/...) -> MỞ POPUP DETAIL MODAL NGAY LẬP TỨC
+            if (pathName.includes('/san-pham/')) {
+                e.preventDefault();
+                const pSlug = pathName.replace('/san-pham/', '').trim();
+                const pIdMatch = pSlug.match(/-p([a-zA-Z0-9_-]+)$/) || pSlug.match(/p([a-zA-Z0-9_-]+)$/);
+                const targetProductId = pIdMatch ? pIdMatch[1] : '';
+                const prodIdOrSlug = targetProductId || pSlug;
+
+                if (typeof openDetailModal === 'function') {
+                    openDetailModal(prodIdOrSlug, pSlug);
+                }
+                return;
+            }
+
+            // 2. CLICK LINK BÀI VIẾT BLOG (/blog/...) -> CHUYỂN BÀI MƯỢT MÀ KHÔNG NẠP LẠI TRANG
+            if (pathName.startsWith('/blog/')) {
+                const bSlug = pathName.replace('/blog/', '').trim().split('?')[0];
+                if (bSlug) {
+                    e.preventDefault();
+                    if (typeof navigateTo === 'function') {
+                        navigateTo('blog-detail', bSlug);
+                    }
+                } else if (pathName === '/blog' || pathName === '/blog/') {
+                    e.preventDefault();
+                    if (typeof navigateTo === 'function') {
+                        navigateTo('blog');
+                    }
+                }
+                return;
+            }
         });
 
         // GLOBAL ESCAPE HTML HELPER
