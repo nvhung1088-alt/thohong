@@ -2488,6 +2488,25 @@
             if (modal) modal.style.display = 'none';
         }
 
+        function openImageZoomModal(imgUrl) {
+            if (!imgUrl) return;
+            let zoomModal = document.getElementById('imageZoomModal');
+            if (!zoomModal) {
+                zoomModal = document.createElement('div');
+                zoomModal.id = 'imageZoomModal';
+                zoomModal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:2000000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px); cursor:zoom-out; padding:15px;';
+                zoomModal.onclick = function() { zoomModal.style.display = 'none'; };
+                zoomModal.innerHTML = `
+                    <button style="position:fixed; top:15px; right:15px; background:rgba(255,255,255,0.25); color:white; border:none; width:44px; height:44px; border-radius:50%; font-size:1.8rem; cursor:pointer; z-index:2000001; display:flex; align-items:center; justify-content:center;">&times;</button>
+                    <img id="zoomModalImg" src="" style="max-width:96vw; max-height:92vh; object-fit:contain; border-radius:12px; box-shadow:0 25px 60px rgba(0,0,0,0.5); cursor:default;" onclick="event.stopPropagation()">
+                `;
+                document.body.appendChild(zoomModal);
+            }
+            const imgEl = document.getElementById('zoomModalImg');
+            if (imgEl) imgEl.src = imgUrl;
+            zoomModal.style.display = 'flex';
+        }
+
         // --- PRODUCT DETAIL MODAL ---
         function openDetailModal(id, urlSlug = '') {
             trackPageView(id);
@@ -2507,22 +2526,32 @@
             updateSEO(pTitle, pDesc, pImg);
             updateDynamicProductSchema(p, activeV);
             
+            // Thu thập TẤT CẢ ảnh (từ biến thể hiện tại, danh sách p.images và tất cả phân loại p.variants)
             let modalImages = [];
             if (activeV && activeV.image) modalImages.push(activeV.image);
-            else if (p.variants && p.variants.length > 0 && p.variants[0].image) modalImages.push(p.variants[0].image);
-            
-            if (p.images && p.images.length > 0) {
+            if (p.images && Array.isArray(p.images)) {
                 p.images.forEach(img => {
                     if (img && !modalImages.includes(img)) modalImages.push(img);
                 });
             }
+            if (p.variants && Array.isArray(p.variants)) {
+                p.variants.forEach(v => {
+                    if (v && v.image && !modalImages.includes(v.image)) {
+                        modalImages.push(v.image);
+                    }
+                });
+            }
+            if (p.imageUrl && !modalImages.includes(p.imageUrl)) {
+                modalImages.push(p.imageUrl);
+            }
 
             let mainImgUrl = modalImages[0] || '';
             let thumbnailsHtml = '';
-            if (modalImages.length > 1) {
-                thumbnailsHtml = `<div style="display:flex; gap:8px; margin-top:10px; overflow-x:auto; padding-bottom:5px; width:100%;">`;
+            if (modalImages.length > 0) {
+                thumbnailsHtml = `<div style="display:flex; gap:8px; margin-top:10px; overflow-x:auto; padding:4px 2px; width:100%; -webkit-overflow-scrolling:touch; scrollbar-width:none;">`;
                 modalImages.forEach((img, idx) => {
-                    thumbnailsHtml += `<img src="${img}" style="width:60px; height:60px; min-width:60px; object-fit:cover; border-radius:4px; cursor:pointer; border: 2px solid ${idx===0?'var(--primary)':'transparent'}; transition: border-color 0.2s;" onclick="document.getElementById('mainModalImg').src='${img}'; Array.from(this.parentElement.children).forEach(c=>c.style.borderColor='transparent'); this.style.borderColor='var(--primary)';">`;
+                    const isCurrent = img === mainImgUrl;
+                    thumbnailsHtml += `<img src="${img}" style="width:54px; height:54px; min-width:54px; object-fit:cover; border-radius:8px; cursor:pointer; border: 2px solid ${isCurrent?'var(--primary)':'#e2e8f0'}; transition: all 0.2s;" onclick="document.getElementById('mainModalImg').src='${img}'; Array.from(this.parentElement.children).forEach(c=>c.style.borderColor='#e2e8f0'); this.style.borderColor='var(--primary)';">`;
                 });
                 thumbnailsHtml += `</div>`;
             }
@@ -2583,8 +2612,9 @@
             const content = document.getElementById('detailModalContent');
             content.innerHTML = `
                 <div class="detail-left">
-                    <div class="product-img-box">
+                    <div class="product-img-box" style="cursor:zoom-in; position:relative;" onclick="openImageZoomModal(document.getElementById('mainModalImg').src)" title="Nhấp để xem ảnh phóng to">
                         ${mainImgUrl ? `<img id="mainModalImg" src="${mainImgUrl}" alt="Ảnh SP">` : `<div style="color:var(--text-muted); padding:50px;">Chưa có ảnh</div>`}
+                        <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.6); color:white; font-size:0.75rem; padding:4px 8px; border-radius:12px; backdrop-filter:blur(4px); pointer-events:none; display:flex; align-items:center; gap:4px;">🔍 Phóng to</div>
                     </div>
                     ${thumbnailsHtml}
                     ${isAdmin ? `
