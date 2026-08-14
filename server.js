@@ -342,6 +342,73 @@ async function sendTelegramMessage(token, chatId, text) {
     }
 }
 
+async function sendTelegramPhotoMessage(token, chatId, photoUrl, captionText, blogUrl) {
+    if (!token || !chatId) return;
+    const cleanPhotoUrl = (photoUrl && photoUrl.startsWith('http')) ? photoUrl : null;
+    
+    const replyMarkup = blogUrl ? {
+        inline_keyboard: [
+            [{ text: '📖 Đọc Bài Viết Ngay', url: blogUrl }]
+        ]
+    } : undefined;
+
+    if (cleanPhotoUrl) {
+        const url = `https://api.telegram.org/bot${token}/sendPhoto`;
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    photo: cleanPhotoUrl,
+                    caption: captionText,
+                    parse_mode: 'HTML',
+                    reply_markup: replyMarkup
+                })
+            });
+            const data = await response.json();
+            if (data.ok) return data;
+            console.warn('[Telegram Photo Warning] Failed sendPhoto, falling back to sendMessage:', data.description);
+        } catch(e) {
+            console.error('[Telegram Photo Error]', e.message);
+        }
+    }
+
+    const textMessage = `${captionText}\n\n🔗 <b>Xem chi tiết:</b> <a href="${blogUrl}">${blogUrl}</a>`;
+    return sendTelegramMessage(token, chatId, textMessage);
+}
+
+async function shareBlogToTelegram(fullBlogUrl, title, summary, coverImage) {
+    try {
+        const res = await db.execute("SELECT key, value FROM settings WHERE key IN ('telegramToken', 'telegramChatId', 'telegramBlogToken', 'telegramBlogChatId', 'autoTelegramShare', 'storeName')");
+        const settingsMap = {};
+        (res.rows || []).forEach(r => { settingsMap[r.key] = r.value; });
+
+        if (settingsMap['autoTelegramShare'] === 'false') return { skipped: true, reason: 'Tự động chia sẻ Telegram đang bị tắt' };
+
+        const botToken = (settingsMap['telegramBlogToken'] || settingsMap['telegramToken'] || '').trim();
+        const chatId = (settingsMap['telegramBlogChatId'] || '').trim();
+
+        if (!botToken || !chatId) {
+            return { skipped: true, reason: 'Chưa cấu hình Telegram Blog Channel Chat ID' };
+        }
+
+        const storeName = settingsMap['storeName'] || 'Thỏ Hồng / ĐHTK';
+        const cleanSummary = (summary || '').replace(/<[^>]*>/g, '').substring(0, 200);
+
+        const caption = `📢 <b>BÀI VIẾT MỚI TỪ ${storeName.toUpperCase()}</b>\n\n` +
+                        `📌 <b>${title}</b>\n\n` +
+                        `📝 <i>${cleanSummary}...</i>`;
+
+        const result = await sendTelegramPhotoMessage(botToken, chatId, coverImage, caption, fullBlogUrl);
+        console.log(`[TELEGRAM BLOG SHARE SUCCESS] Shared "${title}" to channel ${chatId}`);
+        return { success: true, result };
+    } catch(e) {
+        console.error('[TELEGRAM BLOG SHARE ERROR]', e.message);
+        return { error: e.message };
+    }
+}
+
 // --- ROUTES ---
 
 // 1. ADMIN LOGIN
@@ -1596,8 +1663,9 @@ app.post('/api/admin/blog', authenticateToken, async (req, res) => {
             const fullBlogUrl = `${protocol}://${host}/blog/${slug}`;
             try {
                 await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id);
+                await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '');
             } catch(e) {
-                console.error('[AUTO-INDEX POST ERROR]', e.message);
+                console.error('[AUTO-INDEX/TELEGRAM POST ERROR]', e.message);
             }
         }
 
@@ -1632,10 +1700,60 @@ app.put('/api/admin/blog/:id', authenticateToken, async (req, res) => {
             const fullBlogUrl = `${protocol}://${host}/blog/${slug}`;
             try {
                 await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id);
+                await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '');
             } catch(e) {
-                console.error('[AUTO-INDEX UPDATE ERROR]', e.message);
+                console.error('[AUTO-INDEX/TELEGRAM UPDATE ERROR]', e.message);
             }
         }
+
+        res.json({ success: true, id, slug });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// 5.5 ADMIN: MANUAL TELEGRAM SHARE NOW
+app.post('/api/admin/social/telegram-share-now', authenticateToken, async (req, res) => {
+    try {
+        const { blogId, customUrl } = req.body;
+        
+        let title = 'Bài viết mới';
+        let summary = '';
+        let coverImage = '';
+        let fullBlogUrl = customUrl || '';
+
+        const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
+        const protocol = req.headers['x-forwarded-proto'] || 'https';
+        const baseUrl = `${protocol}://${host}`;
+
+        if (blogId) {
+            const postRes = await db.execute({
+                sql: "SELECT * FROM blog_posts WHERE id = ? OR slug = ? LIMIT 1",
+                args: [blogId, blogId]
+            });
+            const post = postRes.rows?.[0];
+            if (post) {
+                title = post.title;
+                summary = post.summary || post.content;
+                coverImage = post.cover_image || '';
+                const cleanSlug = String(post.slug || '').replace(/^\/blog\//, '');
+                fullBlogUrl = `${baseUrl}/blog/${cleanSlug}`;
+            }
+        }
+
+        if (!fullBlogUrl) {
+            return res.status(400).json({ error: 'Thiếu thông tin bài viết hoặc URL chia sẻ' });
+        }
+
+        const result = await shareBlogToTelegram(fullBlogUrl, title, summary, coverImage);
+        if (result.error) return res.status(400).json({ error: result.error });
+        if (result.skipped) return res.status(400).json({ error: result.reason });
+
+        res.json({ success: true, message: `Đã chia sẻ thành công bài viết lên Kênh Telegram!` });
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 
         res.json({ success: true, id, slug });
     } catch (e) {
@@ -2659,13 +2777,14 @@ YÊU CẦU SEO CHI TIẾT:
         await db.execute({ sql: "UPDATE seo_keywords SET status = 'generated' WHERE id = ? OR keyword = ?", args: [keywordId || '', keyword] });
         await db.execute({ sql: "INSERT OR REPLACE INTO settings (key, value) VALUES ('autoBlogLastRun', ?)", args: [nowIso] });
 
-        // Auto Push to Google Indexing API for instant 5-minute indexing
+        // Auto Push to Google Indexing API & Auto Share to Telegram Blog Channel
         if (status === 'published') {
             const fullBlogUrl = `${baseUrl}/blog/${uniqueSlug}`;
             try {
                 await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', blogId);
+                await shareBlogToTelegram(fullBlogUrl, title, summary, coverImage);
             } catch(e) {
-                console.error('[AUTO-INDEX HOOK ERROR]', e.message);
+                console.error('[AUTO-INDEX/TELEGRAM HOOK ERROR]', e.message);
             }
         }
 

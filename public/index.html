@@ -956,25 +956,58 @@
 
                 <!-- Tab: Telegram -->
                 <div id="tab-telegram" class="apanel-content" style="display:none;">
-                    <h3 style="margin-bottom:1rem;">📨 Cài đặt thông báo Telegram</h3>
+                    <h3 style="margin-bottom:1rem;">📨 Cài đặt thông báo Telegram & Chia Sẻ Mạng Xã Hội</h3>
                     <div style="display:flex; flex-direction:column; gap:12px;">
-                        <div>
-                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Bot Token:</label>
-                            <input type="text" id="ap_tg_token" placeholder="VD: 7123456789:AAF..." style="width:100%;">
-                            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Lấy từ @BotFather → /newbot trên Telegram</div>
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:15px;">
+                            <div style="font-weight:700; color:#0f172a; margin-bottom:10px; font-size:0.95rem;">🛒 1. KÊNH THÔNG BÁO ĐƠN HÀNG MỚI</div>
+                            <div style="margin-bottom:10px;">
+                                <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Bot Token Chốt Đơn:</label>
+                                <input type="text" id="ap_tg_token" placeholder="VD: 7123456789:AAF..." style="width:100%;">
+                                <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Lấy từ @BotFather → /newbot trên Telegram</div>
+                            </div>
+                            <div style="margin-bottom:10px;">
+                                <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Chat ID Nhóm Nhận Đơn Hàng:</label>
+                                <input type="text" id="ap_tg_chatid" placeholder="VD: -1001234567890" style="width:100%;">
+                                <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Thêm bot vào nhóm → gõ bất kỳ tin → mở <code>api.telegram.org/bot{TOKEN}/getUpdates</code> lấy chat.id</div>
+                            </div>
+                            <div>
+                                <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Tiêu đề thông báo:</label>
+                                <input type="text" id="ap_tg_name" placeholder="VD: 🏪 Thỏ Hồng - Đơn hàng mới" style="width:100%;">
+                            </div>
+                            <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+                                <button class="btn btn-secondary" style="flex:1;" onclick="apTestTelegram()">📨 Gửi tin test đơn hàng</button>
+                            </div>
                         </div>
-                        <div>
-                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Chat ID (Nhóm nhận đơn):</label>
-                            <input type="text" id="ap_tg_chatid" placeholder="VD: -1001234567890" style="width:100%;">
-                            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Thêm bot vào nhóm → gõ bất kỳ tin → mở <code>api.telegram.org/bot{TOKEN}/getUpdates</code> lấy chat.id</div>
-                        </div>
-                        <div>
-                            <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Tiêu đề thông báo:</label>
-                            <input type="text" id="ap_tg_name" placeholder="VD: 🏪 ĐHTK - Đơn hàng mới" style="width:100%;">
-                        </div>
-                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                            <button class="btn btn-secondary" style="flex:1;" onclick="apTestTelegram()">📨 Gửi tin test</button>
-                            <button class="btn btn-primary" style="flex:1;" onclick="apSaveTelegram()">💾 Lưu cài đặt</button>
+
+                        <!-- Kênh Telegram Chia Sẻ Bài Viết SEO & Tin Tức -->
+                        <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:15px;">
+                            <div style="font-weight:700; color:#0369a1; margin-bottom:10px; font-size:0.95rem; display:flex; justify-content:space-between; align-items:center;">
+                                <span>📢 2. KÊNH TELEGRAM CHIA SẺ BÀI VIẾT BLOG (SOCIAL & SEO)</span>
+                                <span style="font-size:0.75rem; background:#0284c7; color:white; padding:2px 8px; border-radius:10px; font-weight:600;">Tách biệt Kênh Đơn</span>
+                            </div>
+                            
+                            <div style="margin-bottom:10px;">
+                                <label style="font-size:0.85rem; font-weight:600; color:#0369a1; display:block; margin-bottom:4px;">Bot Token Kênh SEO (Để trống sẽ tự dùng Bot Token Đơn Hàng ở trên):</label>
+                                <input type="text" id="ap_tg_blog_token" placeholder="Để trống nếu dùng chung Bot Token ở trên..." style="width:100%; border:1px solid #7dd3fc; border-radius:6px; padding:8px;">
+                            </div>
+
+                            <div style="margin-bottom:10px;">
+                                <label style="font-size:0.85rem; font-weight:600; color:#0369a1; display:block; margin-bottom:4px;">Chat ID / Username Kênh Telegram SEO (Kênh đăng bài tin tức):</label>
+                                <input type="text" id="ap_tg_blog_chatid" placeholder="VD: @ten_kenh_tin_tuc hoặc ID dạng -100xxxxxxxxxx" style="width:100%; border:1px solid #7dd3fc; border-radius:6px; padding:8px;">
+                                <div style="font-size:0.75rem; color:#0284c7; margin-top:4px;">Thêm Bot làm <strong>Quản trị viên (Admin)</strong> của Kênh/Nhóm Telegram tin tức và bật quyền <i>Đăng tin nhắn (Post Messages)</i>.</div>
+                            </div>
+
+                            <div style="margin-bottom:12px;">
+                                <label style="font-size:0.82rem; color:#0f172a; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600;">
+                                    <input type="checkbox" id="ap_tg_blog_auto" checked style="width:16px; height:16px;">
+                                    <span>📢 Tự động chia sẻ bài viết mới lên Kênh Telegram khi Xuất Bản (Publish)</span>
+                                </label>
+                            </div>
+
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <button class="btn" style="flex:1; background:#0284c7; color:white; font-weight:bold;" onclick="apTestTelegramBlog()">🧪 Gửi Thử Bài Mẫu Lên Kênh Telegram SEO</button>
+                                <button class="btn btn-primary" style="flex:1; background:#2563eb; font-weight:bold;" onclick="apSaveTelegram()">💾 Lưu Tất Cả Cài Đặt Telegram</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3152,16 +3185,26 @@
         }
 
         function openTelegramSettings() {
-            document.getElementById('tg_bot_token').value = storeSettings.telegramToken || '';
-            document.getElementById('tg_chat_id').value = storeSettings.telegramChatId || '';
-            document.getElementById('tg_store_name').value = storeSettings.storeName || '🏪 ĐHTK - Đơn hàng mới';
-            document.getElementById('telegramModal').classList.add('active');
+            if (document.getElementById('ap_tg_token')) document.getElementById('ap_tg_token').value = storeSettings.telegramToken || '';
+            if (document.getElementById('ap_tg_chatid')) document.getElementById('ap_tg_chatid').value = storeSettings.telegramChatId || '';
+            if (document.getElementById('ap_tg_name')) document.getElementById('ap_tg_name').value = storeSettings.storeName || '🏪 Thỏ Hồng - Đơn hàng mới';
+            if (document.getElementById('ap_tg_blog_token')) document.getElementById('ap_tg_blog_token').value = storeSettings.telegramBlogToken || '';
+            if (document.getElementById('ap_tg_blog_chatid')) document.getElementById('ap_tg_blog_chatid').value = storeSettings.telegramBlogChatId || '';
+            if (document.getElementById('ap_tg_blog_auto')) document.getElementById('ap_tg_blog_auto').checked = storeSettings.autoTelegramShare !== 'false';
+            if (document.getElementById('telegramModal')) document.getElementById('telegramModal').classList.add('active');
         }
 
         async function saveTelegramSettings() {
-            const token = document.getElementById('tg_bot_token').value.trim();
-            const chatId = document.getElementById('tg_chat_id').value.trim();
-            const name = document.getElementById('tg_store_name').value.trim() || '🏪 ĐHTK - Đơn hàng mới';
+            return apSaveTelegram();
+        }
+
+        async function apSaveTelegram() {
+            const token = document.getElementById('ap_tg_token') ? document.getElementById('ap_tg_token').value.trim() : '';
+            const chatId = document.getElementById('ap_tg_chatid') ? document.getElementById('ap_tg_chatid').value.trim() : '';
+            const name = document.getElementById('ap_tg_name') ? document.getElementById('ap_tg_name').value.trim() : '🏪 Thỏ Hồng - Đơn hàng mới';
+            const blogToken = document.getElementById('ap_tg_blog_token') ? document.getElementById('ap_tg_blog_token').value.trim() : '';
+            const blogChatId = document.getElementById('ap_tg_blog_chatid') ? document.getElementById('ap_tg_blog_chatid').value.trim() : '';
+            const autoShare = (document.getElementById('ap_tg_blog_auto') && document.getElementById('ap_tg_blog_auto').checked) ? 'true' : 'false';
 
             try {
                 await fetchAPI('/api/settings', {
@@ -3169,16 +3212,49 @@
                     body: {
                         telegramToken: token,
                         telegramChatId: chatId,
+                        telegramBlogToken: blogToken,
+                        telegramBlogChatId: blogChatId,
+                        autoTelegramShare: autoShare,
                         storeName: name
                     }
                 });
                 storeSettings.telegramToken = token;
                 storeSettings.telegramChatId = chatId;
+                storeSettings.telegramBlogToken = blogToken;
+                storeSettings.telegramBlogChatId = blogChatId;
+                storeSettings.autoTelegramShare = autoShare;
                 storeSettings.storeName = name;
-                alert('✅ Đã lưu cài đặt Telegram lên server thành công!');
-                closeModal('telegramModal');
+                alert('✅ Đã lưu cài đặt Telegram & Chia Sẻ MXH thành công!');
+                if (document.getElementById('telegramModal')) closeModal('telegramModal');
             } catch(e) {
                 alert('Lỗi: ' + e.message);
+            }
+        }
+
+        async function apTestTelegramBlog() {
+            const blogSelect = document.getElementById('indexingBlogSelect');
+            const blogId = blogSelect ? blogSelect.value : '';
+            try {
+                const res = await fetchAPI('/api/admin/social/telegram-share-now', {
+                    method: 'POST',
+                    body: { blogId }
+                });
+                alert('✅ ' + (res.message || 'Đã gửi bài viết mẫu lên Kênh Telegram thành công!'));
+            } catch(e) {
+                alert('❌ Lỗi gửi Kênh Telegram: ' + e.message);
+            }
+        }
+
+        async function triggerShareBlogTelegram(blogId) {
+            if (!confirm('Bạn có chắc muốn chia sẻ bài viết này lên Kênh Telegram ngay bây giờ?')) return;
+            try {
+                const res = await fetchAPI('/api/admin/social/telegram-share-now', {
+                    method: 'POST',
+                    body: { blogId }
+                });
+                alert('✅ ' + (res.message || 'Đã chia sẻ thành công!'));
+            } catch(e) {
+                alert('❌ Lỗi: ' + e.message);
             }
         }
 
@@ -5240,7 +5316,10 @@ YÊU CẦU SEO CHI TIẾT:
                                     <td style="padding:10px 12px;">${pubBadge}</td>
                                     <td style="padding:10px 12px;">${idxBadge}</td>
                                     <td style="padding:10px 12px; text-align:right;">
-                                        <button class="btn" style="background:#0284c7; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="triggerGoogleIndexByItem('${p.id}', '${fullUrl}')">⚡ Nộp Index Ngay</button>
+                                        <div style="display:flex; gap:6px; justify-content:flex-end;">
+                                            <button class="btn" style="background:#0284c7; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="triggerGoogleIndexByItem('${p.id}', '${fullUrl}')">⚡ Nộp Index</button>
+                                            <button class="btn" style="background:#0088cc; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="triggerShareBlogTelegram('${p.id}')">✈️ Share Telegram</button>
+                                        </div>
                                     </td>
                                 </tr>
                             `;
