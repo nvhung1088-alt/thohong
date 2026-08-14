@@ -2045,6 +2045,206 @@ app.post('/api/admin/blog/enrich-images', authenticateToken, async (req, res) =>
     }
 });
 
+// 9.5b GOOGLE INDEXING API V3 ENGINE (NATIVE RSA-256 JWT AUTH)
+let _cachedGoogleAccessToken = { token: '', expiresAt: 0 };
+
+function base64UrlEncode(str) {
+    return Buffer.from(str)
+        .toString('base64')
+        .replace(/=/g, '')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_');
+}
+
+async function getGoogleAccessToken(serviceAccountJsonStr) {
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (_cachedGoogleAccessToken.token && _cachedGoogleAccessToken.expiresAt > nowSec + 120) {
+        return _cachedGoogleAccessToken.token;
+    }
+
+    let serviceAccount;
+    try {
+        serviceAccount = typeof serviceAccountJsonStr === 'string' ? JSON.parse(serviceAccountJsonStr) : serviceAccountJsonStr;
+    } catch(e) {
+        throw new Error('Service Account JSON Key không hợp lệ (lỗi parse JSON).');
+    }
+
+    if (!serviceAccount.client_email || !serviceAccount.private_key) {
+        throw new Error('Service Account JSON Key thiếu client_email hoặc private_key.');
+    }
+
+    const header = { alg: "RS256", typ: "JWT" };
+    const claimSet = {
+        iss: serviceAccount.client_email,
+        scope: "https://www.googleapis.com/auth/indexing",
+        aud: "https://oauth2.googleapis.com/token",
+        exp: nowSec + 3600,
+        iat: nowSec
+    };
+
+    const encodedHeader = base64UrlEncode(JSON.stringify(header));
+    const encodedClaimSet = base64UrlEncode(JSON.stringify(claimSet));
+    const signatureInput = `${encodedHeader}.${encodedClaimSet}`;
+
+    const signer = crypto.createSign('RSA-SHA256');
+    signer.update(signatureInput);
+
+    let privateKey = serviceAccount.private_key;
+    if (typeof privateKey === 'string' && privateKey.includes('\\n')) {
+        privateKey = privateKey.replace(/\\n/g, '\n');
+    }
+
+    const signature = signer.sign(privateKey, 'base64')
+        .replace(/=/g, '')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_');
+
+    const jwtToken = `${signatureInput}.${signature}`;
+
+    const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+            assertion: jwtToken
+        })
+    });
+
+    const tokenData = await tokenResp.json();
+    if (!tokenResp.ok || tokenData.error) {
+        throw new Error(`Lỗi cấp Access Token từ Google OAuth2: ${tokenData.error_description || tokenData.error || tokenResp.statusText}`);
+    }
+
+    _cachedGoogleAccessToken = {
+        token: tokenData.access_token,
+        expiresAt: nowSec + (tokenData.expires_in || 3600)
+    };
+
+    return tokenData.access_token;
+}
+
+async function pushToGoogleIndexingApi(targetUrl, actionType = 'URL_UPDATED') {
+    try {
+        await db.execute(`CREATE TABLE IF NOT EXISTS google_indexing_logs (
+            id TEXT PRIMARY KEY,
+            url TEXT NOT NULL,
+            action_type TEXT DEFAULT 'URL_UPDATED',
+            status TEXT DEFAULT 'pending',
+            response_message TEXT DEFAULT '',
+            created_at TEXT NOT NULL
+        )`);
+    } catch(e) {}
+
+    const logId = 'gidx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const nowIso = new Date().toISOString();
+
+    try {
+        const keyRes = await db.execute("SELECT value FROM settings WHERE key = 'googleServiceAccountJson'");
+        const jsonStr = keyRes.rows?.[0]?.value || '';
+        if (!jsonStr.trim()) {
+            const msg = 'Chưa cấu hình Google Service Account Key JSON trong Admin CP.';
+            await db.execute({
+                sql: "INSERT INTO google_indexing_logs (id, url, action_type, status, response_message, created_at) VALUES (?, ?, ?, 'skipped', ?, ?)",
+                args: [logId, targetUrl, actionType, msg, nowIso]
+            });
+            return { skipped: true, reason: msg };
+        }
+
+        const accessToken = await getGoogleAccessToken(jsonStr);
+
+        const pushResp = await fetch('https://indexing.googleapis.com/v3/urlNotifications:publish', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                url: targetUrl,
+                type: actionType
+            })
+        });
+
+        const pushData = await pushResp.json();
+        const ok = pushResp.ok && !pushData.error;
+        const statusStr = ok ? 'success' : 'error';
+        const msgStr = ok ? `Đã nộp thành công lúc ${new Date(pushData.urlNotificationMetadata?.latestUpdate?.notifyTime || Date.now()).toLocaleTimeString('vi-VN')}` : (pushData.error?.message || pushResp.statusText);
+
+        await db.execute({
+            sql: "INSERT INTO google_indexing_logs (id, url, action_type, status, response_message, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            args: [logId, targetUrl, actionType, statusStr, msgStr, nowIso]
+        });
+
+        console.log(`[GOOGLE INDEXING API ${statusStr.toUpperCase()}] ${targetUrl} -> ${msgStr}`);
+        return { success: ok, status: statusStr, message: msgStr, data: pushData };
+    } catch(e) {
+        console.error('[GOOGLE INDEXING API ERROR]', e.message);
+        try {
+            await db.execute({
+                sql: "INSERT INTO google_indexing_logs (id, url, action_type, status, response_message, created_at) VALUES (?, ?, ?, 'error', ?, ?)",
+                args: [logId, targetUrl, actionType, e.message, nowIso]
+            });
+        } catch(err) {}
+        return { error: e.message };
+    }
+}
+
+app.get('/api/admin/seo/indexing-config', authenticateToken, async (req, res) => {
+    try {
+        const keyRes = await db.execute("SELECT value FROM settings WHERE key = 'googleServiceAccountJson'");
+        const jsonStr = keyRes.rows?.[0]?.value || '';
+        
+        let logsRes = { rows: [] };
+        try {
+            logsRes = await db.execute("SELECT * FROM google_indexing_logs ORDER BY created_at DESC LIMIT 15");
+        } catch(e) {}
+
+        res.json({
+            hasKey: Boolean(jsonStr.trim()),
+            serviceAccountJson: jsonStr,
+            logs: logsRes.rows || []
+        });
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/admin/seo/indexing-config', authenticateToken, async (req, res) => {
+    try {
+        const { serviceAccountJson } = req.body;
+        const val = typeof serviceAccountJson === 'string' ? serviceAccountJson.trim() : JSON.stringify(serviceAccountJson);
+
+        if (val) {
+            try { JSON.parse(val); } catch(e) {
+                return res.status(400).json({ error: 'Nội dung JSON Service Account Key không đúng định dạng JSON hợp lệ!' });
+            }
+        }
+
+        await db.execute({
+            sql: "INSERT OR REPLACE INTO settings (key, value) VALUES ('googleServiceAccountJson', ?)",
+            args: [val]
+        });
+
+        res.json({ success: true, message: 'Đã lưu cấu hình Google Indexing Service Account Key thành công!' });
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/admin/seo/google-index-now', authenticateToken, async (req, res) => {
+    try {
+        const { targetUrl } = req.body;
+        if (!targetUrl || !targetUrl.startsWith('http')) {
+            return res.status(400).json({ error: 'URL nộp Google Indexing không hợp lệ (phải bắt đầu bằng http:// hoặc https://)!' });
+        }
+
+        const result = await pushToGoogleIndexingApi(targetUrl.trim());
+        if (result.error) return res.status(400).json({ error: result.error });
+        res.json(result);
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // 9.6 ADMIN: AUTO-BLOG SCHEDULER & CRON WORKER
 app.get('/api/admin/blog/auto-config', authenticateToken, async (req, res) => {
     try {
@@ -2344,6 +2544,12 @@ YÊU CẦU SEO CHI TIẾT:
 
         await db.execute({ sql: "UPDATE seo_keywords SET status = 'generated' WHERE id = ? OR keyword = ?", args: [keywordId || '', keyword] });
         await db.execute({ sql: "INSERT OR REPLACE INTO settings (key, value) VALUES ('autoBlogLastRun', ?)", args: [nowIso] });
+
+        // Auto Push to Google Indexing API for instant 5-minute indexing
+        if (status === 'published') {
+            const fullBlogUrl = `${baseUrl}/blog/${uniqueSlug}`;
+            pushToGoogleIndexingApi(fullBlogUrl).catch(e => console.error('[AUTO-INDEX HOOK ERROR]', e.message));
+        }
 
         Object.keys(ssrSeoCache).forEach(k => { if (k.startsWith('blog_')) delete ssrSeoCache[k]; });
 

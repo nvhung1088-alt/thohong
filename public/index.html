@@ -1156,6 +1156,38 @@
                                     <button class="btn btn-secondary" style="padding:6px 14px; font-size:0.8rem;" onclick="closePromptModal()">Hủy</button>
                                     <button class="btn" style="background:#7c3aed; color:white; font-weight:bold; padding:6px 16px; font-size:0.8rem;" onclick="savePromptFromModal()">💾 Lưu Prompt Ngay</button>
                                 </div>
+                    <!-- Card Cấu Hình Google Instant Indexing API -->
+                    <div style="background:linear-gradient(135deg, #eff6ff, #f0f9ff); border:1px solid #bae6fd; border-radius:10px; padding:1.2rem; margin-bottom:1.5rem;">
+                        <div style="font-weight:700; color:#0369a1; border-bottom:1px solid #bae6fd; padding-bottom:6px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                            <span>🚀 GOOGLE INSTANT INDEXING API V3 (ÉP GOOGLE BOT INDEX TRONG 5 PHÚT)</span>
+                            <span id="googleIndexingStatusBadge" style="font-size:0.75rem; padding:3px 10px; border-radius:12px; font-weight:bold; background:#e2e8f0; color:#475569;">⚙️ Đang kiểm tra...</span>
+                        </div>
+
+                        <!-- Nộp URL Thủ Công -->
+                        <div style="display:flex; gap:10px; margin-bottom:12px;">
+                            <input type="text" id="manualGoogleIndexUrl" placeholder="Dán link bài viết/sản phẩm bất kỳ để nộp Google Index ngay..." style="flex:1; padding:9px 12px; border:1px solid #7dd3fc; border-radius:8px; font-size:0.88rem;">
+                            <button class="btn" style="background:#0284c7; color:white; font-weight:bold; padding:9px 16px; font-size:0.85rem;" onclick="triggerGoogleIndexNow()" id="btnIndexNow">⚡ Nộp Cho Google Bot</button>
+                        </div>
+
+                        <!-- Khung Nhập Key Google Service Account JSON -->
+                        <details style="background:white; border:1px solid #cbd5e1; border-radius:8px; padding:10px; margin-bottom:10px;">
+                            <summary style="font-size:0.82rem; font-weight:700; color:#0369a1; cursor:pointer; user-select:none;">
+                                🔑 Cấu hình Google Service Account Key JSON (Google Cloud Console)
+                            </summary>
+                            <div style="margin-top:10px;">
+                                <textarea id="googleServiceAccountJsonText" rows="5" style="width:100%; font-size:0.78rem; font-family:monospace; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" placeholder="Dán toàn bộ nội dung file .json của Google Service Account vào đây..."></textarea>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                                    <div style="font-size:0.75rem; color:#64748b;">💡 Nhớ cấp quyền <strong>Chủ sở hữu (Owner)</strong> cho email Service Account trong Google Search Console!</div>
+                                    <button class="btn" style="background:#0284c7; color:white; font-weight:bold; font-size:0.78rem; padding:6px 14px;" onclick="saveGoogleIndexingConfig()">💾 Lưu Key Google API</button>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- Nhật Ký Nộp Indexing Gần Nhất -->
+                        <div style="background:white; border:1px solid #e2e8f0; border-radius:6px; padding:10px;">
+                            <div style="font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:6px;">📜 NHẬT KÝ NỘP GOOGLE INDEXING GẦN ĐÂY:</div>
+                            <div id="googleIndexingLogsList" style="display:flex; flex-direction:column; gap:6px;">
+                                <div style="font-size:0.78rem; color:#94a3b8;">Chưa có lịch sử nộp Index</div>
                             </div>
                         </div>
                     </div>
@@ -2897,6 +2929,71 @@
         // --- TELEGRAM ORDER NOTIFICATION ENGINE ---
         // =============================================
         let telegramSettings = {};
+
+        async function loadAutoBlogConfig() {
+            const token = localStorage.getItem('dhtk_jwt');
+            if (!token) return;
+
+            loadGoogleIndexingConfig();
+
+            try {
+                const res = await fetch('/api/admin/blog/auto-config', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (data.schedule) {
+                    document.getElementById('blog_schedule').value = data.schedule;
+                }
+            } catch(e) {
+                console.error("Error loading auto blog config:", e);
+            }
+        }
+
+        async function loadGoogleIndexingConfig() {
+            const token = localStorage.getItem('dhtk_jwt');
+            if (!token) return;
+            try {
+                const res = await fetch('/api/admin/indexing/config', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (data.status === 'configured') {
+                    document.getElementById('gi_status').innerHTML = '✅ Đã thiết lập';
+                    document.getElementById('gi_status').style.color = '#15803d';
+                } else {
+                    document.getElementById('gi_status').innerHTML = '❌ Chưa thiết lập';
+                    document.getElementById('gi_status').style.color = '#b91c1c';
+                }
+            } catch(e) {
+                console.error("Error loading indexing config:", e);
+            }
+        }
+
+        async function saveGoogleIndexingConfig() {
+            const keyFile = document.getElementById('gi_key_file').files[0];
+            if (!keyFile) return alert('Vui lòng chọn file JSON key!');
+            
+            const formData = new FormData();
+            formData.append('json', keyFile);
+            
+            const token = localStorage.getItem('dhtk_jwt');
+            try {
+                const res = await fetch('/api/admin/indexing/config', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ Đã tải lên và cấu hình thành công!');
+                    loadGoogleIndexingConfig();
+                } else {
+                    alert('Lỗi: ' + data.error);
+                }
+            } catch(e) {
+                alert('Lỗi server.');
+            }
+        }
 
         function openTelegramSettings() {
             document.getElementById('tg_bot_token').value = storeSettings.telegramToken || '';
@@ -4798,6 +4895,104 @@ YÊU CẦU SEO CHI TIẾT:
                 }
             });
         });
+
+        async function loadGoogleIndexingConfig() {
+            const token = localStorage.getItem('dhtk_jwt');
+            if (!token) return;
+            try {
+                const res = await fetch('/api/admin/seo/indexing-config', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                
+                const badge = document.getElementById('googleIndexingStatusBadge');
+                if (badge) {
+                    if (data.hasKey) {
+                        badge.style.background = '#dcfce7';
+                        badge.style.color = '#15803d';
+                        badge.innerText = '🟢 Key Google API: Đã Sẵn Sàng';
+                    } else {
+                        badge.style.background = '#fef3c7';
+                        badge.style.color = '#b45309';
+                        badge.innerText = '⚠️ Chưa dán Key JSON';
+                    }
+                }
+
+                const jsonInput = document.getElementById('googleServiceAccountJsonText');
+                if (jsonInput && data.serviceAccountJson) {
+                    jsonInput.value = data.serviceAccountJson;
+                }
+
+                const logsEl = document.getElementById('googleIndexingLogsList');
+                if (logsEl) {
+                    if (!Array.isArray(data.logs) || data.logs.length === 0) {
+                        logsEl.innerHTML = '<div style="font-size:0.78rem; color:#94a3b8;">Chưa có lịch sử nộp Index</div>';
+                    } else {
+                        let html = '';
+                        data.logs.forEach(l => {
+                            const isOk = l.status === 'success';
+                            const tag = isOk ? '<span style="color:#15803d; font-weight:bold;">✅ Thành công</span>' : `<span style="color:#b91c1c; font-weight:bold;">⚠️ ${l.status}</span>`;
+                            const time = l.created_at ? new Date(l.created_at).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}) : '';
+                            html += `<div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:6px 10px; border-radius:4px; border:1px solid #e2e8f0; font-size:0.78rem;">
+                                <div style="flex:1; overflow:hidden; margin-right:8px; white-space:nowrap; text-overflow:ellipsis;">
+                                    <strong>${l.url}</strong>
+                                    <span style="color:#64748b; font-size:0.72rem; margin-left:6px;">(${time})</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                                    ${tag}
+                                    <span style="color:#475569; font-size:0.75rem;">${l.response_message || ''}</span>
+                                </div>
+                            </div>`;
+                        });
+                        logsEl.innerHTML = html;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        async function saveGoogleIndexingConfig() {
+            const token = localStorage.getItem('dhtk_jwt');
+            const serviceAccountJson = document.getElementById('googleServiceAccountJsonText').value;
+
+            try {
+                const res = await fetch('/api/admin/seo/indexing-config', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ serviceAccountJson })
+                });
+                const data = await res.json();
+                if (data.error) return showToast(data.error, 'error');
+                showToast('Đã lưu Google Service Account Key JSON thành công!', 'success');
+                loadGoogleIndexingConfig();
+            } catch(e) {
+                showToast('Lỗi: ' + e.message, 'error');
+            }
+        }
+
+        async function triggerGoogleIndexNow() {
+            const token = localStorage.getItem('dhtk_jwt');
+            const urlInput = document.getElementById('manualGoogleIndexUrl');
+            const targetUrl = urlInput ? urlInput.value.trim() : '';
+            if (!targetUrl) return showToast('Vui lòng nhập hoặc dán 1 URL hợp lệ để nộp Google Index!', 'error');
+
+            const btn = document.getElementById('btnIndexNow');
+            if (btn) { btn.disabled = true; btn.innerText = '⚡ Đang gửi tới Google Bot...'; }
+
+            try {
+                const res = await fetch('/api/admin/seo/google-index-now', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ targetUrl })
+                });
+                const data = await res.json();
+                if (data.error) return showToast(data.error, 'error');
+                showToast('🚀 Đã gửi nộp URL tới Google Indexing API thành công!', 'success');
+                if (urlInput) urlInput.value = '';
+                loadGoogleIndexingConfig();
+            } catch(e) {
+                showToast('Lỗi: ' + e.message, 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = '⚡ Nộp Cho Google Bot'; }
+            }
+        }
 
         async function triggerAutoBlogNow() {
             const token = localStorage.getItem('dhtk_jwt');
