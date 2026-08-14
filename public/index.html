@@ -1091,6 +1091,31 @@
                                 <button class="btn" style="background:#0ea5e9; color:white; font-weight:700; padding:8px 14px; font-size:0.82rem;" onclick="enrichImagesForExistingBlogs()">🖼️ Thêm ảnh SP cho bài cũ</button>
                             </div>
 
+                            <!-- Khung Tùy Chỉnh Prompt AI -->
+                            <details style="margin-bottom:12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px;">
+                                <summary style="font-size:0.82rem; font-weight:700; color:#166534; cursor:pointer; user-select:none;">
+                                    ⚙️ TÙY CHỈNH CÂU LỆNH PROMPT CHO AI (DEEPSEEK V4 PRO) - Bấm để chỉnh sửa
+                                </summary>
+                                <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
+                                    <div>
+                                        <label style="font-size:0.75rem; font-weight:700; color:#334155; display:block; margin-bottom:3px;">
+                                            1. Prompt Gợi Ý 10 Từ Khóa SEO mới (Biến hỗ trợ: <code style="color:#0284c7;">\${storeName}</code>, <code style="color:#0284c7;">\${categories}</code>):
+                                        </label>
+                                        <textarea id="customSuggestPromptText" rows="3" style="width:100%; font-size:0.8rem; font-family:monospace; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" placeholder="Để trống để dùng Prompt mặc định..."></textarea>
+                                    </div>
+                                    <div>
+                                        <label style="font-size:0.75rem; font-weight:700; color:#334155; display:block; margin-bottom:3px;">
+                                            2. Prompt Viết Bài Blog SEO 1000-1500 từ (Biến hỗ trợ: <code style="color:#0284c7;">\${storeName}</code>, <code style="color:#0284c7;">\${keyword}</code>, <code style="color:#0284c7;">\${productsList}</code>, <code style="color:#0284c7;">\${imagesListPrompt}</code>):
+                                        </label>
+                                        <textarea id="customPostPromptText" rows="6" style="width:100%; font-size:0.8rem; font-family:monospace; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" placeholder="Để trống để dùng Prompt mặc định..."></textarea>
+                                    </div>
+                                    <div style="display:flex; gap:8px;">
+                                        <button class="btn" style="background:#166534; color:white; font-size:0.78rem; font-weight:bold; padding:6px 12px;" onclick="saveAutoBlogConfig()">💾 Lưu Cấu Hình Prompt & Auto-Post</button>
+                                        <button class="btn" style="background:#64748b; color:white; font-size:0.78rem; font-weight:bold; padding:6px 12px;" onclick="fillDefaultPrompts()">🔄 Nạp Prompt Mặc Định Lên Khung Để Sửa</button>
+                                    </div>
+                                </div>
+                            </details>
+
                             <!-- Recent 3 Auto-Posts Log -->
                             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px;">
                                 <div style="font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:6px;">📜 3 BÀI ĐĂNG GẦN ĐÂY NHẤT:</div>
@@ -4511,6 +4536,11 @@
                     const pub = document.getElementById('autoPublishCheck');
                     if (pub) pub.checked = data.autoPublish;
 
+                    const sugPromptEl = document.getElementById('customSuggestPromptText');
+                    if (sugPromptEl && data.customSuggestPrompt !== undefined) sugPromptEl.value = data.customSuggestPrompt || '';
+                    const postPromptEl = document.getElementById('customPostPromptText');
+                    if (postPromptEl && data.customPostPrompt !== undefined) postPromptEl.value = data.customPostPrompt || '';
+
                     // Update stats counters
                     if (data.stats) {
                         const totalEl = document.getElementById('statTotalPosts');
@@ -4580,20 +4610,61 @@
             const schedule = document.getElementById('autoScheduleSelect').value;
             const autoSuggest = document.getElementById('autoSuggestCheck').checked;
             const autoPublish = document.getElementById('autoPublishCheck').checked;
+            const customSuggestPrompt = (document.getElementById('customSuggestPromptText') || {}).value || '';
+            const customPostPrompt = (document.getElementById('customPostPromptText') || {}).value || '';
 
             try {
                 const res = await fetch('/api/admin/blog/auto-config', {
                     method: 'POST',
                     headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ schedule, autoSuggest, autoPublish })
+                    body: JSON.stringify({ schedule, autoSuggest, autoPublish, customSuggestPrompt, customPostPrompt })
                 });
                 const data = await res.json();
                 if (data.error) return showToast(data.error, 'error');
-                showToast('Đã lưu cấu hình Hẹn giờ Auto-Post thành công!', 'success');
+                showToast('Đã lưu cấu hình Prompt & Auto-Post thành công!', 'success');
                 loadAutoBlogConfig();
             } catch(e) {
                 showToast('Lỗi: ' + e.message, 'error');
             }
+        }
+
+        function fillDefaultPrompts() {
+            const defaultSuggest = `Bạn là chuyên gia SEO hàng đầu cho website e-commerce Việt Nam.
+Cửa hàng "\${storeName}" chuyên kinh doanh các nhóm ngành hàng: \${categories}.
+Hãy gợi ý 10 từ khóa SEO tiềm năng nhất cho blog của cửa hàng.
+Trả về kết quả duy nhất 1 mảng JSON array: [{"keyword": "...", "reason": "...", "difficulty": "Dễ|Trung bình|Khó"}]`;
+
+            const defaultPost = `Bạn là nhà báo chuyên nghiệp và chuyên gia SEO thương mại điện tử Việt Nam.
+Hãy viết 1 bài blog chất lượng cao chuẩn SEO cho cửa hàng "\${storeName}" dựa trên từ khóa chính: "\${keyword}".
+
+DANH SÁCH SẢN PHẨM HIỆN CÓ TẠI CỬA HÀNG ĐỂ CHÈN INTERNAL LINK:
+\${productsList}
+
+DANH SÁCH HÌNH ẢNH SẢN PHẨM KHẢ DỤNG ĐỂ CHÈN VÀO BÀI VIẾT:
+\${imagesListPrompt}
+
+YÊU CẦU SEO CHI TIẾT:
+1. ĐỘ DÀI & ĐOẠN VĂN: Bài viết từ 1000 - 1500 từ. Chia thành các đoạn văn từ 3-4 câu giúp người đọc dễ theo dõi trên di động.
+2. THẺ HEADING: Tiêu đề H1 chứa từ khóa chính, 3-5 thẻ H2 (##) và H3 (###).
+3. MẬT ĐỘ TỪ KHÓA: Từ khóa "\${keyword}" xuất hiện 3-5 lần một cách tự nhiên.
+4. CHÈN INTERNAL LINK SẢN PHẨM: Bắt buộc chọn 2-3 sản phẩm phù hợp nhất và chèn ĐÚNG NGUYÊN VẸN cú pháp Markdown link: [Tên sản phẩm](Link) được cấp ở trên.
+5. CHÈN 3 HÌNH ẢNH SẢN PHẨM VÀO BÀI VIẾT (BẮT BUỘC): Bắt buộc lấy đúng 3 URL hình ảnh từ danh sách hình ảnh khả dụng ở trên và chèn rải rác vào bài viết bằng cú pháp Markdown: ![Mô tả ảnh sinh động chứa từ khóa SEO](URL_ảnh). KHÔNG TỰ BỊA LINK ẢNH KHÁC.
+6. ĐỊNH DẠNG MARKDOWN: Dùng **in đậm**, gạch đầu dòng (-).
+7. LỜI KÊU GỌI HÀNG (CTA): Đoạn cuối kết bài kêu gọi khách hàng mua hàng tại \${storeName}.
+
+ĐỊNH DẠNG TRẢ VỀ BẮT BUỘC:
+##TITLE##
+[Viết tiêu đề bài viết hấp dẫn, chứa từ khóa, dưới 65 ký tự]
+##SUMMARY##
+[Viết đoạn tóm tắt Meta Description chuẩn SEO từ 120-150 ký tự chứa từ khóa]
+##CONTENT##
+[Nội dung bài viết chi tiết bằng định dạng Markdown chứa 3 hình ảnh sản phẩm]`;
+
+            const el1 = document.getElementById('customSuggestPromptText');
+            if (el1) el1.value = defaultSuggest;
+            const el2 = document.getElementById('customPostPromptText');
+            if (el2) el2.value = defaultPost;
+            showToast('Đã nạp câu lệnh Prompt mặc định lên giao diện! Bạn có thể tùy chỉnh lại theo ý muốn.', 'info');
         }
 
         async function triggerAutoBlogNow() {
