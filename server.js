@@ -2424,7 +2424,7 @@ async function executeAutoBlogCycle(host = 'thohong.top') {
     try {
         const settingsResult = await db.execute("SELECT key, value FROM settings WHERE key IN ('deepseekApiKey', 'storeName', 'autoBlogAutoSuggest', 'autoBlogAutoPublish', 'autoBlogSuggestPrompt', 'autoBlogPostPrompt')");
         const settingsMap = {};
-        (result.rows || []).forEach(r => { settingsMap[r.key] = r.value; });
+        (settingsResult.rows || []).forEach(r => { settingsMap[r.key] = r.value; });
 
         const apiKey = settingsMap['deepseekApiKey'];
         if (!apiKey) return { error: 'Chưa cấu hình DeepSeek API Key trong Admin Settings.' };
