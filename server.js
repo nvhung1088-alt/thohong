@@ -2288,14 +2288,18 @@ app.post('/api/admin/seo/google-index-now', authenticateToken, async (req, res) 
         try {
             if (blogId) {
                 await db.execute({ sql: "UPDATE blog_posts SET indexed_at = ? WHERE id = ?", args: [nowIso, blogId] });
-            } else if (targetUrl.includes('/blog/')) {
-                const urlParts = targetUrl.split('/blog/');
-                if (urlParts.length > 1) {
-                    const slugPart = urlParts[1].split('?')[0].split('#')[0];
-                    await db.execute({ sql: "UPDATE blog_posts SET indexed_at = ? WHERE slug = ?", args: [nowIso, slugPart] });
-                }
             }
-        } catch(err) {}
+            if (targetUrl.includes('/blog/')) {
+                const rawSlug = targetUrl.split('/blog/')[1].split('?')[0].split('#')[0];
+                const slugWithPrefix = '/blog/' + rawSlug;
+                await db.execute({
+                    sql: "UPDATE blog_posts SET indexed_at = ? WHERE slug = ? OR slug = ? OR id = ? OR slug LIKE ?",
+                    args: [nowIso, rawSlug, slugWithPrefix, rawSlug, `%${rawSlug}%`]
+                });
+            }
+        } catch(err) {
+            console.error('[UPDATE INDEXED_AT ERROR]', err);
+        }
 
         res.json(result);
     } catch(e) {
