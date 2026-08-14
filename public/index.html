@@ -55,14 +55,23 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; padding-bottom: 50px; }
-        header { background-color: var(--card-bg); box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        header { background-color: var(--card-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border); }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
-        .header-content { display: flex; justify-content: space-between; align-items: center; height: 70px; }
-        .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-decoration: none; }
+        .header-content { display: flex; justify-content: space-between; align-items: center; height: 64px; }
+        .logo { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
         .logo span { color: var(--accent); }
         
-        .cart-icon { position: relative; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; }
-        .cart-count { position: absolute; top: 0; right: 0; background: var(--price-retail); color: white; font-size: 0.75rem; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .desktop-nav { display: flex; align-items: center; gap: 8px; }
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+
+        .cart-icon { position: relative; cursor: pointer; padding: 0.4rem 0.85rem; display: flex; align-items: center; gap: 0.4rem; font-weight: 700; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 20px; font-size: 0.88rem; transition: all 0.2s; user-select: none; }
+        .cart-icon:hover { background: #dbeafe; transform: translateY(-1px); }
+        .cart-count { background: var(--price-retail); color: white; font-size: 0.72rem; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+        .mobile-sub-nav { display: none; background: #f8fafc; border-top: 1px solid var(--border); padding: 6px 12px; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+        .mobile-sub-nav::-webkit-scrollbar { display: none; }
+        .mobile-nav-item { flex: 1; text-align: center; white-space: nowrap; padding: 6px 12px; font-size: 0.82rem; font-weight: 600; color: #475569; background: white; border: 1px solid #cbd5e1; border-radius: 16px; text-decoration: none; transition: all 0.2s; }
+        .mobile-nav-item.active { background: var(--primary); color: white; border-color: var(--primary); font-weight: 700; }
 
         .policy-banner { background: linear-gradient(135deg, var(--primary), #1e293b); color: white; padding: 3rem 1rem; text-align: center; border-radius: 16px; margin: 2rem auto; max-width: 1200px; position: relative; min-height: 180px; }
         .section-title { text-align: center; font-size: 2rem; margin: 2rem 0 1rem; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 1rem;}
@@ -180,9 +189,21 @@
         .detail-right { flex: 1; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.2rem; text-align: left; background: white;}
         
         @media (max-width: 768px) {
-            .detail-modal { flex-direction: column; overflow-y: auto; }
-            .detail-left { height: 300px; flex: none; border-right: none; border-bottom: 1px solid var(--border);}
-            .detail-right { flex: none; overflow-y: visible;}
+            .header-content { height: 54px; }
+            .logo { font-size: 1.25rem; }
+            .desktop-nav { display: none; }
+            .mobile-sub-nav { display: flex; }
+            .cart-text { display: none; }
+            .policy-banner { padding: 1.5rem 1rem !important; margin: 1rem auto !important; border-radius: 12px !important; min-height: auto !important; }
+            .policy-banner h1 { font-size: 1.35rem !important; margin-bottom: 0.4rem !important; line-height: 1.3 !important; }
+            .policy-banner p { font-size: 0.88rem !important; line-height: 1.5 !important; }
+            .section-title { font-size: 1.35rem; margin: 1.2rem 0 0.8rem; }
+            .toolbar { padding: 0.75rem; gap: 0.6rem; }
+            .search-box { min-width: 100%; }
+            .cat-nav-btn { display: none; }
+            .detail-modal { flex-direction: column; overflow-y: auto; margin: 10px; max-height: 85vh; }
+            .detail-left { height: 260px; flex: none; border-right: none; border-bottom: 1px solid var(--border);}
+            .detail-right { flex: none; overflow-y: visible; padding: 1.2rem; }
         }
 
         /* Map UI */
@@ -263,16 +284,28 @@
     <header>
         <div class="container header-content">
             <a href="/" class="logo" id="logoContainer" onclick="if(isAdmin){event.preventDefault();} else { navigateTo('home'); return false; }">ĐH<span>TK</span></a>
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <a href="/" class="nav-btn-link" onclick="navigateTo('home'); return false;" id="navHomeBtn">🏪 Cửa hàng</a>
+            
+            <!-- Desktop Nav Links -->
+            <div class="desktop-nav">
+                <a href="/" class="nav-btn-link active" onclick="navigateTo('home'); return false;" id="navHomeBtn">🏪 Cửa hàng</a>
                 <a href="/blog" class="nav-btn-link" onclick="navigateTo('blog'); return false;" id="navBlogBtn" aria-label="Xem trang Blog tin tức">📝 Blog</a>
-                <a href="/dia-chi" class="nav-btn-link" id="navAddressBtn" style="border:1px solid #38bdf8; background:#e0f2fe; color:#0369a1; font-weight:700; margin-right:12px;" onclick="navigateTo('address'); return false;">📞 Liên hệ</a>
-                
+                <a href="/dia-chi" class="nav-btn-link" id="navAddressBtn" style="border:1px solid #38bdf8; background:#e0f2fe; color:#0369a1; font-weight:700;" onclick="navigateTo('address'); return false;">📞 Liên hệ</a>
+            </div>
+
+            <!-- Action Icons (Admin & Cart) -->
+            <div class="header-actions">
                 <button class="admin-toggle" onclick="promptAdmin()" id="adminLoginBtn" title="Quản trị" aria-label="Quản trị hệ thống">🔐 Admin</button>
                 <div class="cart-icon" onclick="toggleCart()" role="button" aria-label="Xem giỏ hàng" tabindex="0" onkeydown="if(event.key==='Enter') toggleCart()">
-                    🛒 Giỏ hàng <span class="cart-count" id="cartCount">0</span>
+                    🛒 <span class="cart-text">Giỏ hàng</span> <span class="cart-count" id="cartCount">0</span>
                 </div>
             </div>
+        </div>
+
+        <!-- Mobile Navigation Sub-Bar (Hiển thị mượt mượt riêng cho Mobile) -->
+        <div class="mobile-sub-nav">
+            <a href="/" class="mobile-nav-item active" onclick="navigateTo('home'); return false;" id="mNavHomeBtn">🏪 Cửa hàng</a>
+            <a href="/blog" class="mobile-nav-item" onclick="navigateTo('blog'); return false;" id="mNavBlogBtn">📝 Blog tin tức</a>
+            <a href="/dia-chi" class="mobile-nav-item" onclick="navigateTo('address'); return false;" id="mNavAddressBtn">📞 Liên hệ</a>
         </div>
     </header>
 
@@ -4144,6 +4177,25 @@
             const blogListView = document.getElementById('blogListView');
             const blogDetailView = document.getElementById('blogDetailView');
             const addressView = document.getElementById('addressView');
+
+            // Active state updater for Desktop & Mobile Sub Nav
+            const updateNavActive = (p) => {
+                ['navHomeBtn', 'navBlogBtn', 'navAddressBtn', 'mNavHomeBtn', 'mNavBlogBtn', 'mNavAddressBtn'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.remove('active');
+                });
+                if (p === 'blog' || p === 'blog-detail') {
+                    const d = document.getElementById('navBlogBtn'); if (d) d.classList.add('active');
+                    const m = document.getElementById('mNavBlogBtn'); if (m) m.classList.add('active');
+                } else if (p === 'address') {
+                    const d = document.getElementById('navAddressBtn'); if (d) d.classList.add('active');
+                    const m = document.getElementById('mNavAddressBtn'); if (m) m.classList.add('active');
+                } else {
+                    const d = document.getElementById('navHomeBtn'); if (d) d.classList.add('active');
+                    const m = document.getElementById('mNavHomeBtn'); if (m) m.classList.add('active');
+                }
+            };
+            updateNavActive(page);
 
             if (page === 'blog') {
                 if (mainView) mainView.style.display = 'none';
