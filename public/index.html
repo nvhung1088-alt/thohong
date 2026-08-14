@@ -184,9 +184,32 @@
         .cart-modal { background: white; width: 100%; max-width: 400px; height: 100%; padding: 1.5rem; display: flex; flex-direction: column; position: absolute; right: 0; }
         
         .detail-modal { background: white; width: 90%; max-width: 1000px; max-height: 90vh; border-radius: 16px; display: flex; overflow: hidden; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);}
-        .detail-left { flex: 1.2; background: #f8fafc; position: relative; display:flex; align-items:center; justify-content:center; border-right: 1px solid var(--border);}
-        .detail-left img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .detail-left { flex: 1.2; background: #f8fafc; position: relative; display:flex; flex-direction:column; align-items:center; justify-content:center; border-right: 1px solid var(--border); padding: 1.5rem; overflow: hidden; }
         .detail-right { flex: 1; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.2rem; text-align: left; background: white;}
+
+        .product-img-box {
+            width: 100%;
+            height: 340px;
+            max-height: 340px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden !important;
+            position: relative;
+            flex-shrink: 0;
+            padding: 10px;
+        }
+        .product-img-box img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+        }
         
         .blog-body-content img { max-width: 100%; height: auto; border-radius: 10px; margin: 12px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
         .blog-body-content table { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 15px 0; border-collapse: collapse; }
@@ -2559,8 +2582,10 @@
 
             const content = document.getElementById('detailModalContent');
             content.innerHTML = `
-                <div class="detail-left" style="display:flex; flex-direction:column; justify-content:center; align-items:center; padding:1.5rem; box-sizing:border-box;">
-                    ${mainImgUrl ? `<img id="mainModalImg" src="${mainImgUrl}" alt="Ảnh SP" style="max-height:400px; width:100%; object-fit:contain; border-radius:8px;">` : `<div style="color:var(--text-muted); padding:50px;">Chưa có ảnh</div>`}
+                <div class="detail-left">
+                    <div class="product-img-box">
+                        ${mainImgUrl ? `<img id="mainModalImg" src="${mainImgUrl}" alt="Ảnh SP">` : `<div style="color:var(--text-muted); padding:50px;">Chưa có ảnh</div>`}
+                    </div>
                     ${thumbnailsHtml}
                     ${isAdmin ? `
                     <div class="admin-only-btn" style="margin-top:15px; width:100%; box-sizing:border-box;">
@@ -4446,15 +4471,15 @@
                                 ${p.keyword ? `<span>🔑 Từ khóa SEO: <strong>${p.keyword}</strong></span>` : ''}
                             </div>
                             ${coverHtml}
+                            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px 22px; margin: 20px 0; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+                                <h3 style="font-size:1.1rem; margin-top:0; margin-bottom:10px; color:#0f172a; border-bottom:2px solid #e11d48; padding-bottom:6px; display:inline-block; font-weight:800;">📌 Mục Lục Bài Viết</h3>
+                                <div id="blogToc" style="font-size:0.92rem; line-height:1.7;"></div>
+                            </div>
                             <div class="blog-body-content" id="blogContentArea">${mdToHtml(p.content)}</div>
                         </div>
                     </div>
                     <div class="blog-sidebar-column">
                         <div style="position:sticky; top:20px;">
-                            <div style="background:white; border-radius:12px; border:1px solid #e2e8f0; padding:20px; margin-bottom:20px;">
-                                <h3 style="font-size:1.1rem; margin-top:0; border-bottom:2px solid #e11d48; padding-bottom:10px; display:inline-block;">Mục Lục</h3>
-                                <div id="blogToc" style="font-size:0.9rem; line-height:1.6; max-height:300px; overflow-y:auto; margin-top:10px;"></div>
-                            </div>
                             <div style="background:white; border-radius:12px; border:1px solid #e2e8f0; padding:20px;">
                                 <h3 style="font-size:1.1rem; margin-top:0; border-bottom:2px solid #e11d48; padding-bottom:10px; display:inline-block;">Sản Phẩm Đề Xuất</h3>
                                 <div style="margin-top:15px;">${sidebarProducts}</div>
