@@ -2057,7 +2057,7 @@
                         <div class="product-info">
                             <div class="info-main">
                                 <div class="cat-badge" ${editAttr} onblur="updateProductInfo('${p.id}', 'category', this.innerText)">${p.category}</div>
-                                <h3 class="product-title" ${editAttr} onblur="updateProductInfo('${p.id}', 'name', this.innerText)">${p.name}</h3>
+                                <h3 class="product-title" style="cursor:pointer;" onclick="openDetailModal('${p.id}')" ${editAttr} onblur="updateProductInfo('${p.id}', 'name', this.innerText)">${p.name}</h3>
                                 <div class="product-meta">Mã: <span class="meta-val">${sku}</span> | Trọng lượng: <span class="meta-val">${p.weight || '0'}g</span> | Tồn kho: <span class="meta-val" style="color:var(--accent);">${stock}</span></div>
                                 ${optsHtml}
                             </div>
@@ -2545,7 +2545,11 @@
                     </div>
                 </div>
             `;
-            document.getElementById('detailModalOverlay').classList.add('active');
+            const overlay = document.getElementById('detailModalOverlay');
+            if (overlay) {
+                overlay.style.display = '';
+                overlay.classList.add('active');
+            }
         }
 
         // --- CART LOGIC ---
@@ -2701,7 +2705,11 @@
         }
 
         function closeModal(id) { 
-            document.getElementById(id).classList.remove('active'); 
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('active'); 
+                el.style.display = '';
+            }
             if (id === 'detailModalOverlay') {
                 updateURLParams({ p: null });
                 updateSEO();
@@ -4923,8 +4931,8 @@ YÊU CẦU SEO CHI TIẾT:
         window.addEventListener('click', function(e) {
             const modals = document.querySelectorAll('.modal, [id*="Modal"]');
             modals.forEach(modal => {
-                if (e.target === modal && modal.style.display !== 'none') {
-                    modal.style.display = 'none';
+                if (e.target === modal) {
+                    closeModal(modal.id);
                 }
             });
         });
