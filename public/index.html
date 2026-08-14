@@ -5189,7 +5189,7 @@ YÊU CẦU SEO CHI TIẾT:
                 if (data.skipped) return showToast('⚠️ Hệ thống đang bận chạy bài viết trước, vui lòng thử lại sau giây lát.', 'warning');
 
                 showToast(`🎉 AI đã tự động xuất bản bài viết: "${data.title || 'Bài viết mới'}"!`, 'success');
-                loadAdminBlogList();
+                loadAdminBlog();
                 loadAdminKeywords();
                 loadAutoBlogConfig();
             } catch(e) {
