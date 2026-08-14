@@ -2258,15 +2258,48 @@ app.post('/api/admin/seo/indexing-config', authenticateToken, async (req, res) =
 
 app.get('/api/admin/seo/indexing-posts', authenticateToken, async (req, res) => {
     try {
-        const result = await db.execute("SELECT * FROM blog_posts ORDER BY created_at DESC LIMIT 50");
-        const posts = (result.rows || []).map(r => ({
-            id: r.id,
-            title: r.title,
-            slug: r.slug,
-            status: r.status || 'draft',
-            created_at: r.created_at,
-            indexed_at: r.indexed_at || ''
-        }));
+        try {
+            await db.execute("ALTER TABLE blog_posts ADD COLUMN indexed_at TEXT DEFAULT ''");
+        } catch(e) {}
+
+        const postsRes = await db.execute("SELECT * FROM blog_posts ORDER BY created_at DESC LIMIT 50");
+        
+        let logsMap = {};
+        try {
+            const logsRes = await db.execute("SELECT url, created_at FROM google_indexing_logs WHERE status = 'success' ORDER BY created_at ASC");
+            (logsRes.rows || []).forEach(l => {
+                const u = String(l.url || '');
+                if (u) logsMap[u] = l.created_at;
+            });
+        } catch(e) {}
+
+        const posts = (postsRes.rows || []).map(r => {
+            const cleanSlug = String(r.slug || '').replace(/^\/blog\//, '');
+            const rawSlug = String(r.slug || '');
+            let idxTime = r.indexed_at || '';
+
+            if (!idxTime) {
+                for (const urlKey in logsMap) {
+                    if (cleanSlug && urlKey.includes(cleanSlug)) {
+                        idxTime = logsMap[urlKey];
+                    } else if (rawSlug && urlKey.includes(rawSlug)) {
+                        idxTime = logsMap[urlKey];
+                    } else if (r.id && urlKey.includes(r.id)) {
+                        idxTime = logsMap[urlKey];
+                    }
+                }
+            }
+
+            return {
+                id: r.id,
+                title: r.title,
+                slug: cleanSlug,
+                status: r.status || 'draft',
+                created_at: r.created_at,
+                indexed_at: idxTime
+            };
+        });
+
         res.json({ posts });
     } catch(e) {
         console.error('[INDEXING POSTS API ERROR]', e.message);
