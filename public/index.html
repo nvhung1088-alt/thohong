@@ -4789,6 +4789,16 @@ YÊU CẦU SEO CHI TIẾT:
 [Nội dung bài viết chi tiết bằng định dạng Markdown chứa 3 hình ảnh sản phẩm]`;
         }
 
+        // TỰ ĐỘNG ĐÓNG POPUP/MODAL KHI CLICK CHUỘT TRÁI RA NGOÀI LỚP NỀN (BACKDROP)
+        window.addEventListener('click', function(e) {
+            const modals = document.querySelectorAll('.modal, [id*="Modal"]');
+            modals.forEach(modal => {
+                if (e.target === modal && modal.style.display !== 'none') {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+
         async function triggerAutoBlogNow() {
             const token = localStorage.getItem('dhtk_jwt');
             const btn = document.getElementById('btnTriggerAuto');
