@@ -1257,9 +1257,12 @@
 
                         <!-- Bảng Danh Sách Bài Viết Blog & Trạng Thái Google Index -->
                         <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:15px; margin-bottom:15px;">
-                            <div style="font-size:0.88rem; font-weight:700; color:#0f172a; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                            <div style="font-size:0.88rem; font-weight:700; color:#0f172a; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                                 <span>📚 Trạng Thái Nộp Google Index Của Các Bài Viết</span>
-                                <span style="font-size:0.75rem; color:#10b981; font-weight:600;">✓ Tự động nộp ngay khi xuất bản bài viết mới</span>
+                                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                    <span style="font-size:0.75rem; color:#10b981; font-weight:600;">✓ Tự động nộp khi xuất bản</span>
+                                    <button class="btn" style="background:#0284c7; color:white; font-size:0.8rem; font-weight:bold; padding:6px 14px; border-radius:6px;" id="btnBatchIndex" onclick="triggerBatchGoogleIndex()">⚡ Nộp Hàng Loạt (Bài Chưa Index)</button>
+                                </div>
                             </div>
                             <div style="max-height:300px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
                                 <table style="width:100%; border-collapse:collapse; font-size:0.82rem; text-align:left;">
