@@ -2136,13 +2136,13 @@ async function executeAutoBlogCycle(host = 'thohong.top') {
         // 0. Ensure table exists
         await db.execute(`CREATE TABLE IF NOT EXISTS seo_keywords (id TEXT PRIMARY KEY, keyword TEXT NOT NULL UNIQUE, difficulty TEXT DEFAULT 'Trung bình', reason TEXT DEFAULT '', status TEXT DEFAULT 'pending', created_at TEXT NOT NULL)`);
 
-        // 1. Check if there are pending keywords in queue
+        // BƯỚC 1: Quét xem còn từ khóa trong hàng đợi hay không
         let kwResult = await db.execute("SELECT id, keyword, status FROM seo_keywords WHERE status = 'pending' OR status IS NULL OR status = '' OR status != 'generated' ORDER BY created_at ASC LIMIT 1");
         let kwRow = kwResult.rows?.[0];
 
-        // 2. ONLY if queue is 100% empty AND autoSuggest is enabled: generate new keywords!
-        if (!kwRow && autoSuggest) {
-            console.log('[AUTO-BLOG] Keyword queue is empty. Triggering AI keyword suggestion to fill queue...');
+        // BƯỚC 2: Nếu đã hết từ khóa trong danh sách đợi -> Tự động kích hoạt AI Gợi Ý & Thêm Hàng Đợi (nạp 10 từ khóa mới)
+        if (!kwRow) {
+            console.log('[AUTO-BLOG BƯỚC 2] Hàng đợi rỗng! Đang tự động gọi AI DeepSeek gợi ý 10 từ khóa mới...');
             const productsResult = await db.execute("SELECT DISTINCT category FROM products WHERE status = 'active' OR status IS NULL OR status = '' LIMIT 30");
             const categories = (productsResult.rows || []).map(r => r.category).filter(Boolean);
 
