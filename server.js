@@ -2345,6 +2345,62 @@ app.post('/api/admin/blog/auto-trigger', authenticateToken, async (req, res) => 
     res.json(result);
 });
 
+// 9.7 PUBLIC CRON ENDPOINT FOR AUTO-BLOG (Compatible with cron-job.org & Vercel)
+app.all('/api/cron/auto-blog', async (req, res) => {
+    try {
+        const result = await db.execute("SELECT key, value FROM settings WHERE key IN ('autoBlogSchedule', 'autoBlogLastRun')");
+        const configMap = {};
+        (result.rows || []).forEach(r => { configMap[r.key] = r.value; });
+
+        const schedule = configMap['autoBlogSchedule'] || 'off';
+        if (schedule === 'off') {
+            return res.json({ status: 'skipped', reason: 'Tự động viết bài đang TẮT (Schedule is off in Admin CP)' });
+        }
+
+        const intervalMsMap = {
+            '8h': 8 * 3600000,
+            '12h': 12 * 3600000,
+            '24h': 24 * 3600000
+        };
+        const targetInterval = intervalMsMap[schedule] || 8 * 3600000;
+
+        const lastRunStr = configMap['autoBlogLastRun'] || '';
+        const lastRunTime = lastRunStr ? new Date(lastRunStr).getTime() : 0;
+        const now = Date.now();
+        const elapsed = now - lastRunTime;
+
+        if (elapsed < targetInterval) {
+            const remainingMs = targetInterval - elapsed;
+            const remainingHours = (remainingMs / 3600000).toFixed(1);
+            return res.json({
+                status: 'waiting',
+                schedule,
+                lastRun: lastRunStr,
+                message: `Chưa đến chu kỳ ${schedule}. Lần chạy gần nhất: ${lastRunStr || 'Chưa chạy'}. Cần đợi thêm ~${remainingHours} giờ.`
+            });
+        }
+
+        // Đã đến chu kỳ -> Thực thi viết bài tự động
+        console.log(`[EXTERNAL CRON /api/cron/auto-blog] Triggering auto-blog cycle (Schedule: ${schedule})...`);
+        const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
+        const execResult = await executeAutoBlogCycle(host);
+
+        if (execResult.error) {
+            return res.status(500).json({ status: 'error', error: execResult.error });
+        }
+
+        res.json({
+            status: 'success',
+            schedule,
+            execResult
+        });
+    } catch(e) {
+        console.error('[CRON AUTO-BLOG ROUTE ERROR]', e.message);
+        res.status(500).json({ status: 'error', error: e.message });
+    }
+});
+
+
 // Periodic Cron check loop (Runs every 10 minutes to see if schedule interval has elapsed)
 setInterval(async () => {
     try {
