@@ -1594,11 +1594,11 @@ app.post('/api/admin/blog', authenticateToken, async (req, res) => {
             const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
             const protocol = req.headers['x-forwarded-proto'] || 'https';
             const fullBlogUrl = `${protocol}://${host}/blog/${slug}`;
-            pushToGoogleIndexingApi(fullBlogUrl).then(async (res) => {
-                if (res && res.success) {
-                    try { await db.execute({ sql: "UPDATE blog_posts SET indexed_at = ? WHERE id = ?", args: [new Date().toISOString(), id] }); } catch(err) {}
-                }
-            }).catch(e => console.error('[AUTO-INDEX POST ERROR]', e.message));
+            try {
+                await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id);
+            } catch(e) {
+                console.error('[AUTO-INDEX POST ERROR]', e.message);
+            }
         }
 
         res.json({ success: true, id, slug });
@@ -1630,11 +1630,11 @@ app.put('/api/admin/blog/:id', authenticateToken, async (req, res) => {
             const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
             const protocol = req.headers['x-forwarded-proto'] || 'https';
             const fullBlogUrl = `${protocol}://${host}/blog/${slug}`;
-            pushToGoogleIndexingApi(fullBlogUrl).then(async (res) => {
-                if (res && res.success) {
-                    try { await db.execute({ sql: "UPDATE blog_posts SET indexed_at = ? WHERE id = ?", args: [new Date().toISOString(), id] }); } catch(err) {}
-                }
-            }).catch(e => console.error('[AUTO-INDEX UPDATE ERROR]', e.message));
+            try {
+                await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id);
+            } catch(e) {
+                console.error('[AUTO-INDEX UPDATE ERROR]', e.message);
+            }
         }
 
         res.json({ success: true, id, slug });
@@ -2149,7 +2149,7 @@ async function getGoogleAccessToken(serviceAccountJsonStr) {
     return tokenData.access_token;
 }
 
-async function pushToGoogleIndexingApi(targetUrl, actionType = 'URL_UPDATED') {
+async function pushToGoogleIndexingApi(targetUrl, actionType = 'URL_UPDATED', blogId = null) {
     try {
         await db.execute(`CREATE TABLE IF NOT EXISTS google_indexing_logs (
             id TEXT PRIMARY KEY,
@@ -2199,6 +2199,25 @@ async function pushToGoogleIndexingApi(targetUrl, actionType = 'URL_UPDATED') {
             sql: "INSERT INTO google_indexing_logs (id, url, action_type, status, response_message, created_at) VALUES (?, ?, ?, ?, ?, ?)",
             args: [logId, targetUrl, actionType, statusStr, msgStr, nowIso]
         });
+
+        // Tự động cập nhật indexed_at vào cơ sở dữ liệu nếu nộp Google thành công
+        if (ok) {
+            try {
+                if (blogId) {
+                    await db.execute({ sql: "UPDATE blog_posts SET indexed_at = ? WHERE id = ?", args: [nowIso, blogId] });
+                }
+                if (targetUrl.includes('/blog/')) {
+                    const rawSlug = targetUrl.split('/blog/')[1].split('?')[0].split('#')[0];
+                    const slugWithPrefix = '/blog/' + rawSlug;
+                    await db.execute({
+                        sql: "UPDATE blog_posts SET indexed_at = ? WHERE slug = ? OR slug = ? OR id = ? OR slug LIKE ?",
+                        args: [nowIso, rawSlug, slugWithPrefix, rawSlug, `%${rawSlug}%`]
+                    });
+                }
+            } catch(updateErr) {
+                console.error('[AUTO-UPDATE INDEXED_AT ERROR]', updateErr.message);
+            }
+        }
 
         console.log(`[GOOGLE INDEXING API ${statusStr.toUpperCase()}] ${targetUrl} -> ${msgStr}`);
         return { success: ok, status: statusStr, message: msgStr, data: pushData };
@@ -2643,7 +2662,11 @@ YÊU CẦU SEO CHI TIẾT:
         // Auto Push to Google Indexing API for instant 5-minute indexing
         if (status === 'published') {
             const fullBlogUrl = `${baseUrl}/blog/${uniqueSlug}`;
-            pushToGoogleIndexingApi(fullBlogUrl).catch(e => console.error('[AUTO-INDEX HOOK ERROR]', e.message));
+            try {
+                await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', blogId);
+            } catch(e) {
+                console.error('[AUTO-INDEX HOOK ERROR]', e.message);
+            }
         }
 
         Object.keys(ssrSeoCache).forEach(k => { if (k.startsWith('blog_')) delete ssrSeoCache[k]; });
