@@ -1755,12 +1755,6 @@ app.post('/api/admin/social/telegram-share-now', authenticateToken, async (req, 
     }
 });
 
-        res.json({ success: true, id, slug });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
 // 6. ADMIN: DELETE BLOG POST
 app.delete('/api/admin/blog/:id', authenticateToken, async (req, res) => {
     try {
