@@ -1009,6 +1009,29 @@
                                 <button class="btn btn-primary" style="flex:1; background:#2563eb; font-weight:bold;" onclick="apSaveTelegram()">💾 Lưu Tất Cả Cài Đặt Telegram</button>
                             </div>
                         </div>
+
+                        <!-- Bảng Quản Lý Trạng Thái Chia Sẻ Bài Viết Lên Kênh Telegram SEO -->
+                        <div style="background:white; border:1px solid #bae6fd; border-radius:10px; padding:15px; margin-top:5px;">
+                            <div style="font-size:0.88rem; font-weight:700; color:#0369a1; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                <span>📢 TRẠNG THÁI CHIA SẺ BÀI VIẾT LÊN KÊNH TELEGRAM SEO</span>
+                                <button class="btn" style="background:#0088cc; color:white; font-size:0.78rem; font-weight:bold; padding:6px 14px; border-radius:6px;" onclick="triggerBatchTelegramShare()">✈️ Share Telegram Hàng Loạt (Bài Chưa Share)</button>
+                            </div>
+                            <div style="max-height:350px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
+                                <table style="width:100%; border-collapse:collapse; font-size:0.82rem; text-align:left;">
+                                    <thead>
+                                        <tr style="background:#f0f9ff; border-bottom:1px solid #bae6fd; color:#0369a1; position:sticky; top:0;">
+                                            <th style="padding:8px 12px;">Tiêu đề bài viết</th>
+                                            <th style="padding:8px 12px;">Trạng thái</th>
+                                            <th style="padding:8px 12px;">Telegram SEO Status</th>
+                                            <th style="padding:8px 12px; text-align:right;">Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="telegramTabPostsTableBody">
+                                        <tr><td colspan="4" style="padding:15px; text-align:center; color:#94a3b8;">Đang tải danh sách bài viết...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -3789,6 +3812,8 @@
             }
             if (tabId === 'tab-indexing') {
                 loadGoogleIndexingConfig();
+            } else if (tabId === 'tab-telegram') {
+                loadIndexingPosts();
             }
         }
 
@@ -5352,6 +5377,38 @@ YÊU CẦU SEO CHI TIẾT:
                                             <button class="btn" style="background:#0284c7; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="triggerGoogleIndexByItem('${p.id}', '${fullUrl}')">⚡ Nộp Index</button>
                                             <button class="btn" style="background:#0088cc; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="triggerShareBlogTelegram('${p.id}')">✈️ Share Telegram</button>
                                         </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+                const tgTbody = document.getElementById('telegramTabPostsTableBody');
+                if (tgTbody) {
+                    if (posts.length === 0) {
+                        tgTbody.innerHTML = '<tr><td colspan="4" style="padding:15px; text-align:center; color:#94a3b8;">Chưa có bài viết blog nào</td></tr>';
+                    } else {
+                        tgTbody.innerHTML = posts.map(p => {
+                            const isPub = p.status === 'published';
+                            const pubBadge = isPub ? '<span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">📢 Đã xuất bản</span>'
+                                                   : '<span style="background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">📋 Bản nháp</span>';
+
+                            const hasTgShared = Boolean(p.telegram_shared_at);
+                            const tgBadge = hasTgShared
+                                ? `<span style="background:#f0f9ff; color:#0284c7; border:1px solid #bae6fd; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">🟢 Đã chia sẻ (${new Date(p.telegram_shared_at).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})} ${new Date(p.telegram_shared_at).toLocaleDateString('vi-VN')})</span>`
+                                : '<span style="background:#f1f5f9; color:#64748b; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">⏳ Chưa chia sẻ Telegram</span>';
+
+                            const cleanSlug = (p.slug || '').replace(/^\/blog\//, '');
+
+                            return `
+                                <tr style="border-bottom:1px solid #f1f5f9;">
+                                    <td style="padding:10px 12px;">
+                                        <div style="font-weight:700; color:#0f172a;">${escapeHtml(p.title)}</div>
+                                        <a href="/blog/${cleanSlug}" target="_blank" style="font-size:0.75rem; color:#2563eb; text-decoration:underline;">/blog/${cleanSlug}</a>
+                                    </td>
+                                    <td style="padding:10px 12px;">${pubBadge}</td>
+                                    <td style="padding:10px 12px;">${tgBadge}</td>
+                                    <td style="padding:10px 12px; text-align:right;">
+                                        <button class="btn" style="background:#0088cc; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="triggerShareBlogTelegram('${p.id}')">✈️ Share Telegram</button>
                                     </td>
                                 </tr>
                             `;

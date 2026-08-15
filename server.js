@@ -2853,7 +2853,7 @@ YÊU CẦU SEO CHI TIẾT:
             const fullBlogUrl = `${baseUrl}/blog/${uniqueSlug}`;
             try {
                 await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', blogId);
-                await shareBlogToTelegram(fullBlogUrl, title, summary, coverImage);
+                await shareBlogToTelegram(fullBlogUrl, title, summary, coverImage, blogId);
             } catch(e) {
                 console.error('[AUTO-INDEX/TELEGRAM HOOK ERROR]', e.message);
             }
