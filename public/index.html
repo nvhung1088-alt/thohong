@@ -3957,6 +3957,7 @@
             const modal = document.getElementById('adminPanelModal');
             if (modal) modal.classList.add('active');
             switchTab('tab-store');
+            if (typeof loadIndexingPosts === 'function') loadIndexingPosts();
         }
 
         async function apSaveStoreConfig() {
@@ -4037,9 +4038,11 @@
             if (target) target.style.display = 'block';
             const tabMap = { 
                 'tab-store': 't-store', 
+                'tab-category': 't-category',
                 'tab-analytics': 't-analytics', 
                 'tab-seo': 't-seo', 
                 'tab-telegram': 't-telegram', 
+                'tab-facebook': 't-facebook', 
                 'tab-pos': 't-pos', 
                 'tab-import': 't-import', 
                 'tab-account': 't-account',
@@ -4051,7 +4054,7 @@
             }
             if (tabId === 'tab-indexing') {
                 loadGoogleIndexingConfig();
-            } else if (tabId === 'tab-telegram') {
+            } else if (tabId === 'tab-telegram' || tabId === 'tab-facebook') {
                 if (document.getElementById('ap_tg_token')) document.getElementById('ap_tg_token').value = storeSettings.telegramToken || '';
                 if (document.getElementById('ap_tg_chatid')) document.getElementById('ap_tg_chatid').value = storeSettings.telegramChatId || '';
                 if (document.getElementById('ap_tg_blog_token')) document.getElementById('ap_tg_blog_token').value = storeSettings.telegramBlogToken || '';
