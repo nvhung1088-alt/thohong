@@ -384,11 +384,18 @@ async function shareBlogToTelegram(fullBlogUrl, title, summary, coverImage, blog
         const settingsMap = {};
         (res.rows || []).forEach(r => { settingsMap[r.key] = r.value; });
 
-        const botToken = (overrideToken || settingsMap['telegramBlogToken'] || settingsMap['telegramToken'] || '').trim();
-        const chatId = (overrideChatId || settingsMap['telegramBlogChatId'] || settingsMap['telegramChatId'] || '').trim();
+        const blogTokenSetting = (settingsMap['telegramBlogToken'] || '').trim();
+        const blogChatIdSetting = (settingsMap['telegramBlogChatId'] || '').trim();
 
-        if (!botToken || !chatId) {
-            return { skipped: true, reason: 'Chưa cấu hình Telegram Blog Channel Chat ID hoặc Bot Token. Vui lòng kiểm tra và nhấn "💾 Lưu Tất Cả Cài Đặt Telegram"!' };
+        const botToken = (overrideToken || blogTokenSetting || settingsMap['telegramToken'] || '').trim();
+        const chatId = (overrideChatId || blogChatIdSetting || settingsMap['telegramChatId'] || '').trim();
+
+        if (!botToken) {
+            return { skipped: true, reason: 'Chưa nhập Bot Token Telegram. Vui lòng nhập Bot Token và nhấn "💾 Lưu Tất Cả Cài Đặt Telegram"!' };
+        }
+
+        if (!chatId) {
+            return { skipped: true, reason: 'Chưa nhập Chat ID Kênh Telegram SEO (VD: -100xxxxxxxxx hoặc @ten_kenh). Vui lòng nhập Chat ID và bấm "💾 Lưu Tất Cả Cài Đặt Telegram"!' };
         }
 
         const storeName = settingsMap['storeName'] || 'Thỏ Hồng / ĐHTK';

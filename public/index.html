@@ -3261,7 +3261,11 @@
             const blogToken = document.getElementById('ap_tg_blog_token') ? document.getElementById('ap_tg_blog_token').value.trim() : '';
             const blogChatId = document.getElementById('ap_tg_blog_chatid') ? document.getElementById('ap_tg_blog_chatid').value.trim() : '';
 
-            // Tự động lưu cài đặt cài đặt nếu người dùng đã nhập thông tin mới
+            if (!blogChatId && !storeSettings.telegramBlogChatId) {
+                return alert('⚠️ Vui lòng nhập Chat ID / Username Kênh Telegram SEO (VD: -5301080063 hoặc @ten_kenh) vào ô bên dưới và nhấn nút "💾 Lưu Tất Cả Cài Đặt Telegram"!');
+            }
+
+            // Tự động lưu cài đặt nếu người dùng đã nhập thông tin mới
             if (blogToken || blogChatId) {
                 try { await apSaveTelegram(); } catch(e) {}
             }
