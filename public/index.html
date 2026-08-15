@@ -3258,10 +3258,18 @@
         async function apTestTelegramBlog() {
             const blogSelect = document.getElementById('indexingBlogSelect');
             const blogId = blogSelect ? blogSelect.value : '';
+            const blogToken = document.getElementById('ap_tg_blog_token') ? document.getElementById('ap_tg_blog_token').value.trim() : '';
+            const blogChatId = document.getElementById('ap_tg_blog_chatid') ? document.getElementById('ap_tg_blog_chatid').value.trim() : '';
+
+            // Tự động lưu cài đặt cài đặt nếu người dùng đã nhập thông tin mới
+            if (blogToken || blogChatId) {
+                try { await apSaveTelegram(); } catch(e) {}
+            }
+
             try {
                 const res = await fetchAPI('/api/admin/social/telegram-share-now', {
                     method: 'POST',
-                    body: { blogId }
+                    body: { blogId, blogToken, blogChatId }
                 });
                 alert('✅ ' + (res.message || 'Đã gửi bài viết mẫu lên Kênh Telegram thành công!'));
             } catch(e) {
@@ -3271,10 +3279,12 @@
 
         async function triggerShareBlogTelegram(blogId) {
             if (!confirm('Bạn có chắc muốn chia sẻ bài viết này lên Kênh Telegram ngay bây giờ?')) return;
+            const blogToken = document.getElementById('ap_tg_blog_token') ? document.getElementById('ap_tg_blog_token').value.trim() : '';
+            const blogChatId = document.getElementById('ap_tg_blog_chatid') ? document.getElementById('ap_tg_blog_chatid').value.trim() : '';
             try {
                 const res = await fetchAPI('/api/admin/social/telegram-share-now', {
                     method: 'POST',
-                    body: { blogId }
+                    body: { blogId, blogToken, blogChatId }
                 });
                 alert('✅ ' + (res.message || 'Đã chia sẻ thành công!'));
                 if (typeof loadIndexingPosts === 'function') loadIndexingPosts();
@@ -3813,6 +3823,11 @@
             if (tabId === 'tab-indexing') {
                 loadGoogleIndexingConfig();
             } else if (tabId === 'tab-telegram') {
+                if (document.getElementById('ap_tg_token')) document.getElementById('ap_tg_token').value = storeSettings.telegramToken || '';
+                if (document.getElementById('ap_tg_chatid')) document.getElementById('ap_tg_chatid').value = storeSettings.telegramChatId || '';
+                if (document.getElementById('ap_tg_blog_token')) document.getElementById('ap_tg_blog_token').value = storeSettings.telegramBlogToken || '';
+                if (document.getElementById('ap_tg_blog_chatid')) document.getElementById('ap_tg_blog_chatid').value = storeSettings.telegramBlogChatId || '';
+                if (document.getElementById('ap_tg_blog_auto')) document.getElementById('ap_tg_blog_auto').checked = storeSettings.autoTelegramShare !== 'false';
                 loadIndexingPosts();
             }
         }

@@ -378,19 +378,17 @@ async function sendTelegramPhotoMessage(token, chatId, photoUrl, captionText, bl
     return sendTelegramMessage(token, chatId, textMessage);
 }
 
-async function shareBlogToTelegram(fullBlogUrl, title, summary, coverImage, blogId = null) {
+async function shareBlogToTelegram(fullBlogUrl, title, summary, coverImage, blogId = null, overrideToken = '', overrideChatId = '') {
     try {
         const res = await db.execute("SELECT key, value FROM settings WHERE key IN ('telegramToken', 'telegramChatId', 'telegramBlogToken', 'telegramBlogChatId', 'autoTelegramShare', 'storeName')");
         const settingsMap = {};
         (res.rows || []).forEach(r => { settingsMap[r.key] = r.value; });
 
-        if (settingsMap['autoTelegramShare'] === 'false') return { skipped: true, reason: 'Tự động chia sẻ Telegram đang bị tắt' };
-
-        const botToken = (settingsMap['telegramBlogToken'] || settingsMap['telegramToken'] || '').trim();
-        const chatId = (settingsMap['telegramBlogChatId'] || '').trim();
+        const botToken = (overrideToken || settingsMap['telegramBlogToken'] || settingsMap['telegramToken'] || '').trim();
+        const chatId = (overrideChatId || settingsMap['telegramBlogChatId'] || settingsMap['telegramChatId'] || '').trim();
 
         if (!botToken || !chatId) {
-            return { skipped: true, reason: 'Chưa cấu hình Telegram Blog Channel Chat ID' };
+            return { skipped: true, reason: 'Chưa cấu hình Telegram Blog Channel Chat ID hoặc Bot Token. Vui lòng kiểm tra và nhấn "💾 Lưu Tất Cả Cài Đặt Telegram"!' };
         }
 
         const storeName = settingsMap['storeName'] || 'Thỏ Hồng / ĐHTK';
@@ -1774,7 +1772,9 @@ app.post('/api/admin/social/telegram-share-now', authenticateToken, async (req, 
             }
         }
 
-        const result = await shareBlogToTelegram(fullBlogUrl, title, summary, coverImage, targetBlogId);
+        const overrideToken = req.body.blogToken || req.body.overrideToken || '';
+        const overrideChatId = req.body.blogChatId || req.body.overrideChatId || '';
+        const result = await shareBlogToTelegram(fullBlogUrl, title, summary, coverImage, targetBlogId, overrideToken, overrideChatId);
         if (result.error) return res.status(400).json({ error: result.error });
         if (result.skipped) return res.status(400).json({ error: result.reason });
 
