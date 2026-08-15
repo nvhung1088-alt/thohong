@@ -553,6 +553,19 @@ async function shareBlogToFacebook(fullBlogUrl, title, summary, coverImage, blog
     }
 }
 
+// --- ROUTES PHỤC VỤ META FACEBOOK APP REVIEW ---
+app.get('/privacy', (req, res) => {
+    res.send(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Chính Sách Quyền Riêng Tư | Thỏ Hồng & DHTK</title><style>body{font-family:Arial,sans-serif;line-height:1.6;padding:40px;max-width:800px;margin:0 auto;color:#333}h1{color:#1e40af}h2{color:#2563eb}</style></head><body><h1>Chính Sách Quyền Riêng Tư (Privacy Policy)</h1><p>Website và ứng dụng của chúng tôi tôn trọng quyền riêng tư của quý khách hàng. Khi kết nối ứng dụng Facebook, chúng tôi chỉ thu thập thông tin để quản lý việc đăng bài viết tự động từ website lên Fanpage.</p><h2>1. Dữ liệu thu thập</h2><p>Chúng tôi chỉ lưu trữ thông tin ID Trang, Tên Trang và Page Access Token do quý khách cung cấp để phục vụ tính năng chia sẻ bài viết.</p><h2>2. Cam kết bảo mật</h2><p>Dữ liệu được lưu trữ an toàn trong cơ sở dữ liệu và tuyệt đối không chia sẻ cho bất kỳ bên thứ ba nào khác.</p><h2>3. Liên hệ</h2><p>Email: admin@thohong.top | Hotline: 0968.988.636</p></body></html>`);
+});
+
+app.get('/terms', (req, res) => {
+    res.send(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Điều Khoản Dịch Vụ | Thỏ Hồng & DHTK</title><style>body{font-family:Arial,sans-serif;line-height:1.6;padding:40px;max-width:800px;margin:0 auto;color:#333}h1{color:#1e40af}</style></head><body><h1>Điều Khoản Dịch Vụ (Terms of Service)</h1><p>Bằng việc sử dụng tính năng kết nối Facebook trên hệ thống của chúng tôi, bạn đồng ý tuân thủ các quy định đăng tải nội dung phù hợp với tiêu chuẩn cộng đồng của Facebook và pháp luật hiện hành.</p></body></html>`);
+});
+
+app.get('/data-deletion', (req, res) => {
+    res.send(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Hướng Dẫn Xóa Dữ Liệu | Thỏ Hồng & DHTK</title><style>body{font-family:Arial,sans-serif;line-height:1.6;padding:40px;max-width:800px;margin:0 auto;color:#333}h1{color:#1e40af}</style></head><body><h1>Hướng Dẫn Xóa Dữ Liệu Người Dùng (Data Deletion Instructions)</h1><p>Nếu bạn muốn xóa toàn bộ dữ liệu kết nối ứng dụng Facebook khỏi hệ thống của chúng tôi:</p><ol><li>Đăng nhập vào Admin CP của bạn.</li><li>Vào mục Cấu hình Facebook ➔ Nhấp "Xóa cài đặt Facebook".</li><li>Hoặc gửi yêu cầu xóa dữ liệu về Email: admin@thohong.top. Chúng tôi sẽ xóa toàn bộ Token trong vòng 24 giờ.</li></ol></body></html>`);
+});
+
 // --- ROUTES ---
 
 // 1. ADMIN LOGIN
