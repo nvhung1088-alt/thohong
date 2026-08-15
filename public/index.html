@@ -3722,9 +3722,13 @@
                 try {
                     const privateSettings = await fetchAPI('/api/settings/private');
                     if (privateSettings) {
+                        Object.assign(storeSettings, privateSettings);
                         setVal('ap_tg_token', privateSettings.telegramToken || '');
                         setVal('ap_tg_chatid', privateSettings.telegramChatId || '');
                         setVal('ap_tg_name', privateSettings.storeName || '');
+                        setVal('ap_tg_blog_token', privateSettings.telegramBlogToken || '');
+                        setVal('ap_tg_blog_chatid', privateSettings.telegramBlogChatId || '');
+                        if (document.getElementById('ap_tg_blog_auto')) document.getElementById('ap_tg_blog_auto').checked = privateSettings.autoTelegramShare !== 'false';
 
                         setVal('ap_pos_key', privateSettings.pos_api_key || '');
                         setVal('ap_pos_shop', privateSettings.pos_shop_id || '');
