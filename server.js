@@ -378,7 +378,7 @@ async function sendTelegramPhotoMessage(token, chatId, photoUrl, captionText, bl
     return sendTelegramMessage(token, chatId, textMessage);
 }
 
-async function shareBlogToTelegram(fullBlogUrl, title, summary, coverImage) {
+async function shareBlogToTelegram(fullBlogUrl, title, summary, coverImage, blogId = null) {
     try {
         const res = await db.execute("SELECT key, value FROM settings WHERE key IN ('telegramToken', 'telegramChatId', 'telegramBlogToken', 'telegramBlogChatId', 'autoTelegramShare', 'storeName')");
         const settingsMap = {};
@@ -402,6 +402,19 @@ async function shareBlogToTelegram(fullBlogUrl, title, summary, coverImage) {
 
         const result = await sendTelegramPhotoMessage(botToken, chatId, coverImage, caption, fullBlogUrl);
         console.log(`[TELEGRAM BLOG SHARE SUCCESS] Shared "${title}" to channel ${chatId}`);
+
+        // Tự động ghi nhận mốc thời gian đã chia sẻ Telegram vào CSDL
+        if (blogId) {
+            try {
+                await db.execute("ALTER TABLE blog_posts ADD COLUMN telegram_shared_at TEXT DEFAULT ''");
+            } catch(e) {}
+            const nowIso = new Date().toISOString();
+            await db.execute({
+                sql: "UPDATE blog_posts SET telegram_shared_at = ? WHERE id = ? OR slug = ?",
+                args: [nowIso, blogId, blogId]
+            });
+        }
+
         return { success: true, result };
     } catch(e) {
         console.error('[TELEGRAM BLOG SHARE ERROR]', e.message);
@@ -1663,7 +1676,7 @@ app.post('/api/admin/blog', authenticateToken, async (req, res) => {
             const fullBlogUrl = `${protocol}://${host}/blog/${slug}`;
             try {
                 await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id);
-                await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '');
+                await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '', id);
             } catch(e) {
                 console.error('[AUTO-INDEX/TELEGRAM POST ERROR]', e.message);
             }
@@ -1700,7 +1713,7 @@ app.put('/api/admin/blog/:id', authenticateToken, async (req, res) => {
             const fullBlogUrl = `${protocol}://${host}/blog/${slug}`;
             try {
                 await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id);
-                await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '');
+                await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '', id);
             } catch(e) {
                 console.error('[AUTO-INDEX/TELEGRAM UPDATE ERROR]', e.message);
             }
@@ -1721,6 +1734,7 @@ app.post('/api/admin/social/telegram-share-now', authenticateToken, async (req, 
         let summary = '';
         let coverImage = '';
         let fullBlogUrl = customUrl || '';
+        let targetBlogId = blogId || null;
 
         const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
         const protocol = req.headers['x-forwarded-proto'] || 'https';
@@ -1738,6 +1752,7 @@ app.post('/api/admin/social/telegram-share-now', authenticateToken, async (req, 
                 coverImage = post.cover_image || '';
                 const cleanSlug = String(post.slug || '').replace(/^\/blog\//, '');
                 fullBlogUrl = `${baseUrl}/blog/${cleanSlug}`;
+                targetBlogId = post.id;
             }
         }
 
@@ -1751,6 +1766,7 @@ app.post('/api/admin/social/telegram-share-now', authenticateToken, async (req, 
                 coverImage = latestPost.cover_image || '';
                 const cleanSlug = String(latestPost.slug || '').replace(/^\/blog\//, '');
                 fullBlogUrl = `${baseUrl}/blog/${cleanSlug}`;
+                targetBlogId = latestPost.id;
             } else {
                 title = "📌 Bài Viết Mẫu Thử Nghiệm Kênh Telegram SEO";
                 summary = "Đây là bài viết thử nghiệm kết nối hệ thống tự động chia sẻ bài viết lên Kênh Telegram. Khi bài viết mới xuất bản, bài viết sẽ tự động hiển thị tại đây!";
@@ -1758,11 +1774,57 @@ app.post('/api/admin/social/telegram-share-now', authenticateToken, async (req, 
             }
         }
 
-        const result = await shareBlogToTelegram(fullBlogUrl, title, summary, coverImage);
+        const result = await shareBlogToTelegram(fullBlogUrl, title, summary, coverImage, targetBlogId);
         if (result.error) return res.status(400).json({ error: result.error });
         if (result.skipped) return res.status(400).json({ error: result.reason });
 
         res.json({ success: true, message: `Đã chia sẻ thành công bài viết lên Kênh Telegram!` });
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// 5.6 ADMIN: TELEGRAM SHARE BATCH (TỰ ĐỘNG CHIA SẺ BÀI CHƯA SHARE)
+app.post('/api/admin/social/telegram-share-batch', authenticateToken, async (req, res) => {
+    try {
+        try {
+            await db.execute("ALTER TABLE blog_posts ADD COLUMN telegram_shared_at TEXT DEFAULT ''");
+        } catch(e) {}
+
+        const postsRes = await db.execute("SELECT * FROM blog_posts ORDER BY created_at DESC");
+        const unshared = (postsRes.rows || []).filter(p => !p.telegram_shared_at);
+
+        if (unshared.length === 0) {
+            return res.json({ success: true, count: 0, message: '🎉 Tất cả bài viết đã được chia sẻ Telegram từ trước!' });
+        }
+
+        const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
+        const protocol = req.headers['x-forwarded-proto'] || 'https';
+        const baseUrl = `${protocol}://${host}`;
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const post of unshared) {
+            const cleanSlug = String(post.slug || '').replace(/^\/blog\//, '');
+            const fullBlogUrl = `${baseUrl}/blog/${cleanSlug}`;
+            const summary = post.summary || post.content;
+            
+            const shareRes = await shareBlogToTelegram(fullBlogUrl, post.title, summary, post.cover_image || '', post.id);
+            if (shareRes.success || shareRes.ok) {
+                successCount++;
+            } else {
+                failCount++;
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Đã chia sẻ hàng loạt ${successCount}/${unshared.length} bài viết chưa share lên Kênh Telegram!`,
+            successCount,
+            failCount,
+            total: unshared.length
+        });
     } catch(e) {
         res.status(500).json({ error: e.message });
     }
@@ -2404,6 +2466,7 @@ app.get('/api/admin/seo/indexing-posts', authenticateToken, async (req, res) => 
     try {
         try {
             await db.execute("ALTER TABLE blog_posts ADD COLUMN indexed_at TEXT DEFAULT ''");
+            await db.execute("ALTER TABLE blog_posts ADD COLUMN telegram_shared_at TEXT DEFAULT ''");
         } catch(e) {}
 
         const postsRes = await db.execute("SELECT * FROM blog_posts ORDER BY created_at DESC LIMIT 50");
@@ -2440,7 +2503,8 @@ app.get('/api/admin/seo/indexing-posts', authenticateToken, async (req, res) => 
                 slug: cleanSlug,
                 status: r.status || 'draft',
                 created_at: r.created_at,
-                indexed_at: idxTime
+                indexed_at: idxTime,
+                telegram_shared_at: r.telegram_shared_at || ''
             };
         });
 

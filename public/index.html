@@ -1377,27 +1377,28 @@
                             </div>
                         </div>
 
-                        <!-- Bảng Danh Sách Bài Viết Blog & Trạng Thái Google Index -->
+                        <!-- Bảng Danh Sách Bài Viết Blog & Trạng Thái Google Index & Telegram -->
                         <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:15px; margin-bottom:15px;">
                             <div style="font-size:0.88rem; font-weight:700; color:#0f172a; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                                <span>📚 Trạng Thái Nộp Google Index Của Các Bài Viết</span>
-                                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                                    <span style="font-size:0.75rem; color:#10b981; font-weight:600;">✓ Tự động nộp khi xuất bản</span>
-                                    <button class="btn" style="background:#0284c7; color:white; font-size:0.8rem; font-weight:bold; padding:6px 14px; border-radius:6px;" id="btnBatchIndex" onclick="triggerBatchGoogleIndex()">⚡ Nộp Hàng Loạt (Bài Chưa Index)</button>
+                                <span>📚 Trạng Thái Nộp Google Index & Chia Sẻ Telegram Của Các Bài Viết</span>
+                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                    <button class="btn" style="background:#0284c7; color:white; font-size:0.78rem; font-weight:bold; padding:6px 12px; border-radius:6px;" id="btnBatchIndex" onclick="triggerBatchGoogleIndex()">⚡ Nộp Index Hàng Loạt</button>
+                                    <button class="btn" style="background:#0088cc; color:white; font-size:0.78rem; font-weight:bold; padding:6px 12px; border-radius:6px;" id="btnBatchTelegramShare" onclick="triggerBatchTelegramShare()">✈️ Share Telegram Hàng Loạt</button>
                                 </div>
                             </div>
-                            <div style="max-height:300px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
+                            <div style="max-height:350px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
                                 <table style="width:100%; border-collapse:collapse; font-size:0.82rem; text-align:left;">
                                     <thead>
                                         <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:#475569; position:sticky; top:0;">
                                             <th style="padding:8px 12px;">Tiêu đề bài viết</th>
                                             <th style="padding:8px 12px;">Trạng thái</th>
                                             <th style="padding:8px 12px;">Google Index Status</th>
+                                            <th style="padding:8px 12px;">Telegram SEO Status</th>
                                             <th style="padding:8px 12px; text-align:right;">Hành động</th>
                                         </tr>
                                     </thead>
                                     <tbody id="indexingPostsTableBody">
-                                        <tr><td colspan="4" style="padding:15px; text-align:center; color:#94a3b8;">Đang tải danh sách bài viết...</td></tr>
+                                        <tr><td colspan="5" style="padding:15px; text-align:center; color:#94a3b8;">Đang tải danh sách bài viết...</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -3253,8 +3254,33 @@
                     body: { blogId }
                 });
                 alert('✅ ' + (res.message || 'Đã chia sẻ thành công!'));
+                if (typeof loadIndexingPosts === 'function') loadIndexingPosts();
             } catch(e) {
                 alert('❌ Lỗi: ' + e.message);
+            }
+        }
+
+        async function triggerBatchTelegramShare() {
+            const unshared = currentFetchedPosts.filter(p => !p.telegram_shared_at);
+            if (unshared.length === 0) {
+                return showToast('🎉 Tất cả bài viết đã được chia sẻ Kênh Telegram từ trước!', 'info');
+            }
+
+            if (!confirm(`Bạn có chắc muốn tự động chia sẻ ${unshared.length} bài viết chưa share lên Kênh Telegram SEO?`)) return;
+
+            const btn = document.getElementById('btnBatchTelegramShare');
+            if (btn) { btn.disabled = true; btn.innerText = `⏳ Đang chia sẻ 0/${unshared.length}...`; }
+
+            try {
+                const res = await fetchAPI('/api/admin/social/telegram-share-batch', {
+                    method: 'POST'
+                });
+                showToast(res.message || 'Đã chia sẻ hàng loạt lên Kênh Telegram thành công!', 'success');
+                if (typeof loadIndexingPosts === 'function') loadIndexingPosts();
+            } catch(e) {
+                showToast('❌ Lỗi: ' + e.message, 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = '✈️ Share Telegram Hàng Loạt'; }
             }
         }
 
@@ -5292,7 +5318,7 @@ YÊU CẦU SEO CHI TIẾT:
                 const tbody = document.getElementById('indexingPostsTableBody');
                 if (tbody) {
                     if (posts.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" style="padding:15px; text-align:center; color:#94a3b8;">Chưa có bài viết blog nào</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="5" style="padding:15px; text-align:center; color:#94a3b8;">Chưa có bài viết blog nào</td></tr>';
                     } else {
                         tbody.innerHTML = posts.map(p => {
                             const isPub = p.status === 'published';
@@ -5303,6 +5329,11 @@ YÊU CẦU SEO CHI TIẾT:
                             const idxBadge = hasIndexed 
                                 ? `<span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">🟢 Đã nộp Google Bot (${new Date(p.indexed_at).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})} ${new Date(p.indexed_at).toLocaleDateString('vi-VN')})</span>`
                                 : '<span style="background:#f1f5f9; color:#64748b; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">⏳ Chưa nộp Google Bot</span>';
+
+                            const hasTgShared = Boolean(p.telegram_shared_at);
+                            const tgBadge = hasTgShared
+                                ? `<span style="background:#f0f9ff; color:#0284c7; border:1px solid #bae6fd; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">🟢 Đã chia sẻ (${new Date(p.telegram_shared_at).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})} ${new Date(p.telegram_shared_at).toLocaleDateString('vi-VN')})</span>`
+                                : '<span style="background:#f1f5f9; color:#64748b; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">⏳ Chưa chia sẻ Telegram</span>';
 
                             const cleanSlug = (p.slug || '').replace(/^\/blog\//, '');
                             const fullUrl = `${window.location.origin}/blog/${cleanSlug}`;
@@ -5315,6 +5346,7 @@ YÊU CẦU SEO CHI TIẾT:
                                     </td>
                                     <td style="padding:10px 12px;">${pubBadge}</td>
                                     <td style="padding:10px 12px;">${idxBadge}</td>
+                                    <td style="padding:10px 12px;">${tgBadge}</td>
                                     <td style="padding:10px 12px; text-align:right;">
                                         <div style="display:flex; gap:6px; justify-content:flex-end;">
                                             <button class="btn" style="background:#0284c7; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="triggerGoogleIndexByItem('${p.id}', '${fullUrl}')">⚡ Nộp Index</button>
