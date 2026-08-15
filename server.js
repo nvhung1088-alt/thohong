@@ -466,44 +466,36 @@ async function shareBlogToFacebook(fullBlogUrl, title, summary, coverImage, blog
         // 1. ĐĂNG BÀI LÊN FANPAGE (nếu có Token & Page ID)
         if (fbPageId && fbPageToken) {
             try {
-                const feedUrl = `https://graph.facebook.com/v19.0/${fbPageId}/feed`;
-                const feedPayload = {
+                // Với Page Access Token, dùng endpoint /me/feed là chuẩn nhất của Meta Graph API
+                let feedUrl = `https://graph.facebook.com/v19.0/me/feed`;
+                let feedPayload = {
                     message: message,
                     link: fullBlogUrl,
                     access_token: fbPageToken
                 };
 
-                const fbRes = await fetch(feedUrl, {
+                let fbRes = await fetch(feedUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(feedPayload)
                 });
-                const fbJson = await fbRes.json();
+                let fbJson = await fbRes.json();
+
+                // Nếu /me/feed báo lỗi #100, thử fallback sang /{pageId}/feed
+                if (!fbJson.id && !fbJson.post_id && fbPageId) {
+                    feedUrl = `https://graph.facebook.com/v19.0/${fbPageId}/feed`;
+                    fbRes = await fetch(feedUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(feedPayload)
+                    });
+                    fbJson = await fbRes.json();
+                }
+
                 if (fbJson.id || fbJson.post_id) {
                     const postId = fbJson.id || fbJson.post_id;
                     console.log(`[FACEBOOK FANPAGE SHARE SUCCESS] Post ID: ${postId}`);
                     results.push({ type: 'fanpage', success: true, postId });
-                } else if (coverImage && coverImage.startsWith('http')) {
-                    // Fallback thử đăng dạng photo nếu /feed không nhận
-                    const photoUrl = `https://graph.facebook.com/v19.0/${fbPageId}/photos`;
-                    const photoPayload = {
-                        url: coverImage,
-                        caption: message,
-                        access_token: fbPageToken
-                    };
-                    const photoRes = await fetch(photoUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(photoPayload)
-                    });
-                    const photoJson = await photoRes.json();
-                    if (photoJson.id || photoJson.post_id) {
-                        const postId = photoJson.id || photoJson.post_id;
-                        results.push({ type: 'fanpage', success: true, postId });
-                    } else {
-                        const errMsg = fbJson.error ? `(#${fbJson.error.code}) ${fbJson.error.message}` : 'Lỗi API Facebook';
-                        results.push({ type: 'fanpage', success: false, error: errMsg });
-                    }
                 } else {
                     const errMsg = fbJson.error ? `(#${fbJson.error.code}) ${fbJson.error.message}` : 'Lỗi API Facebook';
                     console.error(`[FACEBOOK FANPAGE ERROR]`, fbJson);
