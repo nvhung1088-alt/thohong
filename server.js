@@ -566,7 +566,11 @@ app.post('/api/settings', authenticateToken, async (req, res) => {
         for (const [key, value] of Object.entries(newSettings)) {
             if (value !== undefined && value !== null && value !== 'undefined') {
                 await db.execute({
-                    sql: 'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+                    sql: 'DELETE FROM settings WHERE key = ?',
+                    args: [key]
+                });
+                await db.execute({
+                    sql: 'INSERT INTO settings (key, value) VALUES (?, ?)',
                     args: [key, String(value)]
                 });
             }
