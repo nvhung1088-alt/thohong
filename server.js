@@ -1741,8 +1741,21 @@ app.post('/api/admin/social/telegram-share-now', authenticateToken, async (req, 
             }
         }
 
+        // Tự động lấy bài mới nhất hoặc tạo bài viết thử nghiệm mẫu nếu blogId rỗng
         if (!fullBlogUrl) {
-            return res.status(400).json({ error: 'Thiếu thông tin bài viết hoặc URL chia sẻ' });
+            const latestRes = await db.execute("SELECT * FROM blog_posts ORDER BY created_at DESC LIMIT 1");
+            const latestPost = latestRes.rows?.[0];
+            if (latestPost) {
+                title = latestPost.title;
+                summary = latestPost.summary || latestPost.content;
+                coverImage = latestPost.cover_image || '';
+                const cleanSlug = String(latestPost.slug || '').replace(/^\/blog\//, '');
+                fullBlogUrl = `${baseUrl}/blog/${cleanSlug}`;
+            } else {
+                title = "📌 Bài Viết Mẫu Thử Nghiệm Kênh Telegram SEO";
+                summary = "Đây là bài viết thử nghiệm kết nối hệ thống tự động chia sẻ bài viết lên Kênh Telegram. Khi bài viết mới xuất bản, bài viết sẽ tự động hiển thị tại đây!";
+                fullBlogUrl = `${baseUrl}/blog`;
+            }
         }
 
         const result = await shareBlogToTelegram(fullBlogUrl, title, summary, coverImage);
