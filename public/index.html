@@ -1044,56 +1044,65 @@
                         <span>📘 Quản Lý Tự Động Chia Sẻ Bài Viết Facebook Fanpage & Group</span>
                     </h3>
 
-                    <!-- Cấu hình Credentials & Template Facebook -->
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:12px 15px; margin-bottom:15px;">
-                        <div style="font-size:0.9rem; font-weight:700; color:#1e40af; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <!-- Cấu hình Credentials & Template Facebook (Hỗ trợ Ẩn / Hiện Thu Gọn) -->
+                    <details style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:12px 15px; margin-bottom:15px; transition:0.3s;" id="detailsFacebookConfig">
+                        <summary style="font-size:0.9rem; font-weight:700; color:#1e40af; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none; outline:none; padding-bottom:4px;">
                             <span>⚙️ CẤU HÌNH TÀI KHOẢN & MẪU TIN NHẮN FACEBOOK</span>
-                        </div>
+                            <span style="font-size:0.75rem; background:#dbeafe; color:#1d4ed8; padding:3px 10px; border-radius:6px; font-weight:600; border:1px solid #93c5fd;">👇 Nhấp để Ẩn / Hiện Cài Đặt</span>
+                        </summary>
 
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
-                            <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
-                                <div style="font-size:0.83rem; font-weight:700; color:#2563eb; margin-bottom:6px;">🚩 1. Fanpage Facebook (Trang)</div>
-                                <div style="margin-bottom:6px;">
-                                    <label style="font-size:0.78rem; font-weight:600; color:#334155;">Facebook Page ID:</label>
-                                    <input type="text" id="ap_fb_page_id" placeholder="VD: 10008321982312" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:0.8rem;" oninput="storeSettings.fbPageId=this.value.trim()">
+                        <div style="margin-top:12px; border-top:1px solid #cbd5e1; padding-top:12px;">
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                                <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
+                                    <div style="font-size:0.83rem; font-weight:700; color:#2563eb; margin-bottom:6px;">🚩 1. Fanpage Facebook (Trang)</div>
+                                    <div style="margin-bottom:6px;">
+                                        <label style="font-size:0.78rem; font-weight:600; color:#334155;">Facebook Page ID:</label>
+                                        <input type="text" id="ap_fb_page_id" placeholder="VD: 10008321982312" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:0.8rem;" oninput="storeSettings.fbPageId=this.value.trim()">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:0.78rem; font-weight:600; color:#334155;">Page Access Token (EAAG...):</label>
+                                        <input type="password" id="ap_fb_page_token" placeholder="Nhập Page Access Token dài hạn..." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:0.8rem;" oninput="storeSettings.fbPageToken=this.value.trim()">
+                                    </div>
                                 </div>
-                                <div>
-                                    <label style="font-size:0.78rem; font-weight:600; color:#334155;">Page Access Token (EAAG...):</label>
-                                    <input type="password" id="ap_fb_page_token" placeholder="Nhập Page Access Token dài hạn..." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:0.8rem;" oninput="storeSettings.fbPageToken=this.value.trim()">
+
+                                <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
+                                    <div style="font-size:0.83rem; font-weight:700; color:#2563eb; margin-bottom:6px;">👥 2. Nhóm Facebook (Group)</div>
+                                    <div style="margin-bottom:6px;">
+                                        <label style="font-size:0.78rem; font-weight:600; color:#334155;">Facebook Group ID:</label>
+                                        <input type="text" id="ap_fb_group_id" placeholder="VD: 981273981237" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:0.8rem;" oninput="storeSettings.fbGroupId=this.value.trim()">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:0.78rem; font-weight:600; color:#334155;">Group Access Token (Để trống nếu dùng Page Token):</label>
+                                        <input type="password" id="ap_fb_group_token" placeholder="Để trống nếu dùng chung Page Token..." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:0.8rem;" oninput="storeSettings.fbGroupToken=this.value.trim()">
+                                    </div>
                                 </div>
                             </div>
 
-                            <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
-                                <div style="font-size:0.83rem; font-weight:700; color:#2563eb; margin-bottom:6px;">👥 2. Nhóm Facebook (Group)</div>
-                                <div style="margin-bottom:6px;">
-                                    <label style="font-size:0.78rem; font-weight:600; color:#334155;">Facebook Group ID:</label>
-                                    <input type="text" id="ap_fb_group_id" placeholder="VD: 981273981237" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:0.8rem;" oninput="storeSettings.fbGroupId=this.value.trim()">
+                            <!-- Mẫu Định Dạng Tin Nhắn Tùy Chỉnh (Đóng / Mở riêng biệt) -->
+                            <details style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:10px; transition:0.3s;" open>
+                                <summary style="font-size:0.8rem; font-weight:700; color:#334155; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none; outline:none;">
+                                    <span>✍️ Mẫu Định Dạng Tin Nhắn Tùy Chỉnh (Message Template)</span>
+                                    <span style="font-size:0.7rem; color:#64748b;">(Ẩn/Hiện Mẫu)</span>
+                                </summary>
+                                <div style="margin-top:8px;">
+                                    <textarea id="ap_fb_msg_tpl" rows="2" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.8rem;" placeholder="BÀI VIẾT MỚI TỪ {storeName}&#10;&#10;📌 {title}&#10;&#10;📝 {summary}&#10;&#10;👉 Link bài viết: {url}&#10;&#10;{hashtag}" oninput="storeSettings.fbMsgTemplate=this.value"></textarea>
+                                    <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">💡 Biến điền tự động: <code>{title}</code>, <code>{summary}</code>, <code>{url}</code>, <code>{storeName}</code>, <code>{hashtag}</code></div>
                                 </div>
-                                <div>
-                                    <label style="font-size:0.78rem; font-weight:600; color:#334155;">Group Access Token (Để trống nếu dùng Page Token):</label>
-                                    <input type="password" id="ap_fb_group_token" placeholder="Để trống nếu dùng chung Page Token..." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:0.8rem;" oninput="storeSettings.fbGroupToken=this.value.trim()">
-                                </div>
+                            </details>
+
+                            <div style="margin-bottom:10px;">
+                                <label style="font-size:0.8rem; color:#0f172a; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600;">
+                                    <input type="checkbox" id="ap_fb_auto" checked style="width:15px; height:15px;" onchange="storeSettings.autoFbShare=this.checked?'true':'false'">
+                                    <span>📘 Tự động chia sẻ bài viết mới lên Facebook Fanpage & Group khi Xuất Bản (Publish)</span>
+                                </label>
+                            </div>
+
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <button class="btn" style="flex:1; background:#1d4ed8; color:white; font-weight:bold; padding:7px 12px; font-size:0.85rem;" onclick="apTestFacebookShare()">🧪 Gửi Thử Bài Mẫu Lên Facebook</button>
+                                <button class="btn btn-primary" style="flex:1; background:#16a34a; font-weight:bold; padding:7px 12px; font-size:0.85rem;" onclick="apSaveFacebookSettings()">💾 Lưu Cài Đặt Facebook</button>
                             </div>
                         </div>
-
-                        <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:10px;">
-                            <label style="font-size:0.8rem; font-weight:700; color:#334155; display:block; margin-bottom:4px;">✍️ Mẫu Định Dạng Tin Nhắn Tùy Chỉnh (Message Template):</label>
-                            <textarea id="ap_fb_msg_tpl" rows="2" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.8rem;" placeholder="BÀI VIẾT MỚI TỪ {storeName}&#10;&#10;📌 {title}&#10;&#10;📝 {summary}&#10;&#10;👉 Link bài viết: {url}&#10;&#10;{hashtag}" oninput="storeSettings.fbMsgTemplate=this.value"></textarea>
-                            <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">💡 Biến điền tự động: <code>{title}</code>, <code>{summary}</code>, <code>{url}</code>, <code>{storeName}</code>, <code>{hashtag}</code></div>
-                        </div>
-
-                        <div style="margin-bottom:10px;">
-                            <label style="font-size:0.8rem; color:#0f172a; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600;">
-                                <input type="checkbox" id="ap_fb_auto" checked style="width:15px; height:15px;" onchange="storeSettings.autoFbShare=this.checked?'true':'false'">
-                                <span>📘 Tự động chia sẻ bài viết mới lên Facebook Fanpage & Group khi Xuất Bản (Publish)</span>
-                            </label>
-                        </div>
-
-                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                            <button class="btn" style="flex:1; background:#1d4ed8; color:white; font-weight:bold; padding:7px 12px; font-size:0.85rem;" onclick="apTestFacebookShare()">🧪 Gửi Thử Bài Mẫu Lên Facebook</button>
-                            <button class="btn btn-primary" style="flex:1; background:#16a34a; font-weight:bold; padding:7px 12px; font-size:0.85rem;" onclick="apSaveFacebookSettings()">💾 Lưu Cài Đặt Facebook</button>
-                        </div>
-                    </div>
+                    </details>
 
                     <!-- Bảng Quản Lý Trạng Thái Chia Sẻ Bài Viết Lên Facebook Fanpage & Group -->
                     <div style="background:white; border:1px solid #bfdbfe; border-radius:10px; padding:15px;">
