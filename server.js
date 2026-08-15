@@ -675,7 +675,7 @@ app.get('/api/settings', async (req, res) => {
         const result = await db.execute('SELECT * FROM settings');
         const rows = result.rows;
         const settings = {};
-        const publicKeys = ['bannerTitle', 'bannerSubtitle', 'logoText', 'metaTitle', 'metaDescription', 'storeName', 'contact_hotline', 'contact_zalo', 'hideOutOfStock'];
+        const publicKeys = ['bannerTitle', 'bannerSubtitle', 'logoText', 'metaTitle', 'metaDescription', 'storeName', 'contact_hotline', 'contact_zalo', 'hideOutOfStock', 'customHeaderCode', 'ogImage', 'seoCatTitleTpl', 'seoCatDescTpl', 'seoProdTitleTpl', 'seoProdDescTpl'];
         rows.forEach(r => {
             if (publicKeys.includes(r.key)) {
                 // Parse boolean string 'true'/'false' back to boolean type if it's hideOutOfStock
