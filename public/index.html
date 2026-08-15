@@ -4015,28 +4015,7 @@
             });
         }
 
-        async function apSaveTelegram() {
-            const token = document.getElementById('ap_tg_token').value.trim();
-            const chatId = document.getElementById('ap_tg_chatid').value.trim();
-            const name = document.getElementById('ap_tg_name').value.trim() || '🏪 ĐHTK - Đơn hàng mới';
-
-            try {
-                await fetchAPI('/api/settings', {
-                    method: 'POST',
-                    body: {
-                        telegramToken: token,
-                        telegramChatId: chatId,
-                        storeName: name
-                    }
-                });
-                storeSettings.telegramToken = token;
-                storeSettings.telegramChatId = chatId;
-                storeSettings.storeName = name;
-                alert('✅ Đã lưu cài đặt Telegram lên server!');
-            } catch(e) {
-                alert('Lỗi: ' + e.message);
-            }
-        }
+        // [REMOVED] Duplicate apSaveTelegram - correct version is at line ~3249
 
         async function apTestTelegram() {
             const token = document.getElementById('ap_tg_token').value.trim();
