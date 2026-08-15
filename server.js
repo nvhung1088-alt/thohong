@@ -388,14 +388,14 @@ async function shareBlogToTelegram(fullBlogUrl, title, summary, coverImage, blog
         const blogChatIdSetting = (settingsMap['telegramBlogChatId'] || '').trim();
 
         const botToken = (overrideToken || blogTokenSetting || settingsMap['telegramToken'] || '').trim();
-        const chatId = (overrideChatId || blogChatIdSetting || settingsMap['telegramChatId'] || '').trim();
+        const chatId = (overrideChatId || blogChatIdSetting || '').trim();
 
         if (!botToken) {
-            return { skipped: true, reason: 'Chưa nhập Bot Token Telegram. Vui lòng nhập Bot Token và nhấn "💾 Lưu Tất Cả Cài Đặt Telegram"!' };
+            return { skipped: true, reason: '❌ Chưa nhập Bot Token Telegram. Vui lòng nhập Bot Token và nhấn "💾 Lưu Tất Cả Cài Đặt Telegram"!' };
         }
 
         if (!chatId) {
-            return { skipped: true, reason: 'Chưa nhập Chat ID Kênh Telegram SEO (VD: -100xxxxxxxxx hoặc @ten_kenh). Vui lòng nhập Chat ID và bấm "💾 Lưu Tất Cả Cài Đặt Telegram"!' };
+            return { skipped: true, reason: '❌ Chưa nhập Chat ID Kênh Telegram SEO ở Mục 2! Vui lòng nhập Chat ID Kênh Tin Tức (VD: -100xxxxxxxxx) vào Mục 2 và bấm "💾 Lưu Tất Cả Cài Đặt Telegram"!' };
         }
 
         const storeName = settingsMap['storeName'] || 'Thỏ Hồng / ĐHTK';
