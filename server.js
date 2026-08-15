@@ -470,6 +470,7 @@ async function shareBlogToFacebook(fullBlogUrl, title, summary, coverImage, blog
                 const feedPayload = {
                     message: message,
                     link: fullBlogUrl,
+                    published: true,
                     access_token: fbPageToken
                 };
 
