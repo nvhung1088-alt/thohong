@@ -1032,6 +1032,58 @@
                                 </table>
                             </div>
                         </div>
+
+                        <!-- 📢 3. KÊNH FACEBOOK FANPAGE & NHÓM CHIA SẺ BÀI VIẾT (SOCIAL & SEO) -->
+                        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:15px; margin-top:20px;">
+                            <div style="font-size:0.95rem; font-weight:700; color:#1e40af; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                                <span>📘 3. KÊNH FACEBOOK FANPAGE & NHÓM CHIA SẺ BÀI VIẾT (SOCIAL & SEO)</span>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+                                <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+                                    <div style="font-size:0.85rem; font-weight:700; color:#2563eb; margin-bottom:8px;">🚩 3.1 Fanpage Facebook (Trang)</div>
+                                    <div style="margin-bottom:8px;">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Facebook Page ID:</label>
+                                        <input type="text" id="ap_fb_page_id" placeholder="VD: 10008321982312" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.82rem;" oninput="storeSettings.fbPageId=this.value.trim()">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Page Access Token (EAAG...):</label>
+                                        <input type="password" id="ap_fb_page_token" placeholder="Nhập Page Access Token dài hạn..." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.82rem;" oninput="storeSettings.fbPageToken=this.value.trim()">
+                                    </div>
+                                </div>
+
+                                <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+                                    <div style="font-size:0.85rem; font-weight:700; color:#2563eb; margin-bottom:8px;">👥 3.2 Nhóm Facebook (Group)</div>
+                                    <div style="margin-bottom:8px;">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Facebook Group ID:</label>
+                                        <input type="text" id="ap_fb_group_id" placeholder="VD: 981273981237" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.82rem;" oninput="storeSettings.fbGroupId=this.value.trim()">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Group Access Token (Để trống nếu dùng Page Token):</label>
+                                        <input type="password" id="ap_fb_group_token" placeholder="Để trống nếu dùng chung Page Token..." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.82rem;" oninput="storeSettings.fbGroupToken=this.value.trim()">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:12px;">
+                                <label style="font-size:0.83rem; font-weight:700; color:#334155; display:block; margin-bottom:4px;">✍️ Mẫu Định Dạng Tin Nhắn Tùy Chỉnh (Message Template):</label>
+                                <textarea id="ap_fb_msg_tpl" rows="3" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:8px; font-size:0.82rem;" placeholder="BÀI VIẾT MỚI TỪ {storeName}&#10;&#10;📌 {title}&#10;&#10;📝 {summary}&#10;&#10;👉 Link bài viết: {url}&#10;&#10;{hashtag}" oninput="storeSettings.fbMsgTemplate=this.value"></textarea>
+                                <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">💡 Các biến tự động điền: <code>{title}</code>, <code>{summary}</code>, <code>{url}</code>, <code>{storeName}</code>, <code>{hashtag}</code></div>
+                            </div>
+
+                            <div style="margin-bottom:12px;">
+                                <label style="font-size:0.82rem; color:#0f172a; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600;">
+                                    <input type="checkbox" id="ap_fb_auto" checked style="width:16px; height:16px;" onchange="storeSettings.autoFbShare=this.checked?'true':'false'">
+                                    <span>📘 Tự động chia sẻ bài viết mới lên Facebook Fanpage & Group khi Xuất Bản (Publish)</span>
+                                </label>
+                            </div>
+
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <button class="btn" style="flex:1; background:#1d4ed8; color:white; font-weight:bold;" onclick="apTestFacebookShare()">🧪 Gửi Thử Bài Mẫu Lên Facebook</button>
+                                <button class="btn btn-primary" style="flex:1; background:#16a34a; font-weight:bold;" onclick="apSaveFacebookSettings()">💾 Lưu Cài Đặt Facebook</button>
+                                <button class="btn" style="background:#0284c7; color:white; font-weight:bold; padding:8px 16px;" onclick="apShareFacebookBatch()">📘 Share Facebook Hàng Loạt</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1524,7 +1576,7 @@
 
         async function saveSettings() {
             try {
-                const privateKeys = ['telegramToken', 'telegramChatId', 'telegramBlogToken', 'telegramBlogChatId', 'pos_api_key', 'pos_shop_id', 'pos_warehouse_id', 'deepseekApiKey'];
+                const privateKeys = ['telegramToken', 'telegramChatId', 'telegramBlogToken', 'telegramBlogChatId', 'fbPageToken', 'fbGroupToken', 'fbPageId', 'fbGroupId', 'pos_api_key', 'pos_shop_id', 'pos_warehouse_id', 'deepseekApiKey'];
                 const cleanData = {};
                 for (const [k, v] of Object.entries(storeSettings)) {
                     if (v !== undefined && v !== null) {
@@ -3352,6 +3404,99 @@
             }
         }
 
+        async function apSaveFacebookSettings() {
+            const pageIdEl = document.getElementById('ap_fb_page_id');
+            const pageTokenEl = document.getElementById('ap_fb_page_token');
+            const groupIdEl = document.getElementById('ap_fb_group_id');
+            const groupTokenEl = document.getElementById('ap_fb_group_token');
+            const msgTplEl = document.getElementById('ap_fb_msg_tpl');
+            const autoShareEl = document.getElementById('ap_fb_auto');
+
+            const fbPageId = pageIdEl ? pageIdEl.value.trim() : (storeSettings.fbPageId || '');
+            const fbPageToken = pageTokenEl ? pageTokenEl.value.trim() : (storeSettings.fbPageToken || '');
+            const fbGroupId = groupIdEl ? groupIdEl.value.trim() : (storeSettings.fbGroupId || '');
+            const fbGroupToken = groupTokenEl ? groupTokenEl.value.trim() : (storeSettings.fbGroupToken || '');
+            const fbMsgTemplate = msgTplEl ? msgTplEl.value : (storeSettings.fbMsgTemplate || '');
+            const autoFbShare = autoShareEl ? (autoShareEl.checked ? 'true' : 'false') : (storeSettings.autoFbShare || 'true');
+
+            try {
+                await fetchAPI('/api/settings', {
+                    method: 'POST',
+                    body: {
+                        fbPageId,
+                        fbPageToken,
+                        fbGroupId,
+                        fbGroupToken,
+                        fbMsgTemplate,
+                        autoFbShare
+                    }
+                });
+                storeSettings.fbPageId = fbPageId;
+                storeSettings.fbPageToken = fbPageToken;
+                storeSettings.fbGroupId = fbGroupId;
+                storeSettings.fbGroupToken = fbGroupToken;
+                storeSettings.fbMsgTemplate = fbMsgTemplate;
+                storeSettings.autoFbShare = autoFbShare;
+                alert('✅ Đã lưu cài đặt Facebook Fanpage & Group thành công!');
+            } catch(e) {
+                alert('❌ Lỗi lưu cài đặt Facebook: ' + e.message);
+            }
+        }
+
+        async function apTestFacebookShare() {
+            const blogSelect = document.getElementById('indexingBlogSelect');
+            const blogId = blogSelect ? blogSelect.value : '';
+            const fbPageId = document.getElementById('ap_fb_page_id') ? document.getElementById('ap_fb_page_id').value.trim() : '';
+            const fbPageToken = document.getElementById('ap_fb_page_token') ? document.getElementById('ap_fb_page_token').value.trim() : '';
+            const fbGroupId = document.getElementById('ap_fb_group_id') ? document.getElementById('ap_fb_group_id').value.trim() : '';
+            const fbGroupToken = document.getElementById('ap_fb_group_token') ? document.getElementById('ap_fb_group_token').value.trim() : '';
+
+            if (!fbPageId && !fbGroupId && !storeSettings.fbPageId && !storeSettings.fbGroupId) {
+                return alert('⚠️ Vui lòng nhập Facebook Page ID hoặc Group ID ở Mục 3 rồi nhấn "💾 Lưu Cài Đặt Facebook"!');
+            }
+
+            if (fbPageId || fbPageToken || fbGroupId || fbGroupToken) {
+                try { await apSaveFacebookSettings(); } catch(e) {}
+            }
+
+            try {
+                const res = await fetchAPI('/api/admin/social/facebook-share-now', {
+                    method: 'POST',
+                    body: { blogId, fbPageId, fbPageToken, fbGroupId, fbGroupToken }
+                });
+                alert('✅ ' + (res.message || 'Đã chia sẻ bài viết thử nghiệm lên Facebook thành công!'));
+            } catch(e) {
+                alert('❌ Lỗi chia sẻ Facebook: ' + e.message);
+            }
+        }
+
+        async function apShareFacebookPost(blogId) {
+            if (!confirm('Bạn có chắc muốn chia sẻ bài viết này lên Facebook Fanpage & Group ngay bây giờ?')) return;
+            try {
+                const res = await fetchAPI('/api/admin/social/facebook-share-now', {
+                    method: 'POST',
+                    body: { blogId }
+                });
+                alert('✅ ' + (res.message || 'Đã chia sẻ lên Facebook thành công!'));
+                if (typeof loadIndexingPosts === 'function') loadIndexingPosts();
+            } catch(e) {
+                alert('❌ Lỗi Facebook: ' + e.message);
+            }
+        }
+
+        async function apShareFacebookBatch() {
+            if (!confirm('Bạn có chắc muốn chia sẻ tất cả bài viết chưa đăng lên Facebook Fanpage & Group?')) return;
+            try {
+                const res = await fetchAPI('/api/admin/social/facebook-share-batch', {
+                    method: 'POST'
+                });
+                alert('✅ ' + (res.message || 'Đã chia sẻ hàng loạt lên Facebook thành công!'));
+                if (typeof loadIndexingPosts === 'function') loadIndexingPosts();
+            } catch(e) {
+                alert('❌ Lỗi chia sẻ hàng loạt Facebook: ' + e.message);
+            }
+        }
+
         async function sendTelegramMessage(text) {
             console.log("Send telegram request has been handled by backend server.");
         }
@@ -3737,6 +3882,13 @@
                         setVal('ap_tg_blog_token', privateSettings.telegramBlogToken || '');
                         setVal('ap_tg_blog_chatid', privateSettings.telegramBlogChatId || '');
                         if (document.getElementById('ap_tg_blog_auto')) document.getElementById('ap_tg_blog_auto').checked = privateSettings.autoTelegramShare !== 'false';
+
+                        setVal('ap_fb_page_id', privateSettings.fbPageId || '');
+                        setVal('ap_fb_page_token', privateSettings.fbPageToken || '');
+                        setVal('ap_fb_group_id', privateSettings.fbGroupId || '');
+                        setVal('ap_fb_group_token', privateSettings.fbGroupToken || '');
+                        setVal('ap_fb_msg_tpl', privateSettings.fbMsgTemplate || '');
+                        if (document.getElementById('ap_fb_auto')) document.getElementById('ap_fb_auto').checked = privateSettings.autoFbShare !== 'false';
 
                         setVal('ap_pos_key', privateSettings.pos_api_key || '');
                         setVal('ap_pos_shop', privateSettings.pos_shop_id || '');
@@ -5406,9 +5558,10 @@ YÊU CẦU SEO CHI TIẾT:
                                     <td style="padding:10px 12px;">${idxBadge}</td>
                                     <td style="padding:10px 12px;">${tgBadge}</td>
                                     <td style="padding:10px 12px; text-align:right;">
-                                        <div style="display:flex; gap:6px; justify-content:flex-end;">
+                                        <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
                                             <button class="btn" style="background:#0284c7; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="triggerGoogleIndexByItem('${p.id}', '${fullUrl}')">⚡ Nộp Index</button>
                                             <button class="btn" style="background:#0088cc; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="triggerShareBlogTelegram('${p.id}')">✈️ Share Telegram</button>
+                                            <button class="btn" style="background:#1877f2; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="apShareFacebookPost('${p.id}')">📘 Share Facebook</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -5443,7 +5596,10 @@ YÊU CẦU SEO CHI TIẾT:
                                     <td style="padding:10px 12px;">${pubBadge}</td>
                                     <td style="padding:10px 12px;">${tgBadge}</td>
                                     <td style="padding:10px 12px; text-align:right;">
-                                        <button class="btn" style="background:#0088cc; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="triggerShareBlogTelegram('${p.id}')">✈️ Share Telegram</button>
+                                        <div style="display:flex; gap:6px; justify-content:flex-end;">
+                                            <button class="btn" style="background:#0088cc; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="triggerShareBlogTelegram('${p.id}')">✈️ Telegram</button>
+                                            <button class="btn" style="background:#1877f2; color:white; font-size:0.75rem; padding:5px 10px; font-weight:bold;" onclick="apShareFacebookPost('${p.id}')">📘 Facebook</button>
+                                        </div>
                                     </td>
                                 </tr>
                             `;

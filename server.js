@@ -427,6 +427,125 @@ async function shareBlogToTelegram(fullBlogUrl, title, summary, coverImage, blog
     }
 }
 
+async function shareBlogToFacebook(fullBlogUrl, title, summary, coverImage, blogId = null, overridePageId = '', overridePageToken = '', overrideGroupId = '', overrideGroupToken = '') {
+    try {
+        const res = await db.execute("SELECT key, value FROM settings WHERE key IN ('fbPageId', 'fbPageToken', 'fbGroupId', 'fbGroupToken', 'autoFbShare', 'fbMsgTemplate', 'storeName')");
+        const settingsMap = {};
+        (res.rows || []).forEach(r => { settingsMap[r.key] = r.value; });
+
+        const fbPageId = (overridePageId || settingsMap['fbPageId'] || '').trim();
+        const fbPageToken = (overridePageToken || settingsMap['fbPageToken'] || '').trim();
+        const fbGroupId = (overrideGroupId || settingsMap['fbGroupId'] || '').trim();
+        const fbGroupToken = (overrideGroupToken || settingsMap['fbGroupToken'] || '').trim();
+        const customTpl = (settingsMap['fbMsgTemplate'] || '').trim();
+        const storeName = settingsMap['storeName'] || 'Thỏ Hồng / ĐHTK';
+
+        if (!fbPageId && !fbGroupId) {
+            return { skipped: true, reason: '❌ Chưa nhập Page ID Fanpage hoặc Group ID Facebook. Vui lòng nhập thông tin cài đặt Facebook ở Mục 3!' };
+        }
+
+        const cleanSummary = (summary || '').replace(/<[^>]*>/g, '').substring(0, 250);
+        
+        let message = '';
+        if (customTpl) {
+            message = customTpl
+                .replace(/\{title\}/g, title)
+                .replace(/\{summary\}/g, cleanSummary)
+                .replace(/\{url\}/g, fullBlogUrl)
+                .replace(/\{storeName\}/g, storeName)
+                .replace(/\{hashtag\}/g, '#thohong #dhtk #tintuc');
+        } else {
+            message = `📢 BÀI VIẾT MỚI TỪ ${storeName.toUpperCase()}\n\n` +
+                      `📌 ${title}\n\n` +
+                      `📝 ${cleanSummary}...\n\n` +
+                      `👉 Xem chi tiết tại: ${fullBlogUrl}`;
+        }
+
+        const results = [];
+
+        // 1. ĐĂNG BÀI LÊN FANPAGE (nếu có Token & Page ID)
+        if (fbPageId && fbPageToken) {
+            try {
+                let fbUrl = `https://graph.facebook.com/v19.0/${fbPageId}/feed`;
+                let payload = {
+                    message: message,
+                    link: fullBlogUrl,
+                    access_token: fbPageToken
+                };
+
+                if (coverImage && coverImage.startsWith('http')) {
+                    fbUrl = `https://graph.facebook.com/v19.0/${fbPageId}/photos`;
+                    payload = {
+                        url: coverImage,
+                        caption: message,
+                        access_token: fbPageToken
+                    };
+                }
+
+                const fbRes = await fetch(fbUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const fbJson = await fbRes.json();
+                if (fbJson.id) {
+                    console.log(`[FACEBOOK FANPAGE SHARE SUCCESS] Post ID: ${fbJson.id}`);
+                    results.push({ type: 'fanpage', success: true, postId: fbJson.id });
+                } else {
+                    console.error(`[FACEBOOK FANPAGE ERROR]`, fbJson);
+                    results.push({ type: 'fanpage', success: false, error: fbJson.error ? fbJson.error.message : 'Lỗi API Facebook' });
+                }
+            } catch(errPage) {
+                results.push({ type: 'fanpage', success: false, error: errPage.message });
+            }
+        }
+
+        // 2. ĐĂNG BÀI LÊN GROUP (nếu có Token & Group ID)
+        if (fbGroupId && (fbGroupToken || fbPageToken)) {
+            try {
+                const groupToken = fbGroupToken || fbPageToken;
+                const groupUrl = `https://graph.facebook.com/v19.0/${fbGroupId}/feed`;
+                const groupPayload = {
+                    message: message,
+                    link: fullBlogUrl,
+                    access_token: groupToken
+                };
+                const groupRes = await fetch(groupUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(groupPayload)
+                });
+                const groupJson = await groupRes.json();
+                if (groupJson.id) {
+                    console.log(`[FACEBOOK GROUP SHARE SUCCESS] Post ID: ${groupJson.id}`);
+                    results.push({ type: 'group', success: true, postId: groupJson.id });
+                } else {
+                    console.error(`[FACEBOOK GROUP ERROR]`, groupJson);
+                    results.push({ type: 'group', success: false, error: groupJson.error ? groupJson.error.message : 'Lỗi API Facebook' });
+                }
+            } catch(errGroup) {
+                results.push({ type: 'group', success: false, error: errGroup.message });
+            }
+        }
+
+        if (blogId) {
+            try {
+                await db.execute("ALTER TABLE blog_posts ADD COLUMN facebook_shared_at TEXT DEFAULT ''");
+            } catch(e) {}
+            const nowIso = new Date().toISOString();
+            await db.execute({
+                sql: "UPDATE blog_posts SET facebook_shared_at = ? WHERE id = ? OR slug = ?",
+                args: [nowIso, blogId, blogId]
+            });
+        }
+
+        return { success: true, results };
+    } catch(e) {
+        console.error('[FACEBOOK BLOG SHARE ERROR]', e.message);
+        return { error: e.message };
+    }
+}
+
 // --- ROUTES ---
 
 // 1. ADMIN LOGIN
@@ -1688,8 +1807,9 @@ app.post('/api/admin/blog', authenticateToken, async (req, res) => {
             try {
                 await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id);
                 await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '', id);
+                await shareBlogToFacebook(fullBlogUrl, title, finalSummary, cover_image || '', id);
             } catch(e) {
-                console.error('[AUTO-INDEX/TELEGRAM POST ERROR]', e.message);
+                console.error('[AUTO-INDEX/SOCIAL POST ERROR]', e.message);
             }
         }
 
@@ -1725,8 +1845,9 @@ app.put('/api/admin/blog/:id', authenticateToken, async (req, res) => {
             try {
                 await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id);
                 await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '', id);
+                await shareBlogToFacebook(fullBlogUrl, title, finalSummary, cover_image || '', id);
             } catch(e) {
-                console.error('[AUTO-INDEX/TELEGRAM UPDATE ERROR]', e.message);
+                console.error('[AUTO-INDEX/SOCIAL UPDATE ERROR]', e.message);
             }
         }
 
@@ -1834,6 +1955,108 @@ app.post('/api/admin/social/telegram-share-batch', authenticateToken, async (req
         res.json({
             success: true,
             message: `Đã chia sẻ hàng loạt ${successCount}/${unshared.length} bài viết chưa share lên Kênh Telegram!`,
+            successCount,
+            failCount,
+            total: unshared.length
+        });
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// 5.7 ADMIN: FACEBOOK SHARE NOW & BATCH
+app.post('/api/admin/social/facebook-share-now', authenticateToken, async (req, res) => {
+    try {
+        const { blogId, fbPageId, fbPageToken, fbGroupId, fbGroupToken } = req.body;
+        const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
+        const protocol = req.headers['x-forwarded-proto'] || 'https';
+        const baseUrl = `${protocol}://${host}`;
+
+        let fullBlogUrl = req.body.url || '';
+        let title = req.body.title || '';
+        let summary = req.body.summary || '';
+        let coverImage = req.body.coverImage || '';
+        let targetBlogId = blogId || null;
+
+        if (blogId) {
+            const blogRes = await db.execute({
+                sql: "SELECT * FROM blog_posts WHERE id = ? OR slug = ?",
+                args: [blogId, blogId]
+            });
+            const post = blogRes.rows?.[0];
+            if (post) {
+                title = post.title;
+                summary = post.summary || post.content;
+                coverImage = post.cover_image || '';
+                const cleanSlug = String(post.slug || '').replace(/^\/blog\//, '');
+                fullBlogUrl = `${baseUrl}/blog/${cleanSlug}`;
+                targetBlogId = post.id;
+            }
+        }
+
+        if (!fullBlogUrl) {
+            const latestRes = await db.execute("SELECT * FROM blog_posts ORDER BY created_at DESC LIMIT 1");
+            const latestPost = latestRes.rows?.[0];
+            if (latestPost) {
+                title = latestPost.title;
+                summary = latestPost.summary || latestPost.content;
+                coverImage = latestPost.cover_image || '';
+                const cleanSlug = String(latestPost.slug || '').replace(/^\/blog\//, '');
+                fullBlogUrl = `${baseUrl}/blog/${cleanSlug}`;
+                targetBlogId = latestPost.id;
+            } else {
+                title = "📌 Bài Viết Mẫu Thử Nghiệm Facebook Fanpage & Group";
+                summary = "Đây là bài viết thử nghiệm kết nối hệ thống tự động chia sẻ bài viết lên Facebook Fanpage / Group. Khi bài viết mới xuất bản, bài viết sẽ tự động hiển thị tại đây!";
+                fullBlogUrl = `${baseUrl}/blog`;
+            }
+        }
+
+        const result = await shareBlogToFacebook(fullBlogUrl, title, summary, coverImage, targetBlogId, fbPageId, fbPageToken, fbGroupId, fbGroupToken);
+        if (result.error) return res.status(400).json({ error: result.error });
+        if (result.skipped) return res.status(400).json({ error: result.reason });
+
+        res.json({ success: true, message: `Đã chia sẻ thành công bài viết lên Facebook Fanpage / Group!`, results: result.results });
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/admin/social/facebook-share-batch', authenticateToken, async (req, res) => {
+    try {
+        try {
+            await db.execute("ALTER TABLE blog_posts ADD COLUMN facebook_shared_at TEXT DEFAULT ''");
+        } catch(e) {}
+
+        const postsRes = await db.execute("SELECT * FROM blog_posts ORDER BY created_at DESC");
+        const unshared = (postsRes.rows || []).filter(p => !p.facebook_shared_at);
+
+        if (unshared.length === 0) {
+            return res.json({ success: true, count: 0, message: '🎉 Tất cả bài viết đã được chia sẻ Facebook từ trước!' });
+        }
+
+        const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
+        const protocol = req.headers['x-forwarded-proto'] || 'https';
+        const baseUrl = `${protocol}://${host}`;
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const post of unshared) {
+            const cleanSlug = String(post.slug || '').replace(/^\/blog\//, '');
+            const fullBlogUrl = `${baseUrl}/blog/${cleanSlug}`;
+            const summary = post.summary || post.content;
+            
+            const shareRes = await shareBlogToFacebook(fullBlogUrl, post.title, summary, post.cover_image || '', post.id);
+            if (shareRes.success) {
+                successCount++;
+            } else {
+                failCount++;
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Đã chia sẻ hàng loạt ${successCount}/${unshared.length} bài viết chưa share lên Facebook!`,
             successCount,
             failCount,
             total: unshared.length
