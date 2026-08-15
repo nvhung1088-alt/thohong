@@ -16,4 +16,4 @@
 - **Sprint 1**: Chuẩn hóa giao diện Thỏ Hồng Store, tối ưu hóa CSS & trải nghiệm người dùng mobile.
 - **Sprint 2**: Migrate CSDL SQLite sang Turso Cloud, tích hợp Vercel Serverless.
 - **Sprint 3**: Đồng bộ tính năng đẩy đơn POS V2, kiểm thử luồng CI/CD Auto-Deploy từ GitHub sang Vercel.
-- **Sprint 4**: Khắc phục lỗi tự động nộp Google Indexing API & tự động cập nhật mốc thời gian indexed_at; Bổ sung cột Telegram SEO Status và nút ✈️ Share Telegram Hàng Loạt cho bài viết.
+- **Sprint 4**: Khắc phục lỗi tự động nộp Google Indexing API & tự động cập nhật mốc thời gian indexed_at; Bổ sung cột Telegram SEO Status, nút ✈️ Share Telegram Hàng Loạt và sửa lỗi đóng khối ngoặc render bảng Telegram Tab.
