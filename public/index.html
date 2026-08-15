@@ -3445,7 +3445,7 @@
             }
         }
 
-        async function apSaveFacebookSettings() {
+        async function apSaveFacebookSettings(silent = false) {
             const pageIdEl = document.getElementById('ap_fb_page_id');
             const pageTokenEl = document.getElementById('ap_fb_page_token');
             const groupIdEl = document.getElementById('ap_fb_group_id');
@@ -3478,9 +3478,9 @@
                 storeSettings.fbGroupToken = fbGroupToken;
                 storeSettings.fbMsgTemplate = fbMsgTemplate;
                 storeSettings.autoFbShare = autoFbShare;
-                alert('✅ Đã lưu cài đặt Facebook Fanpage & Group thành công!');
+                if (!silent) alert('✅ Đã lưu cài đặt Facebook Fanpage & Group thành công!');
             } catch(e) {
-                alert('❌ Lỗi lưu cài đặt Facebook: ' + e.message);
+                if (!silent) alert('❌ Lỗi lưu cài đặt Facebook: ' + e.message);
             }
         }
 
@@ -3497,7 +3497,7 @@
             }
 
             if (fbPageId || fbPageToken || fbGroupId || fbGroupToken) {
-                try { await apSaveFacebookSettings(); } catch(e) {}
+                try { await apSaveFacebookSettings(true); } catch(e) {}
             }
 
             try {
