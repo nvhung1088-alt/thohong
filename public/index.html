@@ -3208,13 +3208,29 @@
             }
         }
 
-        function openTelegramSettings() {
-            if (document.getElementById('ap_tg_token')) document.getElementById('ap_tg_token').value = storeSettings.telegramToken || '';
-            if (document.getElementById('ap_tg_chatid')) document.getElementById('ap_tg_chatid').value = storeSettings.telegramChatId || '';
-            if (document.getElementById('ap_tg_name')) document.getElementById('ap_tg_name').value = storeSettings.storeName || '🏪 Thỏ Hồng - Đơn hàng mới';
-            if (document.getElementById('ap_tg_blog_token')) document.getElementById('ap_tg_blog_token').value = storeSettings.telegramBlogToken || '';
-            if (document.getElementById('ap_tg_blog_chatid')) document.getElementById('ap_tg_blog_chatid').value = storeSettings.telegramBlogChatId || '';
-            if (document.getElementById('ap_tg_blog_auto')) document.getElementById('ap_tg_blog_auto').checked = storeSettings.autoTelegramShare !== 'false';
+        async function loadPrivateSettings() {
+            const token = localStorage.getItem('dhtk_jwt');
+            if (!token) return;
+            try {
+                const res = await fetch('/api/settings/private', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (res.ok) {
+                    const privateSettings = await res.json();
+                    Object.assign(storeSettings, privateSettings);
+
+                    if (document.getElementById('ap_tg_token')) document.getElementById('ap_tg_token').value = storeSettings.telegramToken || '';
+                    if (document.getElementById('ap_tg_chatid')) document.getElementById('ap_tg_chatid').value = storeSettings.telegramChatId || '';
+                    if (document.getElementById('ap_tg_name')) document.getElementById('ap_tg_name').value = storeSettings.storeName || '🏪 Thỏ Hồng - Đơn hàng mới';
+                    if (document.getElementById('ap_tg_blog_token')) document.getElementById('ap_tg_blog_token').value = storeSettings.telegramBlogToken || '';
+                    if (document.getElementById('ap_tg_blog_chatid')) document.getElementById('ap_tg_blog_chatid').value = storeSettings.telegramBlogChatId || '';
+                    if (document.getElementById('ap_tg_blog_auto')) document.getElementById('ap_tg_blog_auto').checked = storeSettings.autoTelegramShare !== 'false';
+                }
+            } catch(e) {
+                console.error('[loadPrivateSettings error]', e);
+            }
+        }
+
+        async function openTelegramSettings() {
+            await loadPrivateSettings();
             if (document.getElementById('telegramModal')) document.getElementById('telegramModal').classList.add('active');
         }
 
@@ -3223,12 +3239,19 @@
         }
 
         async function apSaveTelegram() {
-            const token = document.getElementById('ap_tg_token') ? document.getElementById('ap_tg_token').value.trim() : '';
-            const chatId = document.getElementById('ap_tg_chatid') ? document.getElementById('ap_tg_chatid').value.trim() : '';
-            const name = document.getElementById('ap_tg_name') ? document.getElementById('ap_tg_name').value.trim() : '🏪 Thỏ Hồng - Đơn hàng mới';
-            const blogToken = document.getElementById('ap_tg_blog_token') ? document.getElementById('ap_tg_blog_token').value.trim() : '';
-            const blogChatId = document.getElementById('ap_tg_blog_chatid') ? document.getElementById('ap_tg_blog_chatid').value.trim() : '';
-            const autoShare = (document.getElementById('ap_tg_blog_auto') && document.getElementById('ap_tg_blog_auto').checked) ? 'true' : 'false';
+            const tokenEl = document.getElementById('ap_tg_token');
+            const chatIdEl = document.getElementById('ap_tg_chatid');
+            const nameEl = document.getElementById('ap_tg_name');
+            const blogTokenEl = document.getElementById('ap_tg_blog_token');
+            const blogChatIdEl = document.getElementById('ap_tg_blog_chatid');
+            const autoShareEl = document.getElementById('ap_tg_blog_auto');
+
+            const token = tokenEl ? tokenEl.value.trim() : (storeSettings.telegramToken || '');
+            const chatId = chatIdEl ? chatIdEl.value.trim() : (storeSettings.telegramChatId || '');
+            const name = nameEl ? nameEl.value.trim() : (storeSettings.storeName || '🏪 Thỏ Hồng - Đơn hàng mới');
+            const blogToken = blogTokenEl ? blogTokenEl.value.trim() : (storeSettings.telegramBlogToken || '');
+            const blogChatId = blogChatIdEl ? blogChatIdEl.value.trim() : (storeSettings.telegramBlogChatId || '');
+            const autoShare = autoShareEl ? (autoShareEl.checked ? 'true' : 'false') : (storeSettings.autoTelegramShare || 'true');
 
             try {
                 await fetchAPI('/api/settings', {
@@ -3251,7 +3274,7 @@
                 alert('✅ Đã lưu cài đặt Telegram & Chia Sẻ MXH thành công!');
                 if (document.getElementById('telegramModal')) closeModal('telegramModal');
             } catch(e) {
-                alert('Lỗi: ' + e.message);
+                alert('❌ Lỗi: ' + e.message);
             }
         }
 
