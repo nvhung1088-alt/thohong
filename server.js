@@ -488,12 +488,14 @@ async function shareBlogToFacebook(fullBlogUrl, title, summary, coverImage, blog
                     body: JSON.stringify(payload)
                 });
                 const fbJson = await fbRes.json();
-                if (fbJson.id) {
-                    console.log(`[FACEBOOK FANPAGE SHARE SUCCESS] Post ID: ${fbJson.id}`);
-                    results.push({ type: 'fanpage', success: true, postId: fbJson.id });
+                if (fbJson.id || fbJson.post_id) {
+                    const postId = fbJson.id || fbJson.post_id;
+                    console.log(`[FACEBOOK FANPAGE SHARE SUCCESS] Post ID: ${postId}`);
+                    results.push({ type: 'fanpage', success: true, postId });
                 } else {
+                    const errMsg = fbJson.error ? `(#${fbJson.error.code}) ${fbJson.error.message}` : 'Lỗi API Facebook';
                     console.error(`[FACEBOOK FANPAGE ERROR]`, fbJson);
-                    results.push({ type: 'fanpage', success: false, error: fbJson.error ? fbJson.error.message : 'Lỗi API Facebook' });
+                    results.push({ type: 'fanpage', success: false, error: errMsg });
                 }
             } catch(errPage) {
                 results.push({ type: 'fanpage', success: false, error: errPage.message });
@@ -520,15 +522,27 @@ async function shareBlogToFacebook(fullBlogUrl, title, summary, coverImage, blog
                     console.log(`[FACEBOOK GROUP SHARE SUCCESS] Post ID: ${groupJson.id}`);
                     results.push({ type: 'group', success: true, postId: groupJson.id });
                 } else {
+                    const errMsg = groupJson.error ? `(#${groupJson.error.code}) ${groupJson.error.message}` : 'Lỗi API Facebook';
                     console.error(`[FACEBOOK GROUP ERROR]`, groupJson);
-                    results.push({ type: 'group', success: false, error: groupJson.error ? groupJson.error.message : 'Lỗi API Facebook' });
+                    results.push({ type: 'group', success: false, error: errMsg });
                 }
             } catch(errGroup) {
                 results.push({ type: 'group', success: false, error: errGroup.message });
             }
         }
 
-        if (blogId) {
+        const successCount = results.filter(r => r.success).length;
+
+        if (results.length === 0) {
+            return { error: '❌ Vui lòng nhập Facebook Page ID và Page Access Token ở cài đặt!' };
+        }
+
+        if (successCount === 0) {
+            const errSummary = results.map(r => `• ${r.type.toUpperCase()}: ${r.error}`).join('\n');
+            return { error: `❌ Facebook từ chối bài đăng:\n${errSummary}` };
+        }
+
+        if (blogId && successCount > 0) {
             try {
                 await db.execute("ALTER TABLE blog_posts ADD COLUMN facebook_shared_at TEXT DEFAULT ''");
             } catch(e) {}
@@ -2015,7 +2029,12 @@ app.post('/api/admin/social/facebook-share-now', authenticateToken, async (req, 
         if (result.error) return res.status(400).json({ error: result.error });
         if (result.skipped) return res.status(400).json({ error: result.reason });
 
-        res.json({ success: true, message: `Đã chia sẻ thành công bài viết lên Facebook Fanpage / Group!`, results: result.results });
+        const detailMsgs = (result.results || []).map(r => {
+            if (r.success) return `✅ ${r.type === 'fanpage' ? 'Fanpage' : 'Group'}: Thành công (ID: ${r.postId})`;
+            return `❌ ${r.type === 'fanpage' ? 'Fanpage' : 'Group'}: ${r.error}`;
+        }).join('\n');
+
+        res.json({ success: true, message: `Kết quả đăng bài Facebook:\n${detailMsgs}`, results: result.results });
     } catch(e) {
         res.status(500).json({ error: e.message });
     }
