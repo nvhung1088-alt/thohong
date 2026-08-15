@@ -1524,9 +1524,13 @@
 
         async function saveSettings() {
             try {
+                const privateKeys = ['telegramToken', 'telegramChatId', 'telegramBlogToken', 'telegramBlogChatId', 'pos_api_key', 'pos_shop_id', 'pos_warehouse_id', 'deepseekApiKey'];
                 const cleanData = {};
                 for (const [k, v] of Object.entries(storeSettings)) {
-                    if (v !== undefined && v !== null) cleanData[k] = v;
+                    if (v !== undefined && v !== null) {
+                        if (privateKeys.includes(k) && String(v).trim() === '') continue;
+                        cleanData[k] = v;
+                    }
                 }
                 await fetchAPI('/api/settings', {
                     method: 'POST',
