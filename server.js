@@ -566,6 +566,15 @@ app.get('/data-deletion', (req, res) => {
     res.send(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Hướng Dẫn Xóa Dữ Liệu | Thỏ Hồng & DHTK</title><style>body{font-family:Arial,sans-serif;line-height:1.6;padding:40px;max-width:800px;margin:0 auto;color:#333}h1{color:#1e40af}</style></head><body><h1>Hướng Dẫn Xóa Dữ Liệu Người Dùng (Data Deletion Instructions)</h1><p>Nếu bạn muốn xóa toàn bộ dữ liệu kết nối ứng dụng Facebook khỏi hệ thống của chúng tôi:</p><ol><li>Đăng nhập vào Admin CP của bạn.</li><li>Vào mục Cấu hình Facebook ➔ Nhấp "Xóa cài đặt Facebook".</li><li>Hoặc gửi yêu cầu xóa dữ liệu về Email: admin@thohong.top. Chúng tôi sẽ xóa toàn bộ Token trong vòng 24 giờ.</li></ol></body></html>`);
 });
 
+// Meta Data Deletion Callback Endpoint
+app.post('/api/facebook/data-deletion-callback', (req, res) => {
+    const confirmCode = 'FB_DEL_' + Math.floor(Math.random() * 1000000);
+    res.json({
+        url: `https://thohong.top/data-deletion?code=${confirmCode}`,
+        confirmation_code: confirmCode
+    });
+});
+
 // --- ROUTES ---
 
 // 1. ADMIN LOGIN
