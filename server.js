@@ -564,10 +564,12 @@ app.post('/api/settings', authenticateToken, async (req, res) => {
     const newSettings = req.body;
     try {
         for (const [key, value] of Object.entries(newSettings)) {
-            await db.execute({
-                sql: 'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
-                args: [key, String(value)]
-            });
+            if (value !== undefined && value !== null && value !== 'undefined') {
+                await db.execute({
+                    sql: 'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+                    args: [key, String(value)]
+                });
+            }
         }
         res.json({ success: true });
     } catch (e) {

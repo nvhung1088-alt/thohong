@@ -962,17 +962,17 @@
                             <div style="font-weight:700; color:#0f172a; margin-bottom:10px; font-size:0.95rem;">🛒 1. KÊNH THÔNG BÁO ĐƠN HÀNG MỚI</div>
                             <div style="margin-bottom:10px;">
                                 <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Bot Token Chốt Đơn:</label>
-                                <input type="text" id="ap_tg_token" placeholder="VD: 7123456789:AAF..." style="width:100%;">
+                                <input type="text" id="ap_tg_token" placeholder="VD: 7123456789:AAF..." style="width:100%;" oninput="storeSettings.telegramToken=this.value.trim()">
                                 <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Lấy từ @BotFather → /newbot trên Telegram</div>
                             </div>
                             <div style="margin-bottom:10px;">
                                 <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Chat ID Nhóm Nhận Đơn Hàng:</label>
-                                <input type="text" id="ap_tg_chatid" placeholder="VD: -1001234567890" style="width:100%;">
+                                <input type="text" id="ap_tg_chatid" placeholder="VD: -1001234567890" style="width:100%;" oninput="storeSettings.telegramChatId=this.value.trim()">
                                 <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Thêm bot vào nhóm → gõ bất kỳ tin → mở <code>api.telegram.org/bot{TOKEN}/getUpdates</code> lấy chat.id</div>
                             </div>
                             <div>
                                 <label style="font-size:0.85rem; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Tiêu đề thông báo:</label>
-                                <input type="text" id="ap_tg_name" placeholder="VD: 🏪 Thỏ Hồng - Đơn hàng mới" style="width:100%;">
+                                <input type="text" id="ap_tg_name" placeholder="VD: 🏪 Thỏ Hồng - Đơn hàng mới" style="width:100%;" oninput="storeSettings.storeName=this.value.trim()">
                             </div>
                             <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
                                 <button class="btn btn-secondary" style="flex:1;" onclick="apTestTelegram()">📨 Gửi tin test đơn hàng</button>
@@ -988,18 +988,18 @@
                             
                             <div style="margin-bottom:10px;">
                                 <label style="font-size:0.85rem; font-weight:600; color:#0369a1; display:block; margin-bottom:4px;">Bot Token Kênh SEO (Để trống sẽ tự dùng Bot Token Đơn Hàng ở trên):</label>
-                                <input type="text" id="ap_tg_blog_token" placeholder="Để trống nếu dùng chung Bot Token ở trên..." style="width:100%; border:1px solid #7dd3fc; border-radius:6px; padding:8px;">
+                                <input type="text" id="ap_tg_blog_token" placeholder="Để trống nếu dùng chung Bot Token ở trên..." style="width:100%; border:1px solid #7dd3fc; border-radius:6px; padding:8px;" oninput="storeSettings.telegramBlogToken=this.value.trim()">
                             </div>
 
                             <div style="margin-bottom:10px;">
                                 <label style="font-size:0.85rem; font-weight:600; color:#0369a1; display:block; margin-bottom:4px;">Chat ID / Username Kênh Telegram SEO (Kênh đăng bài tin tức):</label>
-                                <input type="text" id="ap_tg_blog_chatid" placeholder="VD: @ten_kenh_tin_tuc hoặc ID dạng -100xxxxxxxxxx" style="width:100%; border:1px solid #7dd3fc; border-radius:6px; padding:8px;">
+                                <input type="text" id="ap_tg_blog_chatid" placeholder="VD: @ten_kenh_tin_tuc hoặc ID dạng -100xxxxxxxxxx" style="width:100%; border:1px solid #7dd3fc; border-radius:6px; padding:8px;" oninput="storeSettings.telegramBlogChatId=this.value.trim()">
                                 <div style="font-size:0.75rem; color:#0284c7; margin-top:4px;">Thêm Bot làm <strong>Quản trị viên (Admin)</strong> của Kênh/Nhóm Telegram tin tức và bật quyền <i>Đăng tin nhắn (Post Messages)</i>.</div>
                             </div>
 
                             <div style="margin-bottom:12px;">
                                 <label style="font-size:0.82rem; color:#0f172a; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600;">
-                                    <input type="checkbox" id="ap_tg_blog_auto" checked style="width:16px; height:16px;">
+                                    <input type="checkbox" id="ap_tg_blog_auto" checked style="width:16px; height:16px;" onchange="storeSettings.autoTelegramShare=this.checked?'true':'false'">
                                     <span>📢 Tự động chia sẻ bài viết mới lên Kênh Telegram khi Xuất Bản (Publish)</span>
                                 </label>
                             </div>
@@ -1524,9 +1524,13 @@
 
         async function saveSettings() {
             try {
+                const cleanData = {};
+                for (const [k, v] of Object.entries(storeSettings)) {
+                    if (v !== undefined && v !== null) cleanData[k] = v;
+                }
                 await fetchAPI('/api/settings', {
                     method: 'POST',
-                    body: storeSettings
+                    body: cleanData
                 });
             } catch(e) {
                 alert('Lỗi lưu cấu hình: ' + e.message);
