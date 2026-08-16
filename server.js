@@ -575,6 +575,48 @@ app.post('/api/facebook/data-deletion-callback', (req, res) => {
     });
 });
 
+// RSS FEED ROUTE FOR MAKE.COM, N8N & AUTOMATION PLATFORMS
+app.get('/rss.xml', async (req, res) => {
+    try {
+        const result = await db.execute("SELECT * FROM blog_posts WHERE status = 'published' ORDER BY created_at DESC LIMIT 50");
+        const posts = result.rows || [];
+        
+        let rssXml = `<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+    <title>Thỏ Hồng - Phụ Kiện &amp; Quà Tặng</title>
+    <link>https://thohong.top</link>
+    <description>Kênh tin tức, khuyến mãi &amp; hướng dẫn mua sắm phụ kiện văn phòng phẩm Thỏ Hồng</description>
+    <language>vi</language>
+    <atom:link href="https://thohong.top/rss.xml" rel="self" type="application/rss+xml" />`;
+
+        posts.forEach(p => {
+            const postUrl = `https://thohong.top/blog/${p.slug || p.id}`;
+            const pubDate = p.created_at ? new Date(p.created_at).toUTCString() : new Date().toUTCString();
+            const cleanTitle = (p.title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const cleanDesc = (p.excerpt || p.title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            rssXml += `
+    <item>
+        <title>${cleanTitle}</title>
+        <link>${postUrl}</link>
+        <guid isPermaLink="true">${postUrl}</guid>
+        <pubDate>${pubDate}</pubDate>
+        <description>${cleanDesc}</description>
+    </item>`;
+        });
+
+        rssXml += `
+</channel>
+</rss>`;
+
+        res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+        res.send(rssXml);
+    } catch (e) {
+        res.status(500).send('Error generating RSS feed');
+    }
+});
+
 // --- ROUTES ---
 
 // 1. ADMIN LOGIN
