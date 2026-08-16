@@ -698,7 +698,7 @@
                 <button class="apanel-tab" onclick="switchTab('tab-category'); loadAdminCategories();" id="t-category">📁 Danh mục</button>
                 <button class="apanel-tab" onclick="switchTab('tab-blog'); loadAdminBlog();" id="t-blog" style="background:#fef3c7; color:#92400e; font-weight:700; border:1px solid #fde68a;">📝 Blog AI</button>
                 <button class="apanel-tab" onclick="switchTab('tab-seo')" id="t-seo">🚀 SEO & iSocial</button>
-                <button class="apanel-tab" onclick="switchTab('tab-facebook'); if(typeof loadFacebookPosts==='function')loadFacebookPosts();" id="t-facebook">📘 Facebook</button>
+                <button class="apanel-tab" onclick="switchTab('tab-make'); if(typeof loadMakePosts==='function')loadMakePosts();" id="t-make" style="background:#e0e7ff; color:#3730a3; font-weight:700; border:1px solid #c7d2fe;">⚡ Make.com Automation</button>
                 <button class="apanel-tab" onclick="switchTab('tab-telegram')" id="t-telegram">✈️ Telegram</button>
                 <button class="apanel-tab" onclick="switchTab('tab-indexing'); loadGoogleIndexingConfig();" id="t-indexing">🚀 Google Index</button>
                 <button class="apanel-tab" onclick="switchTab('tab-analytics'); loadAnalytics();" id="t-analytics">📈 Thống kê</button>
@@ -1039,89 +1039,54 @@
                     </div>
                 </div>
 
-                <!-- Tab: Facebook Fanpage & Group -->
-                <div id="tab-facebook" class="apanel-content" style="display:none;">
-                    <h3 style="margin-bottom:1rem; color:#1e40af; display:flex; align-items:center; gap:8px;">
-                        <span>📘 Quản Lý Tự Động Chia Sẻ Bài Viết Facebook Fanpage & Group</span>
+                <!-- Tab: Make.com / n8n Automation -->
+                <div id="tab-make" class="apanel-content" style="display:none;">
+                    <h3 style="margin-bottom:1rem; color:#4338ca; display:flex; align-items:center; gap:8px;">
+                        <span>⚡ Quản Lý Tự Động Phân Phối Bài Viết Đa Kênh Qua Make.com & n8n</span>
                     </h3>
 
-                    <!-- Cấu hình Credentials & Template Facebook (Hỗ trợ Ẩn / Hiện Thu Gọn) -->
-                    <details style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:12px 15px; margin-bottom:15px; transition:0.3s;" id="detailsFacebookConfig">
-                        <summary style="font-size:0.9rem; font-weight:700; color:#1e40af; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none; outline:none; padding-bottom:4px;">
-                            <span>⚙️ CẤU HÌNH TÀI KHOẢN & MẪU TIN NHẮN FACEBOOK</span>
-                            <span style="font-size:0.75rem; background:#dbeafe; color:#1d4ed8; padding:3px 10px; border-radius:6px; font-weight:600; border:1px solid #93c5fd;">👇 Nhấp để Ẩn / Hiện Cài Đặt</span>
-                        </summary>
-
-                        <div style="margin-top:12px; border-top:1px solid #cbd5e1; padding-top:12px;">
-                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
-                                <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
-                                    <div style="font-size:0.83rem; font-weight:700; color:#2563eb; margin-bottom:6px;">🚩 1. Fanpage Facebook (Trang)</div>
-                                    <div style="margin-bottom:6px;">
-                                        <label style="font-size:0.78rem; font-weight:600; color:#334155;">Facebook Page ID:</label>
-                                        <input type="text" id="ap_fb_page_id" placeholder="VD: 10008321982312" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:0.8rem;" oninput="storeSettings.fbPageId=this.value.trim()">
-                                    </div>
-                                    <div>
-                                        <label style="font-size:0.78rem; font-weight:600; color:#334155;">Page Access Token (EAAG...):</label>
-                                        <input type="password" id="ap_fb_page_token" placeholder="Nhập Page Access Token dài hạn..." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:0.8rem;" oninput="storeSettings.fbPageToken=this.value.trim()">
-                                    </div>
-                                </div>
-
-                                <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
-                                    <div style="font-size:0.83rem; font-weight:700; color:#2563eb; margin-bottom:6px;">👥 2. Nhóm Facebook (Group)</div>
-                                    <div style="margin-bottom:6px;">
-                                        <label style="font-size:0.78rem; font-weight:600; color:#334155;">Facebook Group ID:</label>
-                                        <input type="text" id="ap_fb_group_id" placeholder="VD: 981273981237" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:0.8rem;" oninput="storeSettings.fbGroupId=this.value.trim()">
-                                    </div>
-                                    <div>
-                                        <label style="font-size:0.78rem; font-weight:600; color:#334155;">Group Access Token (Để trống nếu dùng Page Token):</label>
-                                        <input type="password" id="ap_fb_group_token" placeholder="Để trống nếu dùng chung Page Token..." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:5px 8px; font-size:0.8rem;" oninput="storeSettings.fbGroupToken=this.value.trim()">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Mẫu Định Dạng Tin Nhắn Tùy Chỉnh (Đóng / Mở riêng biệt) -->
-                            <details style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:10px; transition:0.3s;" open>
-                                <summary style="font-size:0.8rem; font-weight:700; color:#334155; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none; outline:none;">
-                                    <span>✍️ Mẫu Định Dạng Tin Nhắn Tùy Chỉnh (Message Template)</span>
-                                    <span style="font-size:0.7rem; color:#64748b;">(Ẩn/Hiện Mẫu)</span>
-                                </summary>
-                                <div style="margin-top:8px;">
-                                    <textarea id="ap_fb_msg_tpl" rows="2" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.8rem;" placeholder="BÀI VIẾT MỚI TỪ {storeName}&#10;&#10;📌 {title}&#10;&#10;📝 {summary}&#10;&#10;👉 Link bài viết: {url}&#10;&#10;{hashtag}" oninput="storeSettings.fbMsgTemplate=this.value"></textarea>
-                                    <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">💡 Biến điền tự động: <code>{title}</code>, <code>{summary}</code>, <code>{url}</code>, <code>{storeName}</code>, <code>{hashtag}</code></div>
-                                </div>
-                            </details>
-
-                            <div style="margin-bottom:10px;">
-                                <label style="font-size:0.8rem; color:#0f172a; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600;">
-                                    <input type="checkbox" id="ap_fb_auto" checked style="width:15px; height:15px;" onchange="storeSettings.autoFbShare=this.checked?'true':'false'">
-                                    <span>📘 Tự động chia sẻ bài viết mới lên Facebook Fanpage & Group khi Xuất Bản (Publish)</span>
-                                </label>
-                            </div>
-
-                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                <button class="btn" style="flex:1; background:#1d4ed8; color:white; font-weight:bold; padding:7px 12px; font-size:0.85rem;" onclick="apTestFacebookShare()">🧪 Gửi Thử Bài Mẫu Lên Facebook</button>
-                                <button class="btn btn-primary" style="flex:1; background:#16a34a; font-weight:bold; padding:7px 12px; font-size:0.85rem;" onclick="apSaveFacebookSettings()">💾 Lưu Cài Đặt Facebook</button>
-                            </div>
+                    <!-- Cấu hình Webhook URL Make.com -->
+                    <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:10px; padding:15px; margin-bottom:15px;">
+                        <div style="font-size:0.95rem; font-weight:700; color:#5b21b6; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                            <span>⚙️ 1. CẤU HÌNH MAKE.COM / N8N WEBHOOK URL</span>
                         </div>
-                    </details>
+                        
+                        <div style="margin-bottom:10px;">
+                            <label style="font-size:0.85rem; font-weight:600; color:#4c1d95; display:block; margin-bottom:4px;">Make.com / n8n Webhook URL:</label>
+                            <input type="text" id="ap_make_webhook_url" placeholder="VD: https://hook.eu1.make.com/abc123xyz456..." style="width:100%; border:1px solid #c4b5fd; padding:10px; border-radius:8px; font-family:monospace;" oninput="storeSettings.makeWebhookUrl=this.value.trim()">
+                            <span style="font-size:0.75rem; color:#6d28d9; margin-top:4px; display:block;">Dán URL Custom Webhook từ Make.com hoặc n8n vào đây. Mọi bài viết mới xuất bản sẽ được tự động gửi sang Make.com để đẩy lên Facebook Fanpage, Instagram, Telegram, Zalo, LinkedIn...</span>
+                        </div>
 
-                    <!-- Bảng Quản Lý Trạng Thái Chia Sẻ Bài Viết Lên Facebook Fanpage & Group -->
-                    <div style="background:white; border:1px solid #bfdbfe; border-radius:10px; padding:15px;">
-                        <div style="font-size:0.88rem; font-weight:700; color:#1d4ed8; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                            <span>📘 BẢNG DANH SÁCH BÀI VIẾT CHIA SẺ FACEBOOK</span>
-                            <button class="btn" style="background:#1877f2; color:white; font-size:0.78rem; font-weight:bold; padding:6px 14px; border-radius:6px;" onclick="apShareFacebookBatch()">📘 Share Facebook Hàng Loạt (Bài Chưa Share)</button>
+                        <div style="margin-bottom:12px;">
+                            <label style="font-size:0.85rem; color:#4c1d95; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600;">
+                                <input type="checkbox" id="ap_make_auto_share" checked style="width:16px; height:16px;" onchange="storeSettings.autoMakeShare=this.checked?'true':'false'">
+                                <span>🚀 Tự động gửi bài viết sang Make.com khi Bấm Xuất Bản (Publish)</span>
+                            </label>
+                        </div>
+
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button class="btn" style="flex:1; background:#6366f1; color:white; font-weight:bold;" onclick="apTestMakeShare()">🧪 Gửi Thử Bài Mẫu Sang Make.com Đa Kênh</button>
+                            <button class="btn btn-primary" style="flex:1; background:#4f46e5; font-weight:bold;" onclick="apSaveMakeSettings()">💾 Lưu Cài Đặt Make.com Automation</button>
+                        </div>
+                    </div>
+
+                    <!-- Bảng Quản Lý Trạng Thái Chia Sẻ Bài Viết Sang Make.com Đa Kênh -->
+                    <div style="background:white; border:1px solid #c7d2fe; border-radius:10px; padding:15px;">
+                        <div style="font-size:0.88rem; font-weight:700; color:#3730a3; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                            <span>📊 BẢNG QUẢN LÝ PHÂN PHỐI BÀI VIẾT ĐA KÊNH MAKE.COM</span>
+                            <button class="btn" style="background:#4338ca; color:white; font-size:0.78rem; font-weight:bold; padding:6px 14px; border-radius:6px;" id="btnBatchMakeShare" onclick="apShareMakeBatch()">⚡ Share Make.com Hàng Loạt (Các Bài Chưa Share)</button>
                         </div>
                         <div style="min-height:220px; max-height:360px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
                             <table style="width:100%; border-collapse:collapse; font-size:0.82rem; text-align:left;">
                                 <thead>
-                                    <tr style="background:#eff6ff; border-bottom:1px solid #bfdbfe; color:#1e40af; position:sticky; top:0;">
+                                    <tr style="background:#e0e7ff; border-bottom:1px solid #c7d2fe; color:#3730a3; position:sticky; top:0;">
                                         <th style="padding:8px 12px;">Tiêu đề bài viết</th>
                                         <th style="padding:8px 12px;">Trạng thái</th>
-                                        <th style="padding:8px 12px;">Facebook Status</th>
+                                        <th style="padding:8px 12px;">Make.com Status</th>
                                         <th style="padding:8px 12px; text-align:right;">Hành động</th>
                                     </tr>
                                 </thead>
-                                <tbody id="facebookTabPostsTableBody">
+                                <tbody id="makeTabPostsTableBody">
                                     <tr><td colspan="4" style="padding:15px; text-align:center; color:#94a3b8;">Đang tải danh sách bài viết...</td></tr>
                                 </tbody>
                             </table>
@@ -3443,6 +3408,122 @@
                 showToast('❌ Lỗi: ' + e.message, 'error');
             } finally {
                 if (btn) { btn.disabled = false; btn.innerText = '✈️ Share Telegram Hàng Loạt'; }
+            }
+        }
+
+        // --- MAKE.COM / N8N AUTOMATION JS ENGINE ---
+        async function apSaveMakeSettings(silent = false) {
+            const webhookUrlEl = document.getElementById('ap_make_webhook_url');
+            const autoShareEl = document.getElementById('ap_make_auto_share');
+
+            const makeWebhookUrl = webhookUrlEl ? webhookUrlEl.value.trim() : (storeSettings.makeWebhookUrl || '');
+            const autoMakeShare = autoShareEl ? (autoShareEl.checked ? 'true' : 'false') : (storeSettings.autoMakeShare || 'true');
+
+            try {
+                await fetchAPI('/api/settings', {
+                    method: 'POST',
+                    body: {
+                        makeWebhookUrl,
+                        autoMakeShare
+                    }
+                });
+                storeSettings.makeWebhookUrl = makeWebhookUrl;
+                storeSettings.autoMakeShare = autoMakeShare;
+                if (!silent) alert('✅ Đã lưu cài đặt Make.com Automation thành công!');
+            } catch(e) {
+                if (!silent) alert('❌ Lỗi lưu cài đặt Make.com: ' + e.message);
+            }
+        }
+
+        async function apTestMakeShare() {
+            const webhookUrl = document.getElementById('ap_make_webhook_url') ? document.getElementById('ap_make_webhook_url').value.trim() : '';
+            if (!webhookUrl && !storeSettings.makeWebhookUrl) {
+                return alert('⚠️ Vui lòng nhập Make.com Webhook URL và bấm "💾 Lưu Cài Đặt Make.com Automation"!');
+            }
+
+            if (webhookUrl) {
+                try { await apSaveMakeSettings(true); } catch(e) {}
+            }
+
+            try {
+                const res = await fetchAPI('/api/admin/social/make-share-now', {
+                    method: 'POST',
+                    body: { webhookUrl }
+                });
+                alert('✅ ' + (res.message || 'Đã gửi bài viết mẫu sang Make.com thành công!'));
+                if (typeof loadMakePosts === 'function') loadMakePosts();
+            } catch(e) {
+                alert('❌ Lỗi gửi Make.com: ' + e.message);
+            }
+        }
+
+        async function apShareMakePost(blogId) {
+            if (!confirm('Bạn có chắc muốn gửi bài viết này sang Make.com để phân phối Đa Kênh ngay bây giờ?')) return;
+            try {
+                const res = await fetchAPI('/api/admin/social/make-share-now', {
+                    method: 'POST',
+                    body: { blogId }
+                });
+                alert('✅ ' + (res.message || 'Đã gửi bài viết sang Make.com thành công!'));
+                if (typeof loadMakePosts === 'function') loadMakePosts();
+            } catch(e) {
+                alert('❌ Lỗi Make.com: ' + e.message);
+            }
+        }
+
+        async function apShareMakeBatch() {
+            if (!confirm('Bạn có chắc muốn gửi tất cả bài viết chưa share sang Make.com để phân phối Đa Kênh?')) return;
+            const btn = document.getElementById('btnBatchMakeShare');
+            if (btn) { btn.disabled = true; btn.innerText = '⏳ Đang gửi hàng loạt...'; }
+            try {
+                const res = await fetchAPI('/api/admin/social/make-share-batch', {
+                    method: 'POST'
+                });
+                alert('✅ ' + (res.message || 'Đã gửi hàng loạt sang Make.com thành công!'));
+                if (typeof loadMakePosts === 'function') loadMakePosts();
+            } catch(e) {
+                alert('❌ Lỗi Make.com Batch: ' + e.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = '⚡ Share Make.com Hàng Loạt (Các Bài Chưa Share)'; }
+            }
+        }
+
+        async function loadMakePosts() {
+            const tableBody = document.getElementById('makeTabPostsTableBody');
+            if (!tableBody) return;
+            try {
+                const res = await fetchAPI('/api/admin/blog/indexing-posts');
+                const posts = res.posts || [];
+                if (posts.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" style="padding:15px; text-align:center; color:#94a3b8;">Chưa có bài viết blog nào.</td></tr>';
+                    return;
+                }
+                let html = '';
+                posts.forEach(p => {
+                    const makeShared = !!p.make_shared_at;
+                    const makeStatusHtml = makeShared 
+                        ? `<span style="color:#059669; font-weight:bold; background:#d1fae5; padding:3px 8px; border-radius:6px;">✅ Đã gửi Make.com (${new Date(p.make_shared_at).toLocaleDateString('vi-VN')})</span>` 
+                        : `<span style="color:#d97706; font-weight:bold; background:#fef3c7; padding:3px 8px; border-radius:6px;">⏳ Chưa gửi</span>`;
+
+                    html += `<tr style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:10px 12px;">
+                            <div style="font-weight:600; color:#1e293b;">${p.title}</div>
+                            <a href="/blog/${p.slug || p.id}" target="_blank" style="font-size:0.75rem; color:#4f46e5; text-decoration:none;">/blog/${p.slug || p.id}</a>
+                        </td>
+                        <td style="padding:10px 12px;">
+                            <span style="font-size:0.75rem; font-weight:bold; color:${p.status==='published'?'#059669':'#d1fae5'}; background:${p.status==='published'?'#d1fae5':'#fef3c7'}; padding:2px 6px; border-radius:4px;">
+                                ${p.status==='published'?'📢 Đã xuất bản':'📝 Bài nháp'}
+                            </span>
+                        </td>
+                        <td style="padding:10px 12px;">${makeStatusHtml}</td>
+                        <td style="padding:10px 12px; text-align:right;">
+                            <button class="btn" style="background:#4f46e5; color:white; font-size:0.75rem; font-weight:bold; padding:5px 10px; border-radius:6px;" onclick="apShareMakePost('${p.id}')">⚡ Share Make.com</button>
+                        </td>
+                    </tr>`;
+                });
+                tableBody.innerHTML = html;
+            } catch(e) {
+                tableBody.innerHTML = `<tr><td colspan="4" style="padding:15px; text-align:center; color:#ef4444;">Lỗi: ${e.message}</td></tr>`;
             }
         }
 

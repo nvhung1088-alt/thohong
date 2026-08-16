@@ -553,6 +553,114 @@ async function shareBlogToFacebook(fullBlogUrl, title, summary, coverImage, blog
     }
 }
 
+// --- MAKE.COM / N8N AUTOMATION HELPER & ENDPOINTS ---
+async function triggerMakeWebhook(blogData) {
+    try {
+        const result = await db.execute("SELECT value FROM settings WHERE key = 'makeWebhookUrl'");
+        const webhookUrl = result.rows && result.rows[0] ? result.rows[0].value.trim() : '';
+        if (!webhookUrl) return { error: '⚠️ Chưa cấu hình Make.com Webhook URL!' };
+
+        const payload = {
+            id: blogData.id || blogData.slug || 'sample-post',
+            title: blogData.title || 'Mẫu bài viết thử nghiệm từ Thỏ Hồng',
+            slug: blogData.slug || 'mau-bai-viet-thu-nghiem',
+            excerpt: blogData.excerpt || blogData.title || 'Mô tả tóm tắt nội dung bài viết tự động xuất bản.',
+            link: `https://thohong.top/blog/${blogData.slug || blogData.id || ''}`,
+            image: blogData.image || 'https://thohong.top/media__1784598666512.png',
+            hashtags: '#thohong #vanphongpham #phukien #donghangtietkiem #giasi',
+            created_at: blogData.created_at || new Date().toISOString()
+        };
+
+        const res = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        // Update make_shared_at timestamp in DB
+        try {
+            await db.execute("ALTER TABLE blog_posts ADD COLUMN make_shared_at TEXT DEFAULT ''");
+        } catch(e) {}
+
+        const nowIso = new Date().toISOString();
+        if (blogData.id || blogData.slug) {
+            await db.execute({
+                sql: "UPDATE blog_posts SET make_shared_at = ? WHERE id = ? OR slug = ?",
+                args: [nowIso, blogData.id, blogData.slug]
+            });
+        }
+
+        return { success: true, message: '🚀 Đã gửi bài viết sang Make.com Webhook thành công!' };
+    } catch(e) {
+        console.error('[MAKE WEBHOOK ERROR]', e.message);
+        return { error: e.message };
+    }
+}
+
+// Endpoint bắn Make.com thử nghiệm / trực tiếp
+app.post('/api/admin/social/make-share-now', authenticateToken, async (req, res) => {
+    try {
+        const { blogId, webhookUrl } = req.body;
+        if (webhookUrl) {
+            await db.execute("DELETE FROM settings WHERE key = 'makeWebhookUrl'");
+            await db.execute({
+                sql: "INSERT INTO settings (key, value) VALUES ('makeWebhookUrl', ?)",
+                args: [webhookUrl]
+            });
+        }
+
+        let blogData = {
+            id: 'sample-post-001',
+            title: '🎉 Bài viết thử nghiệm phân phối Đa Kênh qua Make.com!',
+            slug: 'bai-viet-thu-nghiem-make-automation',
+            excerpt: 'Tự động xuất bản bài viết tin tức mới nhất từ hệ thống website Thỏ Hồng lên Facebook, Instagram, Telegram, Zalo OA...',
+            image: 'https://thohong.top/media__1784598666512.png'
+        };
+
+        if (blogId) {
+            const blogRes = await db.execute({
+                sql: "SELECT * FROM blog_posts WHERE id = ? OR slug = ?",
+                args: [blogId, blogId]
+            });
+            if (blogRes.rows && blogRes.rows.length > 0) {
+                blogData = blogRes.rows[0];
+            }
+        }
+
+        const result = await triggerMakeWebhook(blogData);
+        if (result.error) return res.status(400).json({ error: result.error });
+        res.json(result);
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Endpoint bắn hàng loạt sang Make.com
+app.post('/api/admin/social/make-share-batch', authenticateToken, async (req, res) => {
+    try {
+        try {
+            await db.execute("ALTER TABLE blog_posts ADD COLUMN make_shared_at TEXT DEFAULT ''");
+        } catch(e) {}
+
+        const postsRes = await db.execute("SELECT * FROM blog_posts WHERE status = 'published' AND (make_shared_at IS NULL OR make_shared_at = '') LIMIT 20");
+        const unsharedPosts = postsRes.rows || [];
+
+        if (unsharedPosts.length === 0) {
+            return res.json({ success: true, message: '🎉 Tất cả bài viết đã được phân phối sang Make.com từ trước!' });
+        }
+
+        let count = 0;
+        for (const post of unsharedPosts) {
+            const r = await triggerMakeWebhook(post);
+            if (r.success) count++;
+        }
+
+        res.json({ success: true, message: `⚡ Đã gửi hàng loạt ${count}/${unsharedPosts.length} bài viết sang Make.com Webhook thành công!` });
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // --- ROUTES PHỤC VỤ META FACEBOOK APP REVIEW ---
 app.get('/privacy', (req, res) => {
     res.send(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Chính Sách Quyền Riêng Tư | Thỏ Hồng & DHTK</title><style>body{font-family:Arial,sans-serif;line-height:1.6;padding:40px;max-width:800px;margin:0 auto;color:#333}h1{color:#1e40af}h2{color:#2563eb}</style></head><body><h1>Chính Sách Quyền Riêng Tư (Privacy Policy)</h1><p>Website và ứng dụng của chúng tôi tôn trọng quyền riêng tư của quý khách hàng. Khi kết nối ứng dụng Facebook, chúng tôi chỉ thu thập thông tin để quản lý việc đăng bài viết tự động từ website lên Fanpage.</p><h2>1. Dữ liệu thu thập</h2><p>Chúng tôi chỉ lưu trữ thông tin ID Trang, Tên Trang và Page Access Token do quý khách cung cấp để phục vụ tính năng chia sẻ bài viết.</p><h2>2. Cam kết bảo mật</h2><p>Dữ liệu được lưu trữ an toàn trong cơ sở dữ liệu và tuyệt đối không chia sẻ cho bất kỳ bên thứ ba nào khác.</p><h2>3. Liên hệ</h2><p>Email: admin@thohong.top | Hotline: 0968.988.636</p></body></html>`);
@@ -717,7 +825,7 @@ app.get('/api/settings', async (req, res) => {
         const result = await db.execute('SELECT * FROM settings');
         const rows = result.rows;
         const settings = {};
-        const publicKeys = ['bannerTitle', 'bannerSubtitle', 'logoText', 'metaTitle', 'metaDescription', 'storeName', 'contact_hotline', 'contact_zalo', 'hideOutOfStock', 'customHeaderCode', 'ogImage', 'seoCatTitleTpl', 'seoCatDescTpl', 'seoProdTitleTpl', 'seoProdDescTpl'];
+        const publicKeys = ['bannerTitle', 'bannerSubtitle', 'logoText', 'metaTitle', 'metaDescription', 'storeName', 'contact_hotline', 'contact_zalo', 'hideOutOfStock', 'customHeaderCode', 'ogImage', 'seoCatTitleTpl', 'seoCatDescTpl', 'seoProdTitleTpl', 'seoProdDescTpl', 'makeWebhookUrl', 'autoMakeShare'];
         rows.forEach(r => {
             if (publicKeys.includes(r.key)) {
                 // Parse boolean string 'true'/'false' back to boolean type if it's hideOutOfStock
@@ -1879,6 +1987,7 @@ app.post('/api/admin/blog', authenticateToken, async (req, res) => {
                 await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id);
                 await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '', id);
                 await shareBlogToFacebook(fullBlogUrl, title, finalSummary, cover_image || '', id);
+                await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, created_at: now });
             } catch(e) {
                 console.error('[AUTO-INDEX/SOCIAL POST ERROR]', e.message);
             }
@@ -1917,6 +2026,7 @@ app.put('/api/admin/blog/:id', authenticateToken, async (req, res) => {
                 await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id);
                 await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '', id);
                 await shareBlogToFacebook(fullBlogUrl, title, finalSummary, cover_image || '', id);
+                await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, created_at: now });
             } catch(e) {
                 console.error('[AUTO-INDEX/SOCIAL UPDATE ERROR]', e.message);
             }
