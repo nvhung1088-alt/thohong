@@ -2277,8 +2277,7 @@ app.post('/api/admin/blog', authenticateToken, async (req, res) => {
             try { await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '', id); } 
             catch(e) { console.error('[TELEGRAM POST ERROR]', e.message); }
             
-            try { await shareBlogToFacebook(fullBlogUrl, title, finalSummary, cover_image || '', id); } 
-            catch(e) { console.error('[FACEBOOK POST ERROR]', e.message); }
+            // Native Facebook Share bị loại bỏ vì đã dùng Make.com Webhook thay thế
             
             try { await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, content, created_at: now }); } 
             catch(e) { console.error('[MAKE WEBHOOK ERROR]', e.message); }
@@ -2318,9 +2317,7 @@ app.put('/api/admin/blog/:id', authenticateToken, async (req, res) => {
             
             try { await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '', id); } 
             catch(e) { console.error('[TELEGRAM POST ERROR]', e.message); }
-            
-            try { await shareBlogToFacebook(fullBlogUrl, title, finalSummary, cover_image || '', id); } 
-            catch(e) { console.error('[FACEBOOK POST ERROR]', e.message); }
+            // Native Facebook Share bị loại bỏ vì đã dùng Make.com Webhook thay thế
             
             try { await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, content, created_at: now }); } 
             catch(e) { console.error('[MAKE WEBHOOK ERROR]', e.message); }
