@@ -2631,10 +2631,49 @@ app.post('/api/admin/blog/generate', authenticateToken, async (req, res) => {
         const baseUrl = `${protocol}://${host}`;
         const storeName = settingsMap['storeName'] || 'Thỏ Hồng / ĐHTK';
 
-        const prodResult = await db.execute("SELECT id, name, category, price, imageUrl, details FROM products WHERE (status = 'active' OR status IS NULL OR status = '') AND imageUrl IS NOT NULL AND imageUrl != '' LIMIT 15");
+        // 1. Phân tích từ khóa để lọc 5 sản phẩm khớp chính xác nhất từ CSDL kho hàng
+        const postTopic = detectStationeryTopic(keyword);
+        let topicKeywords = [];
+        if (postTopic === 'notebook') topicKeywords = ['sổ', 'vở', 'tập', 'bìa da', 'giấy'];
+        else if (postTopic === 'pen') topicKeywords = ['bút', 'chì', 'viết', 'dạ', 'gel', 'marker'];
+        else if (postTopic === 'pencil_case') topicKeywords = ['bóp', 'hộp bút', 'túi', 'pouch'];
+
+        const rawWords = String(keyword || '').split(/\s+/).filter(w => w.length > 2);
+        rawWords.forEach(w => {
+            if (!topicKeywords.includes(w.toLowerCase())) topicKeywords.push(w.toLowerCase());
+        });
+
+        let matchedProductsMap = new Map();
+        for (const kw of topicKeywords) {
+            if (matchedProductsMap.size >= 5) break;
+            try {
+                const pRes = await db.execute({
+                    sql: "SELECT id, name, category, price, imageUrl, details FROM products WHERE (status = 'active' OR status IS NULL OR status = '') AND imageUrl IS NOT NULL AND imageUrl != '' AND (name LIKE ? OR category LIKE ?) LIMIT 5",
+                    args: [`%${kw}%`, `%${kw}%`]
+                });
+                (pRes.rows || []).forEach(p => {
+                    if (matchedProductsMap.size < 5 && !matchedProductsMap.has(p.id)) {
+                        matchedProductsMap.set(p.id, p);
+                    }
+                });
+            } catch(err) {}
+        }
+
+        if (matchedProductsMap.size < 5) {
+            try {
+                const fbRes = await db.execute("SELECT id, name, category, price, imageUrl, details FROM products WHERE (status = 'active' OR status IS NULL OR status = '') AND imageUrl IS NOT NULL AND imageUrl != '' LIMIT 5");
+                (fbRes.rows || []).forEach(p => {
+                    if (matchedProductsMap.size < 5 && !matchedProductsMap.has(p.id)) {
+                        matchedProductsMap.set(p.id, p);
+                    }
+                });
+            } catch(err) {}
+        }
+
+        const selectedProducts = Array.from(matchedProductsMap.values());
         
         const availableImages = [];
-        const productsList = prodResult.rows.map(p => {
+        const productsList = selectedProducts.map(p => {
             const nameSlug = toAsciiSlug(p.name || '');
             const cleanId = String(p.id || '').replace(/^SP/i, '');
             const link = `${baseUrl}/san-pham/${encodeURIComponent(nameSlug)}-p${cleanId}`;
@@ -2666,6 +2705,16 @@ app.post('/api/admin/blog/generate', authenticateToken, async (req, res) => {
 
             return `- [${p.name}](${link}) (Giá: ${p.price ? p.price + 'đ' : 'Liên hệ'})`;
         }).join('\n');
+
+        if (availableImages.length < 3) {
+            const stockList = STATIONERY_STOCK_IMAGES[postTopic] || STATIONERY_STOCK_IMAGES['stationery_general'];
+            for (const stockUrl of stockList) {
+                if (availableImages.length >= 5) break;
+                if (!availableImages.some(i => i.url === stockUrl)) {
+                    availableImages.push({ url: stockUrl, productName: `Sản phẩm ${keyword}` });
+                }
+            }
+        }
 
         const imagesListPrompt = availableImages.length > 0
             ? availableImages.map((img, idx) => `Ảnh ${idx + 1}: ${img.url} (Sản phẩm: ${img.productName})`).join('\n')
