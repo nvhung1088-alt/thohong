@@ -593,15 +593,17 @@ function generateSmartHashtags(blogData) {
     return tags.slice(0, 5).join(' ');
 }
 
-function extractBlogImages(blogData) {
+async function extractBlogImages(blogData) {
     let images = [];
     
+    // 1. Trích xuất ảnh bìa của bài viết
     let coverImg = blogData.cover_image || blogData.image || '';
     if (coverImg) {
         if (!coverImg.startsWith('http')) coverImg = `https://thohong.top${coverImg.startsWith('/') ? '' : '/'}${coverImg}`;
         images.push(coverImg);
     }
 
+    // 2. Trích xuất tất cả ảnh nằm trong nội dung HTML của bài viết
     if (blogData.content) {
         const imgRegex = /<img[^>]+src=["']([^"']+)["']/gi;
         let match;
@@ -614,15 +616,54 @@ function extractBlogImages(blogData) {
         }
     }
 
-    const fallbackStoreImages = [
-        'https://thohong.top/media__1784218914381.png',
-        'https://thohong.top/media__1784220161564.png',
-        'https://thohong.top/media__1784274909575.png',
-        'https://thohong.top/media__1784275178771.png'
-    ];
-    for (const fbImg of fallbackStoreImages) {
-        if (images.length >= 4) break;
-        if (!images.includes(fbImg)) images.push(fbImg);
+    // 3. Nếu ít hơn 4 ảnh, truy vấn ảnh sản phẩm THẬT từ CSDL (bảng products)
+    if (images.length < 4) {
+        try {
+            let searchKw = (blogData.keyword || blogData.title || '').trim();
+            let matchedProducts = [];
+            if (searchKw) {
+                const words = searchKw.split(/\s+/).filter(w => w.length > 2);
+                if (words.length > 0) {
+                    const term = words[0];
+                    const pRes = await db.execute({
+                        sql: "SELECT imageUrl FROM products WHERE imageUrl IS NOT NULL AND imageUrl LIKE 'http%' AND (name LIKE ? OR category LIKE ?) LIMIT 10",
+                        args: [`%${term}%`, `%${term}%`]
+                    });
+                    matchedProducts = pRes.rows || [];
+                }
+            }
+
+            for (const p of matchedProducts) {
+                if (images.length >= 4) break;
+                if (p.imageUrl && !images.includes(p.imageUrl)) {
+                    images.push(p.imageUrl);
+                }
+            }
+
+            // Nếu vẫn chưa đủ 4 ảnh, lấy ngẫu nhiên các sản phẩm thực tế khác trong kho shop
+            if (images.length < 4) {
+                const randomP = await db.execute("SELECT imageUrl FROM products WHERE imageUrl IS NOT NULL AND imageUrl LIKE 'http%' ORDER BY RANDOM() LIMIT 15");
+                for (const p of (randomP.rows || [])) {
+                    if (images.length >= 4) break;
+                    if (p.imageUrl && !images.includes(p.imageUrl)) {
+                        images.push(p.imageUrl);
+                    }
+                }
+            }
+        } catch(e) {
+            console.error('[SMART BLOG IMAGES ERROR]', e.message);
+        }
+    }
+
+    // 4. Nếu không đủ ảnh, lặp lại chính các ảnh sản phẩm thực tế của bài viết (KHÔNG dùng ảnh chụp màn hình Admin UI)
+    const realImgCount = images.length;
+    if (realImgCount > 0) {
+        while (images.length < 4) {
+            images.push(images[images.length % realImgCount]);
+        }
+    } else {
+        const storeDefaultLogo = 'https://thohong.top/app-icon.jpg';
+        images = [storeDefaultLogo, storeDefaultLogo, storeDefaultLogo, storeDefaultLogo];
     }
 
     return images.slice(0, 4);
@@ -639,7 +680,7 @@ async function triggerMakeWebhook(blogData) {
         let cleanSlug = rawSlug;
         let finalLink = `https://thohong.top/blog/${rawSlug}`;
 
-        const imagesList = extractBlogImages(blogData);
+        const imagesList = await extractBlogImages(blogData);
         let finalImage = imagesList[0];
 
         const smartHashtags = generateSmartHashtags(blogData);
