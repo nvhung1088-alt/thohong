@@ -1381,27 +1381,7 @@
                         </div>
                     </div>
 
-                    <!-- Modal Chỉnh Sửa Prompt AI Nhanh -->
-                    <div id="promptEditModal" class="modal-overlay" onclick="if(event.target === this) closePromptModal()">
-                        <div class="admin-modal" style="max-width:680px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
-                                <h4 style="margin:0; color:#4c1d95; font-size:1.05rem;" id="promptModalTitle">⚙️ Chỉnh Sửa Câu Lệnh Prompt AI</h4>
-                                <button class="btn btn-secondary" style="padding:2px 8px; font-size:0.8rem;" onclick="closePromptModal()">✕ Đóng</button>
-                            </div>
-                            <div style="margin-bottom:12px;">
-                                <label style="font-size:0.8rem; font-weight:700; color:#334155; display:block; margin-bottom:6px;" id="promptModalLabel">Nội dung Prompt:</label>
-                                <textarea id="promptModalTextarea" rows="11" style="width:100%; font-size:0.82rem; font-family:monospace; padding:10px; border:1px solid #cbd5e1; border-radius:8px; line-height:1.4;"></textarea>
-                                <div style="font-size:0.75rem; color:#64748b; margin-top:6px;" id="promptModalHelpText">Biến hỗ trợ...</div>
-                            </div>
-                            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                                <button class="btn" style="background:#64748b; color:white; font-size:0.8rem;" onclick="resetCurrentPromptInModal()">🔄 Nạp Mặc Định</button>
-                                <div style="display:flex; gap:8px;">
-                                    <button class="btn btn-secondary" style="padding:6px 14px; font-size:0.8rem;" onclick="closePromptModal()">Hủy</button>
-                                    <button class="btn" style="background:#7c3aed; color:white; font-weight:bold; padding:6px 16px; font-size:0.8rem;" onclick="savePromptFromModal()">💾 Lưu Prompt Ngay</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
 
                     <!-- Form tạo / xem trước bài viết -->
                     <div id="blogEditorCard" style="background:white; border:1px solid #cbd5e1; border-radius:10px; padding:1.2rem; margin-bottom:1.5rem; display:none;">
@@ -6421,6 +6401,28 @@ YÊU CẦU SEO CHI TIẾT:
             <div style="padding:12px 20px; background:#f1f5f9; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
                 <div style="font-size:0.8rem; color:#64748b;">Hệ thống tự động đồng bộ từ khóa & bài viết SEO</div>
                 <button class="btn btn-secondary" onclick="closeSEOManagerModal()" style="padding:6px 16px; font-size:0.85rem;">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chỉnh Sửa Prompt AI Nhanh -->
+    <div id="promptEditModal" class="modal-overlay" onclick="if(event.target === this) closePromptModal()">
+        <div class="admin-modal" style="max-width:680px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+                <h4 style="margin:0; color:#4c1d95; font-size:1.05rem;" id="promptModalTitle">⚙️ Chỉnh Sửa Câu Lệnh Prompt AI</h4>
+                <button class="btn btn-secondary" style="padding:2px 8px; font-size:0.8rem;" onclick="closePromptModal()">✕ Đóng</button>
+            </div>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#334155; display:block; margin-bottom:6px;" id="promptModalLabel">Nội dung Prompt:</label>
+                <textarea id="promptModalTextarea" rows="11" style="width:100%; font-size:0.82rem; font-family:monospace; padding:10px; border:1px solid #cbd5e1; border-radius:8px; line-height:1.4;"></textarea>
+                <div style="font-size:0.75rem; color:#64748b; margin-top:6px;" id="promptModalHelpText">Biến hỗ trợ...</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                <button class="btn" style="background:#64748b; color:white; font-size:0.8rem;" onclick="resetCurrentPromptInModal()">🔄 Nạp Mặc Định</button>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-secondary" style="padding:6px 14px; font-size:0.8rem;" onclick="closePromptModal()">Hủy</button>
+                    <button class="btn" style="background:#7c3aed; color:white; font-weight:bold; padding:6px 16px; font-size:0.8rem;" onclick="savePromptFromModal()">💾 Lưu Prompt Ngay</button>
+                </div>
             </div>
         </div>
     </div>
