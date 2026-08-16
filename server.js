@@ -601,6 +601,7 @@ async function triggerMakeWebhook(blogData) {
 
         let rawSlug = String(blogData.slug || blogData.id || '').trim();
         rawSlug = rawSlug.replace(/^https?:\/\/[^\/]+/i, '').replace(/^\/?blog\/?/i, '').replace(/^\/+/, '');
+        let cleanSlug = rawSlug;
         let finalLink = `https://thohong.top/blog/${rawSlug}`;
         let finalImage = blogData.cover_image || blogData.image || '';
         if (finalImage && !finalImage.startsWith('http')) {
