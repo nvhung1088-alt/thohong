@@ -2271,14 +2271,17 @@ app.post('/api/admin/blog', authenticateToken, async (req, res) => {
             const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
             const protocol = req.headers['x-forwarded-proto'] || 'https';
             const fullBlogUrl = `${protocol}://${host}/blog/${slug}`;
-            try {
-                await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id);
-                await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '', id);
-                await shareBlogToFacebook(fullBlogUrl, title, finalSummary, cover_image || '', id);
-                await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, created_at: now });
-            } catch(e) {
-                console.error('[AUTO-INDEX/SOCIAL POST ERROR]', e.message);
-            }
+            try { await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id); } 
+            catch(e) { console.error('[GOOGLE INDEX ERROR]', e.message); }
+            
+            try { await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '', id); } 
+            catch(e) { console.error('[TELEGRAM POST ERROR]', e.message); }
+            
+            try { await shareBlogToFacebook(fullBlogUrl, title, finalSummary, cover_image || '', id); } 
+            catch(e) { console.error('[FACEBOOK POST ERROR]', e.message); }
+            
+            try { await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, content, created_at: now }); } 
+            catch(e) { console.error('[MAKE WEBHOOK ERROR]', e.message); }
         }
 
         res.json({ success: true, id, slug });
@@ -2310,14 +2313,17 @@ app.put('/api/admin/blog/:id', authenticateToken, async (req, res) => {
             const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
             const protocol = req.headers['x-forwarded-proto'] || 'https';
             const fullBlogUrl = `${protocol}://${host}/blog/${slug}`;
-            try {
-                await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id);
-                await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '', id);
-                await shareBlogToFacebook(fullBlogUrl, title, finalSummary, cover_image || '', id);
-                await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, created_at: now });
-            } catch(e) {
-                console.error('[AUTO-INDEX/SOCIAL UPDATE ERROR]', e.message);
-            }
+            try { await pushToGoogleIndexingApi(fullBlogUrl, 'URL_UPDATED', id); } 
+            catch(e) { console.error('[GOOGLE INDEX ERROR]', e.message); }
+            
+            try { await shareBlogToTelegram(fullBlogUrl, title, finalSummary, cover_image || '', id); } 
+            catch(e) { console.error('[TELEGRAM POST ERROR]', e.message); }
+            
+            try { await shareBlogToFacebook(fullBlogUrl, title, finalSummary, cover_image || '', id); } 
+            catch(e) { console.error('[FACEBOOK POST ERROR]', e.message); }
+            
+            try { await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, content, created_at: now }); } 
+            catch(e) { console.error('[MAKE WEBHOOK ERROR]', e.message); }
         }
 
         res.json({ success: true, id, slug });
