@@ -706,14 +706,24 @@ function getTopicCategoryKeywords(topic) {
 }
 
 
+function sanitizeImageUrl(url) {
+    if (!url) return '';
+    let u = String(url).trim();
+    if (!u.startsWith('http')) {
+        u = `https://thohong.top${u.startsWith('/') ? '' : '/'}${u}`;
+    }
+    u = u.replace(/^https?:\/\/(www\.)?dhtk\.vercel\.app\/media__/gi, 'https://thohong.top/media__');
+    return u;
+}
+
 async function extractBlogImages(blogData) {
     let images = [];
     
     // 1. Trích xuất ảnh bìa của bài viết (Ưu tiên cao nhất)
     let coverImg = blogData.cover_image || blogData.image || '';
     if (coverImg) {
-        if (!coverImg.startsWith('http')) coverImg = `https://thohong.top${coverImg.startsWith('/') ? '' : '/'}${coverImg}`;
-        images.push(coverImg);
+        coverImg = sanitizeImageUrl(coverImg);
+        if (coverImg) images.push(coverImg);
     }
 
     // 2. Trích xuất tất cả ảnh nằm trong nội dung HTML của bài viết
@@ -723,8 +733,8 @@ async function extractBlogImages(blogData) {
         while ((match = imgRegex.exec(blogData.content)) !== null) {
             let src = match[1];
             if (src) {
-                if (!src.startsWith('http')) src = `https://thohong.top${src.startsWith('/') ? '' : '/'}${src}`;
-                if (!images.includes(src)) images.push(src);
+                src = sanitizeImageUrl(src);
+                if (src && !images.includes(src)) images.push(src);
             }
         }
     }
@@ -777,7 +787,7 @@ async function extractBlogImages(blogData) {
             images.push(images[images.length % realImgCount]);
         }
     } else {
-        const storeDefaultLogo = 'https://thohong.top/app-icon.jpg';
+        const storeDefaultLogo = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=1080&q=80';
         images = [storeDefaultLogo, storeDefaultLogo, storeDefaultLogo, storeDefaultLogo];
     }
 
@@ -829,6 +839,7 @@ async function triggerMakeWebhook(blogData, isManual = false) {
             image4: imagesList[3] || imagesList[0],
             images: imagesList,
             facebook_photos: imagesList.map(url => ({ url: url, type: 'url', photo: url })),
+            thohong_facebook_photos: imagesList.map(url => ({ url: url, type: 'url', photo: url })),
             hashtags: smartHashtags,
             formatted_content: formattedContent,
             created_at: blogData.created_at || new Date().toISOString()
@@ -2377,9 +2388,11 @@ app.post('/api/admin/social/telegram-share-now', authenticateToken, async (req, 
 
 app.get('/api/admin/blog/indexing-posts', authenticateToken, async (req, res) => {
     try {
-        try {
-            await db.execute("ALTER TABLE blog_posts ADD COLUMN make_shared_at TEXT DEFAULT ''");
-        } catch(e) {}
+        try { await db.execute("ALTER TABLE blog_posts ADD COLUMN make_shared_at TEXT DEFAULT ''"); } catch(e) {}
+        try { await db.execute("ALTER TABLE blog_posts ADD COLUMN telegram_shared_at TEXT DEFAULT ''"); } catch(e) {}
+        try { await db.execute("ALTER TABLE blog_posts ADD COLUMN facebook_shared_at TEXT DEFAULT ''"); } catch(e) {}
+        try { await db.execute("ALTER TABLE blog_posts ADD COLUMN indexed_at TEXT DEFAULT ''"); } catch(e) {}
+
         const result = await db.execute("SELECT id, title, slug, summary, status, created_at, make_shared_at, telegram_shared_at, facebook_shared_at FROM blog_posts ORDER BY created_at DESC");
         res.json({ success: true, posts: result.rows || [] });
     } catch(e) {
