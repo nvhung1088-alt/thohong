@@ -3538,6 +3538,37 @@
         }
 
         // --- MAKE.COM / N8N AUTOMATION JS ENGINE ---
+        function updateMakeUrlStatusBadge() {
+            const input = document.getElementById('ap_make_webhook_url');
+            const badge = document.getElementById('makeUrlStatusBadge');
+            if (!input || !badge) return;
+            const val = input.value.trim() || storeSettings.makeWebhookUrl || '';
+            if (val) {
+                badge.style.background = '#dcfce7';
+                badge.style.color = '#15803d';
+                badge.style.borderColor = '#bbf7d0';
+                badge.innerText = '✅ Đã thiết lập URL';
+            } else {
+                badge.style.background = '#fee2e2';
+                badge.style.color = '#991b1b';
+                badge.style.borderColor = '#fca5a5';
+                badge.innerText = '⚠️ Chưa có URL';
+            }
+        }
+
+        function updateMakeToggleSlider(checked) {
+            const slider = document.getElementById('ap_make_auto_slider');
+            const knob = document.getElementById('ap_make_auto_knob');
+            if (!slider || !knob) return;
+            if (checked) {
+                slider.style.background = '#6366f1';
+                knob.style.transform = 'translateX(22px)';
+            } else {
+                slider.style.background = '#cbd5e1';
+                knob.style.transform = 'translateX(0)';
+            }
+        }
+
         async function apSaveMakeSettings(silent = false) {
             const webhookUrlEl = document.getElementById('ap_make_webhook_url');
             const autoShareEl = document.getElementById('ap_make_auto_share');

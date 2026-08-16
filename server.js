@@ -832,6 +832,7 @@ async function triggerMakeWebhook(blogData, isManual = false) {
             title: blogData.title || 'Mẫu bài viết thử nghiệm từ Thỏ Hồng',
             slug: cleanSlug || 'mau-bai-viet-thu-nghiem',
             excerpt: cleanExcerpt,
+            content: blogData.content || '',
             link: finalLink,
             image: imagesList[0],
             image1: imagesList[0],
