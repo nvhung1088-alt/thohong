@@ -560,13 +560,21 @@ async function triggerMakeWebhook(blogData) {
         const webhookUrl = result.rows && result.rows[0] ? result.rows[0].value.trim() : '';
         if (!webhookUrl) return { error: '⚠️ Chưa cấu hình Make.com Webhook URL!' };
 
+        let cleanSlug = String(blogData.slug || '').replace(/^\/blog\//, '');
+        let finalLink = `https://thohong.top/blog/${cleanSlug || blogData.id || ''}`;
+        let finalImage = blogData.cover_image || blogData.image || '';
+        if (finalImage && !finalImage.startsWith('http')) {
+            finalImage = `https://thohong.top${finalImage.startsWith('/') ? '' : '/'}${finalImage}`;
+        }
+        if (!finalImage) finalImage = 'https://thohong.top/media__1784598666512.png';
+
         const payload = {
             id: blogData.id || blogData.slug || 'sample-post',
             title: blogData.title || 'Mẫu bài viết thử nghiệm từ Thỏ Hồng',
-            slug: blogData.slug || 'mau-bai-viet-thu-nghiem',
-            excerpt: blogData.excerpt || blogData.title || 'Mô tả tóm tắt nội dung bài viết tự động xuất bản.',
-            link: `https://thohong.top/blog/${blogData.slug || blogData.id || ''}`,
-            image: blogData.image || 'https://thohong.top/media__1784598666512.png',
+            slug: cleanSlug || 'mau-bai-viet-thu-nghiem',
+            excerpt: blogData.summary || blogData.excerpt || blogData.title || 'Mô tả tóm tắt nội dung bài viết tự động xuất bản.',
+            link: finalLink,
+            image: finalImage,
             hashtags: '#thohong #vanphongpham #phukien #donghangtietkiem #giasi',
             created_at: blogData.created_at || new Date().toISOString()
         };
@@ -590,7 +598,7 @@ async function triggerMakeWebhook(blogData) {
             });
         }
 
-        return { success: true, message: '🚀 Đã gửi bài viết sang Make.com Webhook thành công!' };
+        return { success: true, message: `🚀 Đã gửi bài viết "${blogData.title}" sang Make.com Webhook thành công!` };
     } catch(e) {
         console.error('[MAKE WEBHOOK ERROR]', e.message);
         return { error: e.message };
@@ -609,13 +617,7 @@ app.post('/api/admin/social/make-share-now', authenticateToken, async (req, res)
             });
         }
 
-        let blogData = {
-            id: 'sample-post-001',
-            title: '🎉 Bài viết thử nghiệm phân phối Đa Kênh qua Make.com!',
-            slug: 'bai-viet-thu-nghiem-make-automation',
-            excerpt: 'Tự động xuất bản bài viết tin tức mới nhất từ hệ thống website Thỏ Hồng lên Facebook, Instagram, Telegram, Zalo OA...',
-            image: 'https://thohong.top/media__1784598666512.png'
-        };
+        let blogData = null;
 
         if (blogId) {
             const blogRes = await db.execute({
@@ -625,6 +627,25 @@ app.post('/api/admin/social/make-share-now', authenticateToken, async (req, res)
             if (blogRes.rows && blogRes.rows.length > 0) {
                 blogData = blogRes.rows[0];
             }
+        }
+
+        // Nếu không có blogId truyền lên, tự động lấy bài viết mới nhất đã xuất bản trong DB
+        if (!blogData) {
+            const latestRes = await db.execute("SELECT * FROM blog_posts ORDER BY created_at DESC LIMIT 1");
+            if (latestRes.rows && latestRes.rows.length > 0) {
+                blogData = latestRes.rows[0];
+            }
+        }
+
+        // Dự phòng nếu chưa có bài viết nào trong DB
+        if (!blogData) {
+            blogData = {
+                id: 'sample-post-001',
+                title: '🎉 Bài viết thử nghiệm phân phối Đa Kênh qua Make.com!',
+                slug: 'bai-viet-thu-nghiem-make-automation',
+                excerpt: 'Tự động xuất bản bài viết tin tức mới nhất từ hệ thống website Thỏ Hồng lên Facebook, Instagram, Telegram, Zalo OA...',
+                image: 'https://thohong.top/media__1784598666512.png'
+            };
         }
 
         const result = await triggerMakeWebhook(blogData);
