@@ -241,8 +241,10 @@
         .blog-sidebar-column { width: 320px; flex-shrink: 0; }
 
         @media (max-width: 768px) {
-            .header-content { height: 54px; }
-            .logo { font-size: 1.1rem; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .header-content { height: auto; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; gap: 10px; }
+            .header-search-container { order: 3; flex: 1 1 100%; max-width: 100%; margin: 0; }
+            .header-actions { margin-left: auto; }
+            .logo { font-size: 1.2rem; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .desktop-nav { display: none; }
             .mobile-sub-nav { display: flex; }
             .cart-text { display: none; }
@@ -377,7 +379,7 @@
             <!-- Header Search Bar (Live Search) -->
             <div class="header-search-container">
                 <div class="header-search-input-wrap">
-                    <input type="text" id="headerSearchInput" class="header-search-input" placeholder="🔍 Tìm tên sản phẩm, mã SKU..." oninput="handleHeaderSearch(this.value)" onfocus="handleHeaderSearch(this.value)" aria-label="Tìm kiếm sản phẩm">
+                    <input type="text" id="headerSearchInput" class="header-search-input" placeholder="Tìm tên sản phẩm, mã SKU..." oninput="handleHeaderSearch(this.value)" onfocus="handleHeaderSearch(this.value)" aria-label="Tìm kiếm sản phẩm">
                     <span class="header-search-icon">🔍</span>
                 </div>
                 <div id="headerSearchDropdown" class="search-dropdown"></div>
