@@ -693,17 +693,17 @@
                 </div>
             </div>
             <!-- Tabs -->
-            <div style="display:flex; border-bottom:2px solid #e2e8f0; background:#f8fafc; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;">
+            <div style="display:flex; flex-wrap:wrap; gap:4px; padding:8px 12px; border-bottom:2px solid #e2e8f0; background:#f8fafc;">
                 <button class="apanel-tab active" onclick="switchTab('tab-store')" id="t-store">🏪 Cửa hàng</button>
                 <button class="apanel-tab" onclick="switchTab('tab-category'); loadAdminCategories();" id="t-category">📁 Danh mục</button>
-                <button class="apanel-tab" onclick="switchTab('tab-analytics'); loadAnalytics();" id="t-analytics">📈 Thống kê</button>
+                <button class="apanel-tab" onclick="switchTab('tab-blog'); loadAdminBlog();" id="t-blog" style="background:#fef3c7; color:#92400e; font-weight:700; border:1px solid #fde68a;">📝 Blog AI</button>
                 <button class="apanel-tab" onclick="switchTab('tab-seo')" id="t-seo">🚀 SEO & iSocial</button>
-                <button class="apanel-tab" onclick="switchTab('tab-telegram')" id="t-telegram">✈️ Telegram</button>
                 <button class="apanel-tab" onclick="switchTab('tab-facebook'); if(typeof loadFacebookPosts==='function')loadFacebookPosts();" id="t-facebook">📘 Facebook</button>
+                <button class="apanel-tab" onclick="switchTab('tab-telegram')" id="t-telegram">✈️ Telegram</button>
+                <button class="apanel-tab" onclick="switchTab('tab-indexing'); loadGoogleIndexingConfig();" id="t-indexing">🚀 Google Index</button>
+                <button class="apanel-tab" onclick="switchTab('tab-analytics'); loadAnalytics();" id="t-analytics">📈 Thống kê</button>
                 <button class="apanel-tab" onclick="switchTab('tab-pos')" id="t-pos">🔄 POS Sync</button>
                 <button class="apanel-tab" onclick="switchTab('tab-import')" id="t-import">📥 Import</button>
-                <button class="apanel-tab" onclick="switchTab('tab-blog'); loadAdminBlog();" id="t-blog">📝 Blog AI</button>
-                <button class="apanel-tab" onclick="switchTab('tab-indexing'); loadGoogleIndexingConfig();" id="t-indexing">🚀 Google Index</button>
                 <button class="apanel-tab" onclick="switchTab('tab-account')" id="t-account">👤 Tài khoản</button>
             </div>
             <!-- Tab Content -->
