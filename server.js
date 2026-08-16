@@ -593,6 +593,40 @@ function generateSmartHashtags(blogData) {
     return tags.slice(0, 5).join(' ');
 }
 
+function extractBlogImages(blogData) {
+    let images = [];
+    
+    let coverImg = blogData.cover_image || blogData.image || '';
+    if (coverImg) {
+        if (!coverImg.startsWith('http')) coverImg = `https://thohong.top${coverImg.startsWith('/') ? '' : '/'}${coverImg}`;
+        images.push(coverImg);
+    }
+
+    if (blogData.content) {
+        const imgRegex = /<img[^>]+src=["']([^"']+)["']/gi;
+        let match;
+        while ((match = imgRegex.exec(blogData.content)) !== null) {
+            let src = match[1];
+            if (src) {
+                if (!src.startsWith('http')) src = `https://thohong.top${src.startsWith('/') ? '' : '/'}${src}`;
+                if (!images.includes(src)) images.push(src);
+            }
+        }
+    }
+
+    const fallbackStoreImages = [
+        'https://thohong.top/media__1784598666512.png',
+        'https://thohong.top/media_1786705348713.png',
+        'https://thohong.top/media_1786802317076.jpg'
+    ];
+    for (const fbImg of fallbackStoreImages) {
+        if (images.length >= 4) break;
+        if (!images.includes(fbImg)) images.push(fbImg);
+    }
+
+    return images.slice(0, 4);
+}
+
 async function triggerMakeWebhook(blogData) {
     try {
         const result = await db.execute("SELECT value FROM settings WHERE key = 'makeWebhookUrl'");
@@ -603,11 +637,9 @@ async function triggerMakeWebhook(blogData) {
         rawSlug = rawSlug.replace(/^https?:\/\/[^\/]+/i, '').replace(/^\/?blog\/?/i, '').replace(/^\/+/, '');
         let cleanSlug = rawSlug;
         let finalLink = `https://thohong.top/blog/${rawSlug}`;
-        let finalImage = blogData.cover_image || blogData.image || '';
-        if (finalImage && !finalImage.startsWith('http')) {
-            finalImage = `https://thohong.top${finalImage.startsWith('/') ? '' : '/'}${finalImage}`;
-        }
-        if (!finalImage) finalImage = 'https://thohong.top/media__1784598666512.png';
+
+        const imagesList = extractBlogImages(blogData);
+        let finalImage = imagesList[0];
 
         const smartHashtags = generateSmartHashtags(blogData);
 
@@ -626,6 +658,11 @@ async function triggerMakeWebhook(blogData) {
             excerpt: cleanExcerpt,
             link: finalLink,
             image: finalImage,
+            image1: imagesList[0],
+            image2: imagesList[1] || imagesList[0],
+            image3: imagesList[2] || imagesList[0],
+            image4: imagesList[3] || imagesList[0],
+            images: imagesList,
             hashtags: smartHashtags,
             formatted_content: formattedContent,
             created_at: blogData.created_at || new Date().toISOString()
