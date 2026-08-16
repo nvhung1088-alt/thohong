@@ -3493,7 +3493,7 @@
             if (!tableBody) return;
             try {
                 const res = await fetchAPI('/api/admin/blog/indexing-posts');
-                const posts = res.posts || [];
+                const posts = Array.isArray(res) ? res : (res.posts || []);
                 if (posts.length === 0) {
                     tableBody.innerHTML = '<tr><td colspan="4" style="padding:15px; text-align:center; color:#94a3b8;">Chưa có bài viết blog nào.</td></tr>';
                     return;
