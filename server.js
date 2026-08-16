@@ -401,8 +401,7 @@ async function shareBlogToTelegram(fullBlogUrl, title, summary, coverImage, blog
         const storeName = settingsMap['storeName'] || 'Thỏ Hồng / ĐHTK';
         const cleanSummary = (summary || '').replace(/<[^>]*>/g, '').substring(0, 200);
 
-        const caption = `📢 <b>BÀI VIẾT MỚI TỪ ${storeName.toUpperCase()}</b>\n\n` +
-                        `📌 <b>${title}</b>\n\n` +
+        const caption = `📌 <b>${title}</b>\n\n` +
                         `📝 <i>${cleanSummary}...</i>`;
 
         const result = await sendTelegramPhotoMessage(botToken, chatId, coverImage, caption, fullBlogUrl);
@@ -455,8 +454,7 @@ async function shareBlogToFacebook(fullBlogUrl, title, summary, coverImage, blog
                 .replace(/\{storeName\}/g, storeName)
                 .replace(/\{hashtag\}/g, '#thohong #dhtk #tintuc');
         } else {
-            message = `📢 BÀI VIẾT MỚI TỪ ${storeName.toUpperCase()}\n\n` +
-                      `📌 ${title}\n\n` +
+            message = `📌 ${title}\n\n` +
                       `📝 ${cleanSummary}...\n\n` +
                       `👉 Xem chi tiết tại: ${fullBlogUrl}`;
         }
@@ -816,7 +814,7 @@ async function triggerMakeWebhook(blogData, isManual = false) {
             .trim();
         if (cleanExcerpt.length > 250) cleanExcerpt = cleanExcerpt.substring(0, 247) + '...';
 
-        const formattedContent = `📣 BÀI VIẾT MỚI TỪ THỎ HỒNG SHOP\n\n📌 ${blogData.title || ''}\n\n📝 ${cleanExcerpt}\n\n👉 Đọc bài viết chi tiết tại đây:\n${finalLink}\n\n${smartHashtags}`;
+        const formattedContent = `📌 ${blogData.title || ''}\n\n📝 ${cleanExcerpt}\n\n👉 Đọc bài viết chi tiết tại đây:\n${finalLink}\n\n${smartHashtags}`;
 
         const payload = {
             id: blogData.id || blogData.slug || 'sample-post',
