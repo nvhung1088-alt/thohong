@@ -786,8 +786,16 @@ async function extractBlogImages(blogData) {
     return images.slice(0, 4);
 }
 
-async function triggerMakeWebhook(blogData) {
+async function triggerMakeWebhook(blogData, isManual = false) {
     try {
+        if (!isManual) {
+            const autoRes = await db.execute("SELECT value FROM settings WHERE key = 'autoMakeShare'");
+            const autoShare = autoRes.rows && autoRes.rows[0] ? autoRes.rows[0].value : 'true';
+            if (autoShare === 'false') {
+                return { success: false, skipped: true, message: '⏸️ Tự động gửi Make.com đã bị tắt trong Cấu hình Admin CP.' };
+            }
+        }
+
         const result = await db.execute("SELECT value FROM settings WHERE key = 'makeWebhookUrl'");
         const webhookUrl = result.rows && result.rows[0] ? result.rows[0].value.trim() : '';
         if (!webhookUrl) return { error: '⚠️ Chưa cấu hình Make.com Webhook URL!' };
@@ -897,7 +905,7 @@ app.post('/api/admin/social/make-share-now', authenticateToken, async (req, res)
             };
         }
 
-        const result = await triggerMakeWebhook(blogData);
+        const result = await triggerMakeWebhook(blogData, true);
         if (result.error) return res.status(400).json({ error: result.error });
         res.json(result);
     } catch(e) {
@@ -921,7 +929,7 @@ app.post('/api/admin/social/make-share-batch', authenticateToken, async (req, re
 
         let count = 0;
         for (const post of unsharedPosts) {
-            const r = await triggerMakeWebhook(post);
+            const r = await triggerMakeWebhook(post, true);
             if (r.success) count++;
         }
 
@@ -1095,7 +1103,7 @@ app.get('/api/settings', async (req, res) => {
         const result = await db.execute('SELECT * FROM settings');
         const rows = result.rows;
         const settings = {};
-        const publicKeys = ['bannerTitle', 'bannerSubtitle', 'logoText', 'metaTitle', 'metaDescription', 'storeName', 'contact_hotline', 'contact_zalo', 'hideOutOfStock', 'customHeaderCode', 'ogImage', 'seoCatTitleTpl', 'seoCatDescTpl', 'seoProdTitleTpl', 'seoProdDescTpl', 'makeWebhookUrl', 'autoMakeShare'];
+        const publicKeys = ['bannerTitle', 'bannerSubtitle', 'logoText', 'metaTitle', 'metaDescription', 'storeName', 'contact_hotline', 'contact_zalo', 'hideOutOfStock', 'customHeaderCode', 'ogImage', 'seoCatTitleTpl', 'seoCatDescTpl', 'seoProdTitleTpl', 'seoProdDescTpl'];
         rows.forEach(r => {
             if (publicKeys.includes(r.key)) {
                 // Parse boolean string 'true'/'false' back to boolean type if it's hideOutOfStock

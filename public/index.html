@@ -1086,11 +1086,11 @@
                     </h3>
 
                     <!-- HƯỚNG DẪN TẠO WEBHOOK URL & KẾT NỐI MẠNG XÃ HỘI -->
-                    <details style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 15px; margin-bottom:15px; transition:0.3s;" id="detailsMakeGuide" open>
-                        <summary style="font-size:0.9rem; font-weight:700; color:#15803d; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none; outline:none; padding-bottom:4px;">
-                            <span>📖 HƯỚNG DẪN TẠO WEBHOOK URL & KẾT NỐI MẠNG XÃ HỘI TRÊN MAKE.COM</span>
-                            <span style="font-size:0.75rem; background:#dcfce7; color:#166534; padding:3px 10px; border-radius:6px; font-weight:600; border:1px solid #86efac;">👇 Nhấp để Xem / Ẩn Hướng Dẫn</span>
-                        </summary>
+                    <div id="secMakeGuide" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 15px; margin-bottom:15px; transition:all 0.2s;">
+                        <div onclick="toggleBlogSection('secMakeGuide', event)" style="font-size:0.9rem; font-weight:700; color:#15803d; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none; padding-bottom:4px;">
+                            <span>📖 HƯỚNG DẪN TẠO WEBHOOK URL & KẾT NỐI MẠNG XÃ HỘI TRÊN MAKE.COM <span class="sec-toggle-arrow">▾</span></span>
+                            <span style="font-size:0.75rem; background:#dcfce7; color:#166534; padding:3px 10px; border-radius:6px; font-weight:600; border:1px solid #86efac;">Click Xem / Ẩn</span>
+                        </div>
 
                         <div style="margin-top:12px; border-top:1px solid #bbf7d0; padding-top:12px; font-size:0.83rem; color:#1e293b; line-height:1.6;">
                             <div style="font-weight:700; color:#166534; margin-bottom:6px; font-size:0.88rem;">🔹 BƯỚC 1: LẤY MAKE.COM WEBHOOK URL (30 GIÂY)</div>
@@ -1120,12 +1120,12 @@
                             </div>
                             <p style="margin:0; font-style:italic; color:#059669; font-weight:600;">💡 Bạn chỉ cần nhấp chuột chọn kéo thả các biến <code>title</code>, <code>link</code>, <code>image</code> vào nội dung bài đăng trên Facebook/Telegram trên Make.com là hoàn tất!</p>
                         </div>
-                    </details>
+                    </div>
 
                     <!-- Cấu hình Webhook URL Make.com -->
-                    <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:10px; padding:15px; margin-bottom:15px;">
-                        <div style="font-size:0.95rem; font-weight:700; color:#5b21b6; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-                            <span>⚙️ 1. CẤU HÌNH MAKE.COM / N8N WEBHOOK URL</span>
+                    <div id="secMakeConfig" style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:10px; padding:15px; margin-bottom:15px; transition:all 0.2s;">
+                        <div onclick="toggleBlogSection('secMakeConfig', event)" style="font-size:0.95rem; font-weight:700; color:#5b21b6; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+                            <span>⚙️ 1. CẤU HÌNH MAKE.COM / N8N WEBHOOK URL <span class="sec-toggle-arrow">▾</span></span>
                         </div>
                         
                         <div style="margin-bottom:10px;">
@@ -1148,9 +1148,9 @@
                     </div>
 
                     <!-- Bảng Quản Lý Trạng Thái Chia Sẻ Bài Viết Sang Make.com Đa Kênh -->
-                    <div style="background:white; border:1px solid #c7d2fe; border-radius:10px; padding:15px;">
-                        <div style="font-size:0.88rem; font-weight:700; color:#3730a3; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                            <span>📊 BẢNG QUẢN LÝ PHÂN PHỐI BÀI VIẾT ĐA KÊNH MAKE.COM</span>
+                    <div id="secMakeTable" style="background:white; border:1px solid #c7d2fe; border-radius:10px; padding:15px; transition:all 0.2s;">
+                        <div onclick="toggleBlogSection('secMakeTable', event)" style="font-size:0.88rem; font-weight:700; color:#3730a3; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; cursor:pointer; user-select:none;">
+                            <span>📊 BẢNG QUẢN LÝ PHÂN PHỐI BÀI VIẾT ĐA KÊNH MAKE.COM <span class="sec-toggle-arrow">▾</span></span>
                             <button class="btn" style="background:#4338ca; color:white; font-size:0.78rem; font-weight:bold; padding:6px 14px; border-radius:6px;" id="btnBatchMakeShare" onclick="apShareMakeBatch()">⚡ Share Make.com Hàng Loạt (Các Bài Chưa Share)</button>
                         </div>
                         <div style="min-height:220px; max-height:360px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
@@ -4128,6 +4128,11 @@
                         setVal('ap_pos_key', privateSettings.pos_api_key || '');
                         setVal('ap_pos_shop', privateSettings.pos_shop_id || '');
                         setVal('ap_pos_wh', privateSettings.pos_warehouse_id || '');
+                        
+                        setVal('ap_make_webhook_url', privateSettings.makeWebhookUrl || '');
+                        if (document.getElementById('ap_make_auto_share')) {
+                            document.getElementById('ap_make_auto_share').checked = privateSettings.autoMakeShare !== 'false';
+                        }
                         
                         hasTg = !!privateSettings.telegramToken;
                         hasPos = !!privateSettings.pos_api_key;
