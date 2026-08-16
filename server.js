@@ -593,10 +593,43 @@ function generateSmartHashtags(blogData) {
     return tags.slice(0, 5).join(' ');
 }
 
+const STATIONERY_STOCK_IMAGES = {
+    notebook: [
+        'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1531346878377-a5be20888e57?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1517842645767-c639042777db?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800&auto=format&fit=crop&q=80'
+    ],
+    pen: [
+        'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1585336261026-6757c54e3809?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1569683795645-b62e50fbf103?w=800&auto=format&fit=crop&q=80'
+    ],
+    pencil_case: [
+        'https://images.unsplash.com/photo-1595053826286-2e5a37421e59?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=800&auto=format&fit=crop&q=80'
+    ],
+    stationery_general: [
+        'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=80'
+    ]
+};
+
+function detectStationeryTopic(text) {
+    const lower = String(text || '').toLowerCase();
+    if (/sổ|bìa da|vở|giấy|tập|journal|planner|notebook/i.test(lower)) return 'notebook';
+    if (/bút|chì|viết|dạ|highlight|marker|pen/i.test(lower)) return 'pen';
+    if (/bóp|hộp bút|túi đựng|pencil case|pouch/i.test(lower)) return 'pencil_case';
+    return 'stationery_general';
+}
+
 async function extractBlogImages(blogData) {
     let images = [];
     
-    // 1. Trích xuất ảnh bìa của bài viết
+    // 1. Trích xuất ảnh bìa của bài viết (Ưu tiên cao nhất)
     let coverImg = blogData.cover_image || blogData.image || '';
     if (coverImg) {
         if (!coverImg.startsWith('http')) coverImg = `https://thohong.top${coverImg.startsWith('/') ? '' : '/'}${coverImg}`;
@@ -616,46 +649,48 @@ async function extractBlogImages(blogData) {
         }
     }
 
-    // 3. Nếu ít hơn 4 ảnh, truy vấn ảnh sản phẩm THẬT từ CSDL (bảng products)
+    const postTopic = detectStationeryTopic((blogData.title || '') + ' ' + (blogData.keyword || ''));
+
+    // 3. Nếu ít hơn 4 ảnh, chỉ tìm các sản phẩm trong CSDL KHỚP CHÍNH XÁC chủ đề bài viết
     if (images.length < 4) {
         try {
-            let searchKw = (blogData.keyword || blogData.title || '').trim();
-            let matchedProducts = [];
-            if (searchKw) {
-                const words = searchKw.split(/\s+/).filter(w => w.length > 2);
-                if (words.length > 0) {
-                    const term = words[0];
-                    const pRes = await db.execute({
-                        sql: "SELECT imageUrl FROM products WHERE imageUrl IS NOT NULL AND imageUrl LIKE 'http%' AND (name LIKE ? OR category LIKE ?) LIMIT 10",
-                        args: [`%${term}%`, `%${term}%`]
-                    });
-                    matchedProducts = pRes.rows || [];
-                }
-            }
+            let topicKeywords = [];
+            if (postTopic === 'notebook') topicKeywords = ['sổ', 'vở', 'tập', 'bìa da'];
+            else if (postTopic === 'pen') topicKeywords = ['bút', 'chì', 'viết'];
+            else if (postTopic === 'pencil_case') topicKeywords = ['bóp', 'hộp bút', 'túi'];
 
-            for (const p of matchedProducts) {
-                if (images.length >= 4) break;
-                if (p.imageUrl && !images.includes(p.imageUrl)) {
-                    images.push(p.imageUrl);
-                }
-            }
-
-            // Nếu vẫn chưa đủ 4 ảnh, lấy ngẫu nhiên các sản phẩm thực tế khác trong kho shop
-            if (images.length < 4) {
-                const randomP = await db.execute("SELECT imageUrl FROM products WHERE imageUrl IS NOT NULL AND imageUrl LIKE 'http%' ORDER BY RANDOM() LIMIT 15");
-                for (const p of (randomP.rows || [])) {
+            if (topicKeywords.length > 0) {
+                for (const kw of topicKeywords) {
                     if (images.length >= 4) break;
-                    if (p.imageUrl && !images.includes(p.imageUrl)) {
-                        images.push(p.imageUrl);
+                    const pRes = await db.execute({
+                        sql: "SELECT imageUrl FROM products WHERE imageUrl IS NOT NULL AND imageUrl LIKE 'http%' AND (name LIKE ? OR category LIKE ?) LIMIT 5",
+                        args: [`%${kw}%`, `%${kw}%`]
+                    });
+                    for (const p of (pRes.rows || [])) {
+                        if (images.length >= 4) break;
+                        if (p.imageUrl && !images.includes(p.imageUrl)) {
+                            images.push(p.imageUrl);
+                        }
                     }
                 }
             }
         } catch(e) {
-            console.error('[SMART BLOG IMAGES ERROR]', e.message);
+            console.error('[STRICT BLOG IMAGES MATCH ERROR]', e.message);
         }
     }
 
-    // 4. Nếu không đủ ảnh, lặp lại chính các ảnh sản phẩm thực tế của bài viết (KHÔNG dùng ảnh chụp màn hình Admin UI)
+    // 4. Nếu vẫn ít hơn 4 ảnh, bổ sung các ảnh kho mẫu cao cấp CHUẨN CÙNG CHỦ ĐỀ (Unsplash HD)
+    if (images.length < 4) {
+        const stockList = STATIONERY_STOCK_IMAGES[postTopic] || STATIONERY_STOCK_IMAGES['stationery_general'];
+        for (const stockUrl of stockList) {
+            if (images.length >= 4) break;
+            if (!images.includes(stockUrl)) {
+                images.push(stockUrl);
+            }
+        }
+    }
+
+    // 5. Nếu vẫn thiếu ảnh, lặp lại các ảnh thực tế của chính bài viết đó (TUYỆT ĐỐI KHÔNG lấy ảnh sai chủ đề)
     const realImgCount = images.length;
     if (realImgCount > 0) {
         while (images.length < 4) {
