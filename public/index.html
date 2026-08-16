@@ -65,6 +65,24 @@
         .desktop-nav { display: flex; align-items: center; gap: 8px; }
         .header-actions { display: flex; align-items: center; gap: 10px; }
 
+        /* Header Live Search */
+        .header-search-container { flex: 1; max-width: 420px; margin: 0 15px; position: relative; }
+        .header-search-input-wrap { position: relative; width: 100%; }
+        .header-search-input { width: 100%; padding: 8px 36px 8px 14px; border-radius: 20px; border: 1.5px solid #cbd5e1; outline: none; font-size: 0.88rem; transition: all 0.2s; background: #f8fafc; }
+        .header-search-input:focus { border-color: var(--accent); background: white; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+        .header-search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.9rem; pointer-events: none; }
+        
+        .search-dropdown { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; max-height: 380px; overflow-y: auto; z-index: 1000; display: none; padding: 6px 0; }
+        .search-dropdown.active { display: block; }
+        .search-dropdown-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; transition: background 0.15s; text-decoration: none; color: inherit; }
+        .search-dropdown-item:hover { background: #f1f5f9; }
+        .search-dropdown-img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #f8fafc; border: 1px solid #e2e8f0; flex-shrink: 0; }
+        .search-dropdown-info { flex: 1; min-width: 0; }
+        .search-dropdown-title { font-size: 0.85rem; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .search-dropdown-meta { font-size: 0.75rem; color: #64748b; display: flex; gap: 8px; margin-top: 2px; }
+        .search-dropdown-price { font-weight: 700; color: var(--price-retail); }
+
+
         .cart-icon { position: relative; cursor: pointer; padding: 0.4rem 0.85rem; display: flex; align-items: center; gap: 0.4rem; font-weight: 700; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 20px; font-size: 0.88rem; transition: all 0.2s; user-select: none; }
         .cart-icon:hover { background: #dbeafe; transform: translateY(-1px); }
         .cart-count { background: var(--price-retail); color: white; font-size: 0.72rem; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
@@ -355,6 +373,16 @@
                 <a href="/blog" class="nav-btn-link" onclick="navigateTo('blog'); return false;" id="navBlogBtn" aria-label="Xem trang Blog tin tức">📝 Blog</a>
                 <a href="/dia-chi" class="nav-btn-link" id="navAddressBtn" style="border:1px solid #38bdf8; background:#e0f2fe; color:#0369a1; font-weight:700;" onclick="navigateTo('address'); return false;">📞 Liên hệ</a>
             </div>
+
+            <!-- Header Search Bar (Live Search) -->
+            <div class="header-search-container">
+                <div class="header-search-input-wrap">
+                    <input type="text" id="headerSearchInput" class="header-search-input" placeholder="🔍 Tìm tên sản phẩm, mã SKU..." oninput="handleHeaderSearch(this.value)" onfocus="handleHeaderSearch(this.value)" aria-label="Tìm kiếm sản phẩm">
+                    <span class="header-search-icon">🔍</span>
+                </div>
+                <div id="headerSearchDropdown" class="search-dropdown"></div>
+            </div>
+
 
             <!-- Action Icons (Admin & Cart) -->
             <div class="header-actions">
@@ -2216,6 +2244,74 @@
         let displayLimit = 0;
         const PAGE_SIZE = 24;
         let scrollObserver;
+
+        /* --- Header Live Search Logic --- */
+        function handleHeaderSearch(val) {
+            const query = String(val || '').trim().toLowerCase();
+            const dropdown = document.getElementById('headerSearchDropdown');
+            if (!dropdown) return;
+
+            const mainSearch = document.getElementById('searchInput');
+            if (mainSearch && mainSearch.value !== val) {
+                mainSearch.value = val;
+                renderProducts();
+            }
+
+            if (!query) {
+                dropdown.classList.remove('active');
+                dropdown.innerHTML = '';
+                return;
+            }
+
+            const matches = products.filter(p => {
+                const name = String(p.name || '').toLowerCase();
+                const cat = String(p.category || '').toLowerCase();
+                const sku = String(p.id || '').toLowerCase();
+                return name.includes(query) || cat.includes(query) || sku.includes(query);
+            }).slice(0, 6);
+
+            if (matches.length === 0) {
+                dropdown.innerHTML = '<div style="padding:12px; font-size:0.82rem; color:#94a3b8; text-align:center;">Không tìm thấy sản phẩm nào</div>';
+                dropdown.classList.add('active');
+                return;
+            }
+
+            let html = '';
+            matches.forEach(p => {
+                const img = p.imageUrl || '/app-icon.jpg';
+                const priceStr = p.price ? Number(p.price).toLocaleString('vi-VN') + 'đ' : 'Liên hệ';
+                const cat = p.category || 'Văn phòng phẩm';
+                html += `
+                    <div class="search-dropdown-item" onclick="openProductDetail('${p.id}'); closeHeaderSearchDropdown();">
+                        <img src="${img}" class="search-dropdown-img" alt="${p.name}" onerror="this.src='/app-icon.jpg'">
+                        <div class="search-dropdown-info">
+                            <div class="search-dropdown-title">${p.name}</div>
+                            <div class="search-dropdown-meta">
+                                <span>📁 ${cat}</span>
+                                <span class="search-dropdown-price">${priceStr}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            dropdown.innerHTML = html;
+            dropdown.classList.add('active');
+        }
+
+        function closeHeaderSearchDropdown() {
+            const dropdown = document.getElementById('headerSearchDropdown');
+            if (dropdown) dropdown.classList.remove('active');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.header-search-container')) {
+                closeHeaderSearchDropdown();
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeHeaderSearchDropdown();
+        });
 
         function renderProducts(reset = true) {
             const listEl = document.getElementById('productList'); 
