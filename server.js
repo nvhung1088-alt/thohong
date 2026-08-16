@@ -615,9 +615,10 @@ function extractBlogImages(blogData) {
     }
 
     const fallbackStoreImages = [
-        'https://thohong.top/media__1784598666512.png',
-        'https://thohong.top/media_1786705348713.png',
-        'https://thohong.top/media_1786802317076.jpg'
+        'https://thohong.top/media__1784218914381.png',
+        'https://thohong.top/media__1784220161564.png',
+        'https://thohong.top/media__1784274909575.png',
+        'https://thohong.top/media__1784275178771.png'
     ];
     for (const fbImg of fallbackStoreImages) {
         if (images.length >= 4) break;

@@ -17,3 +17,5 @@
 - **Sprint 2**: Migrate CSDL SQLite sang Turso Cloud, tích hợp Vercel Serverless.
 - **Sprint 3**: Đồng bộ tính năng đẩy đơn POS V2, kiểm thử luồng CI/CD Auto-Deploy từ GitHub sang Vercel.
 - **Sprint 4**: Khắc phục lỗi tự động nộp Google Indexing API & tự động cập nhật mốc thời gian indexed_at; Bổ sung cột Telegram SEO Status, nút ✈️ Share Telegram Hàng Loạt và sửa lỗi đóng khối ngoặc render bảng Telegram Tab.
+- **Sprint 5**: Chuẩn hóa Webhook Make.com kết nối Facebook Pages: Tự động trích xuất đến 4 hình ảnh (`image1..4` và mảng `facebook_photos` dạng `[{ url }]`), sinh Hashtag CamelCase thông minh (`generateSmartHashtags`) và format nội dung bài viết bắt mắt (`formatted_content`). Pushed & Deployed Vercel thành công cho cả `thohong` và `DHTK`.
+- **Sprint 6**: Khắc phục lỗi Facebook Pages `CreatePostWithPhotos` trên Make.com: Đã chuyển toàn bộ file ảnh media tĩnh vào thư mục `public/` và chuẩn hóa danh sách `fallbackStoreImages` trong `extractBlogImages` để đảm bảo 100% URL ảnh trả về HTTP 200 OK (không bị lỗi 404 HTML).
