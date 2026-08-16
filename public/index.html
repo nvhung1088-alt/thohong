@@ -1126,18 +1126,29 @@
                     <div id="secMakeConfig" style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:10px; padding:15px; margin-bottom:15px; transition:all 0.2s;">
                         <div onclick="toggleBlogSection('secMakeConfig', event)" style="font-size:0.95rem; font-weight:700; color:#5b21b6; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
                             <span>⚙️ 1. CẤU HÌNH MAKE.COM / N8N WEBHOOK URL <span class="sec-toggle-arrow">▾</span></span>
+                            <span id="makeUrlStatusBadge" style="font-size:0.75rem; background:#fee2e2; color:#991b1b; padding:3px 10px; border-radius:6px; font-weight:600; border:1px solid #fca5a5;">⚠️ Chưa có URL</span>
                         </div>
                         
-                        <div style="margin-bottom:10px;">
+                        <div style="margin-bottom:12px;">
                             <label style="font-size:0.85rem; font-weight:600; color:#4c1d95; display:block; margin-bottom:4px;">Make.com / n8n Webhook URL:</label>
-                            <input type="text" id="ap_make_webhook_url" placeholder="VD: https://hook.eu1.make.com/abc123xyz456..." style="width:100%; border:1px solid #c4b5fd; padding:10px; border-radius:8px; font-family:monospace;" oninput="storeSettings.makeWebhookUrl=this.value.trim()">
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" id="ap_make_webhook_url" placeholder="VD: https://hook.eu1.make.com/abc123xyz456..." style="flex:1; border:1px solid #c4b5fd; padding:10px; border-radius:8px; font-family:monospace; font-size:0.85rem; background:white;" oninput="storeSettings.makeWebhookUrl=this.value.trim(); updateMakeUrlStatusBadge();">
+                                <button class="btn" style="background:#8b5cf6; color:white; font-size:0.8rem; padding:0 14px; font-weight:bold; white-space:nowrap;" onclick="copyMakeWebhookUrlInput()">📋 Copy</button>
+                            </div>
                             <span style="font-size:0.75rem; color:#6d28d9; margin-top:4px; display:block;">Dán URL Custom Webhook từ Make.com hoặc n8n vào đây. Mọi bài viết mới xuất bản sẽ được tự động gửi sang Make.com để đẩy lên Facebook Fanpage, Instagram, Telegram, Zalo, LinkedIn...</span>
                         </div>
 
-                        <div style="margin-bottom:12px;">
-                            <label style="font-size:0.85rem; color:#4c1d95; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600;">
-                                <input type="checkbox" id="ap_make_auto_share" checked style="width:16px; height:16px;" onchange="storeSettings.autoMakeShare=this.checked?'true':'false'">
-                                <span>🚀 Tự động gửi bài viết sang Make.com khi Bấm Xuất Bản (Publish)</span>
+                        <!-- Modern Toggle Switch UI -->
+                        <div style="margin-bottom:14px; background:white; border:1px solid #e0e7ff; padding:10px 14px; border-radius:8px; display:flex; align-items:center; justify-content:space-between;">
+                            <div>
+                                <div style="font-size:0.85rem; font-weight:700; color:#3730a3;">🚀 Tự động gửi bài viết sang Make.com khi Bấm Xuất Bản</div>
+                                <div style="font-size:0.75rem; color:#64748b;">Hệ thống tự động phát Webhook Đa Kênh mỗi khi xuất bản bài blog AI mới.</div>
+                            </div>
+                            <label style="position:relative; display:inline-block; width:48px; height:26px; cursor:pointer; flex-shrink:0;">
+                                <input type="checkbox" id="ap_make_auto_share" checked style="opacity:0; width:0; height:0;" onchange="storeSettings.autoMakeShare=this.checked?'true':'false'; updateMakeToggleSlider(this.checked);">
+                                <span id="ap_make_auto_slider" style="position:absolute; cursor:pointer; inset:0; background:#6366f1; transition:0.3s; border-radius:26px;">
+                                    <span id="ap_make_auto_knob" style="position:absolute; content:''; height:20px; width:20px; left:3px; bottom:3px; background:white; transition:0.3s; border-radius:50%; transform:translateX(22px);"></span>
+                                </span>
                             </label>
                         </div>
 
@@ -1150,13 +1161,22 @@
                     <!-- Bảng Quản Lý Trạng Thái Chia Sẻ Bài Viết Sang Make.com Đa Kênh -->
                     <div id="secMakeTable" style="background:white; border:1px solid #c7d2fe; border-radius:10px; padding:15px; transition:all 0.2s;">
                         <div onclick="toggleBlogSection('secMakeTable', event)" style="font-size:0.88rem; font-weight:700; color:#3730a3; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; cursor:pointer; user-select:none;">
-                            <span>📊 BẢNG QUẢN LÝ PHÂN PHỐI BÀI VIẾT ĐA KÊNH MAKE.COM <span class="sec-toggle-arrow">▾</span></span>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span>📊 BẢNG QUẢN LÝ PHÂN PHỐI BÀI VIẾT ĐA KÊNH MAKE.COM <span class="sec-toggle-arrow">▾</span></span>
+                                <span id="makeUnsharedBadge" style="font-size:0.75rem; background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-weight:700;">Đang tính...</span>
+                            </div>
                             <button class="btn" style="background:#4338ca; color:white; font-size:0.78rem; font-weight:bold; padding:6px 14px; border-radius:6px;" id="btnBatchMakeShare" onclick="apShareMakeBatch()">⚡ Share Make.com Hàng Loạt (Các Bài Chưa Share)</button>
                         </div>
+                        
+                        <!-- Thanh Tìm Kiếm Bài Viết Nhanh -->
+                        <div style="margin-bottom:10px;">
+                            <input type="text" id="makeSearchInput" placeholder="🔍 Tìm kiếm tiêu đề hoặc slug bài viết..." style="width:100%; border:1px solid #cbd5e1; padding:7px 12px; border-radius:6px; font-size:0.82rem;" oninput="filterMakePostsTable()">
+                        </div>
+
                         <div style="min-height:220px; max-height:360px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
                             <table style="width:100%; border-collapse:collapse; font-size:0.82rem; text-align:left;">
                                 <thead>
-                                    <tr style="background:#e0e7ff; border-bottom:1px solid #c7d2fe; color:#3730a3; position:sticky; top:0;">
+                                    <tr style="background:#e0e7ff; border-bottom:1px solid #c7d2fe; color:#3730a3; position:sticky; top:0; z-index:1;">
                                         <th style="padding:8px 12px;">Tiêu đề bài viết</th>
                                         <th style="padding:8px 12px;">Trạng thái</th>
                                         <th style="padding:8px 12px;">Make.com Status</th>
@@ -4130,9 +4150,12 @@
                         setVal('ap_pos_wh', privateSettings.pos_warehouse_id || '');
                         
                         setVal('ap_make_webhook_url', privateSettings.makeWebhookUrl || '');
+                        const autoMake = privateSettings.autoMakeShare !== 'false';
                         if (document.getElementById('ap_make_auto_share')) {
-                            document.getElementById('ap_make_auto_share').checked = privateSettings.autoMakeShare !== 'false';
+                            document.getElementById('ap_make_auto_share').checked = autoMake;
+                            updateMakeToggleSlider(autoMake);
                         }
+                        updateMakeUrlStatusBadge();
                         
                         hasTg = !!privateSettings.telegramToken;
                         hasPos = !!privateSettings.pos_api_key;
