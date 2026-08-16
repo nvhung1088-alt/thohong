@@ -609,14 +609,23 @@ async function triggerMakeWebhook(blogData) {
 
         const smartHashtags = generateSmartHashtags(blogData);
 
+        let cleanExcerpt = String(blogData.summary || blogData.excerpt || blogData.title || '')
+            .replace(/<[^>]*>/g, '')
+            .replace(/[#*>\-\n]/g, ' ')
+            .trim();
+        if (cleanExcerpt.length > 250) cleanExcerpt = cleanExcerpt.substring(0, 247) + '...';
+
+        const formattedContent = `📣 BÀI VIẾT MỚI TỪ THỎ HỒNG SHOP\n\n📌 ${blogData.title || ''}\n\n📝 ${cleanExcerpt}\n\n👉 Đọc bài viết chi tiết tại đây:\n${finalLink}\n\n${smartHashtags}`;
+
         const payload = {
             id: blogData.id || blogData.slug || 'sample-post',
             title: blogData.title || 'Mẫu bài viết thử nghiệm từ Thỏ Hồng',
             slug: cleanSlug || 'mau-bai-viet-thu-nghiem',
-            excerpt: blogData.summary || blogData.excerpt || blogData.title || 'Mô tả tóm tắt nội dung bài viết tự động xuất bản.',
+            excerpt: cleanExcerpt,
             link: finalLink,
             image: finalImage,
             hashtags: smartHashtags,
+            formatted_content: formattedContent,
             created_at: blogData.created_at || new Date().toISOString()
         };
 
