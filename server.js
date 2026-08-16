@@ -554,6 +554,45 @@ async function shareBlogToFacebook(fullBlogUrl, title, summary, coverImage, blog
 }
 
 // --- MAKE.COM / N8N AUTOMATION HELPER & ENDPOINTS ---
+function generateSmartHashtags(blogData) {
+    let tags = [];
+    
+    // 1. Sinh Hashtag từ từ khóa bài viết
+    if (blogData.keyword) {
+        const kwTag = '#' + String(blogData.keyword)
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+            .replace(/[^a-zA-Z0-9 ]/g, '')
+            .trim().split(/\s+/)
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join('');
+        if (kwTag.length > 2) tags.push(kwTag);
+    }
+
+    // 2. Sinh Hashtag từ tiêu đề bài viết
+    if (blogData.title) {
+        const words = String(blogData.title)
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+            .replace(/[^a-zA-Z0-9 ]/g, '')
+            .trim().split(/\s+/)
+            .filter(w => w.length > 2);
+        
+        if (words.length >= 2) {
+            const titleTag = '#' + words.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
+            if (!tags.includes(titleTag)) tags.push(titleTag);
+        }
+    }
+
+    // 3. Thêm các Hashtag thương hiệu & ngành hàng chuyên nghiệp
+    const defaultTags = ['#ThoHongShop', '#VanPhongPham', '#PhuKienGiaSi', '#DongHangTietKiem'];
+    defaultTags.forEach(t => {
+        if (!tags.includes(t)) tags.push(t);
+    });
+
+    return tags.slice(0, 5).join(' ');
+}
+
 async function triggerMakeWebhook(blogData) {
     try {
         const result = await db.execute("SELECT value FROM settings WHERE key = 'makeWebhookUrl'");
@@ -568,6 +607,8 @@ async function triggerMakeWebhook(blogData) {
         }
         if (!finalImage) finalImage = 'https://thohong.top/media__1784598666512.png';
 
+        const smartHashtags = generateSmartHashtags(blogData);
+
         const payload = {
             id: blogData.id || blogData.slug || 'sample-post',
             title: blogData.title || 'Mẫu bài viết thử nghiệm từ Thỏ Hồng',
@@ -575,7 +616,7 @@ async function triggerMakeWebhook(blogData) {
             excerpt: blogData.summary || blogData.excerpt || blogData.title || 'Mô tả tóm tắt nội dung bài viết tự động xuất bản.',
             link: finalLink,
             image: finalImage,
-            hashtags: '#thohong #vanphongpham #phukien #donghangtietkiem #giasi',
+            hashtags: smartHashtags,
             created_at: blogData.created_at || new Date().toISOString()
         };
 
