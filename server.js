@@ -611,6 +611,10 @@ const STATIONERY_STOCK_IMAGES = {
         'https://images.unsplash.com/photo-1595053826286-2e5a37421e59?w=800&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=800&auto=format&fit=crop&q=80'
     ],
+    office: [
+        'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80'
+    ],
     stationery_general: [
         'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=800&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80',
@@ -619,12 +623,14 @@ const STATIONERY_STOCK_IMAGES = {
 };
 
 function detectStationeryTopic(text) {
-    const lower = String(text || '').toLowerCase();
-    if (/sổ|bìa da|vở|giấy|tập|journal|planner|notebook/i.test(lower)) return 'notebook';
-    if (/bút|chì|viết|dạ|highlight|marker|pen/i.test(lower)) return 'pen';
-    if (/bóp|hộp bút|túi đựng|pencil case|pouch/i.test(lower)) return 'pencil_case';
+    const slug = toAsciiSlug(text || '');
+    if (/\b(but|chi|viet|da|highlight|marker|pen|gel|ngoi|muc)\b/i.test(slug) || /but|pen|gel|ngoi/i.test(slug)) return 'pen';
+    if (/\b(so|vo|tap|bia-da|giay|journal|planner|notebook|so-tay)\b/i.test(slug) || /so-|notebook|vo-/i.test(slug)) return 'notebook';
+    if (/\b(bop|hop-but|tui|pencil-case|pouch)\b/i.test(slug) || /hop-but|pencil/i.test(slug)) return 'pencil_case';
+    if (/\b(keo|kep|thuoc|dan|ho|ghim|may-tinh|trinh-ky|office)\b/i.test(slug)) return 'office';
     return 'stationery_general';
 }
+
 
 async function extractBlogImages(blogData) {
     let images = [];
@@ -2659,16 +2665,8 @@ app.post('/api/admin/blog/generate', authenticateToken, async (req, res) => {
             } catch(err) {}
         }
 
-        if (matchedProductsMap.size < 5) {
-            try {
-                const fbRes = await db.execute("SELECT id, name, category, price, imageUrl, details FROM products WHERE (status = 'active' OR status IS NULL OR status = '') AND imageUrl IS NOT NULL AND imageUrl != '' LIMIT 5");
-                (fbRes.rows || []).forEach(p => {
-                    if (matchedProductsMap.size < 5 && !matchedProductsMap.has(p.id)) {
-                        matchedProductsMap.set(p.id, p);
-                    }
-                });
-            } catch(err) {}
-        }
+        // Không dùng fallback lấy ngẫu nhiên 5 sản phẩm để tránh nhầm sản phẩm không liên quan
+
 
         const selectedProducts = Array.from(matchedProductsMap.values());
         
@@ -3396,11 +3394,40 @@ Trả về kết quả duy nhất 1 mảng JSON array: [{"keyword": "...", "reas
         const protocol = 'https';
         const baseUrl = `${protocol}://${host}`;
 
-        // 3. Fetch products and product images for AI prompt
-        const prodResult = await db.execute("SELECT id, name, category, price, imageUrl, details FROM products WHERE (status = 'active' OR status IS NULL OR status = '') AND imageUrl IS NOT NULL AND imageUrl != '' LIMIT 15");
+        // 3. Fetch products and product images for AI prompt (Lọc chính xác theo chủ đề từ khóa)
+        const postTopic = detectStationeryTopic(keyword);
+        let topicKeywords = [];
+        if (postTopic === 'notebook') topicKeywords = ['sổ', 'vở', 'tập', 'bìa da', 'giấy'];
+        else if (postTopic === 'pen') topicKeywords = ['bút', 'chì', 'viết', 'dạ', 'gel', 'marker', 'ngòi'];
+        else if (postTopic === 'pencil_case') topicKeywords = ['bóp', 'hộp bút', 'túi', 'pouch'];
+        else if (postTopic === 'office') topicKeywords = ['kéo', 'kẹp', 'thước', 'dán', 'hồ', 'ghim'];
+
+        const rawWords = String(keyword || '').split(/\s+/).filter(w => w.length > 2);
+        rawWords.forEach(w => {
+            const low = w.toLowerCase();
+            if (!topicKeywords.includes(low)) topicKeywords.push(low);
+        });
+
+        let matchedProductsMap = new Map();
+        for (const kw of topicKeywords) {
+            if (matchedProductsMap.size >= 5) break;
+            try {
+                const pRes = await db.execute({
+                    sql: "SELECT id, name, category, price, imageUrl, details FROM products WHERE (status = 'active' OR status IS NULL OR status = '') AND imageUrl IS NOT NULL AND imageUrl != '' AND (name LIKE ? OR category LIKE ?) LIMIT 5",
+                    args: [`%${kw}%`, `%${kw}%`]
+                });
+                (pRes.rows || []).forEach(p => {
+                    if (matchedProductsMap.size < 5 && !matchedProductsMap.has(p.id)) {
+                        matchedProductsMap.set(p.id, p);
+                    }
+                });
+            } catch(err) {}
+        }
+
+        const selectedProducts = Array.from(matchedProductsMap.values());
         
         const availableImages = [];
-        const productsList = prodResult.rows.map(p => {
+        const productsList = selectedProducts.map(p => {
             const nameSlug = toAsciiSlug(p.name || '');
             const cleanId = String(p.id || '').replace(/^SP/i, '');
             const link = `${baseUrl}/san-pham/${encodeURIComponent(nameSlug)}-p${cleanId}`;
@@ -3432,6 +3459,17 @@ Trả về kết quả duy nhất 1 mảng JSON array: [{"keyword": "...", "reas
 
             return `- [${p.name}](${link}) (Giá: ${p.price ? p.price + 'đ' : 'Liên hệ'})`;
         }).join('\n');
+
+        if (availableImages.length < 3) {
+            const stockList = STATIONERY_STOCK_IMAGES[postTopic] || STATIONERY_STOCK_IMAGES['stationery_general'];
+            for (const stockUrl of stockList) {
+                if (availableImages.length >= 5) break;
+                if (!availableImages.some(i => i.url === stockUrl)) {
+                    availableImages.push({ url: stockUrl, productName: `Sản phẩm ${keyword}` });
+                }
+            }
+        }
+
 
         const imagesListPrompt = availableImages.length > 0
             ? availableImages.map((img, idx) => `Ảnh ${idx + 1}: ${img.url} (Sản phẩm: ${img.productName})`).join('\n')
