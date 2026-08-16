@@ -664,7 +664,7 @@ async function triggerMakeWebhook(blogData) {
             image3: imagesList[2] || imagesList[0],
             image4: imagesList[3] || imagesList[0],
             images: imagesList,
-            facebook_photos: imagesList.map(url => ({ url })),
+            facebook_photos: imagesList.map(url => ({ url: url, type: 'url', photo: url })),
             hashtags: smartHashtags,
             formatted_content: formattedContent,
             created_at: blogData.created_at || new Date().toISOString()
