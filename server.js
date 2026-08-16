@@ -953,6 +953,8 @@ app.post('/api/admin/social/make-share-batch', authenticateToken, async (req, re
         for (const post of unsharedPosts) {
             const r = await triggerMakeWebhook(post, true);
             if (r.success) count++;
+            // Thêm delay 5 phút (300000ms) giữa các bài viết theo yêu cầu
+            await new Promise(resolve => setTimeout(resolve, 300000));
         }
 
         res.json({ success: true, message: `⚡ Đã gửi hàng loạt ${count}/${unsharedPosts.length} bài viết sang Make.com Webhook thành công!` });
