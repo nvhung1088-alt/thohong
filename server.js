@@ -621,10 +621,12 @@ const STORE_STOCK_IMAGES = {
         'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1577998474517-7eeeed4e448f?w=800&auto=format&fit=crop&q=80'
     ],
-    wholesale_general: [
-        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=800&auto=format&fit=crop&q=80'
+    packaging_supplies: [
+        'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1628102491629-77858ab216b2?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1580674684081-77673e735bf4?w=800&auto=format&fit=crop&q=80'
     ],
     general: [
         'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&auto=format&fit=crop&q=80',
@@ -769,7 +771,7 @@ async function extractBlogImages(blogData) {
         }
     }
 
-    // 4. Nếu vẫn ít hơn 4 ảnh, bổ sung các ảnh kho mẫu cao cấp CHUẨN CÙNG CHỦ ĐỀ (Unsplash HD)
+    // 4. Nếu vẫn chưa đủ 4 ảnh, bổ sung các ảnh kho mẫu cao cấp CHUẨN KHÁC NHAU
     if (images.length < 4) {
         const stockList = STORE_STOCK_IMAGES[postTopic] || STORE_STOCK_IMAGES['general'];
         for (const stockUrl of stockList) {
@@ -780,18 +782,13 @@ async function extractBlogImages(blogData) {
         }
     }
 
-    // 5. Nếu vẫn thiếu ảnh, lặp lại các ảnh thực tế của chính bài viết đó (TUYỆT ĐỐI KHÔNG lấy ảnh sai chủ đề)
-    const realImgCount = images.length;
-    if (realImgCount > 0) {
-        while (images.length < 4) {
-            images.push(images[images.length % realImgCount]);
-        }
-    } else {
-        const storeDefaultLogo = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=1080&q=80';
-        images = [storeDefaultLogo, storeDefaultLogo, storeDefaultLogo, storeDefaultLogo];
+    // 5. Đảm bảo mảng ảnh CHỈ CHỨA CÁC URL DUY NHẤT (Unique array), tuyệt đối KHÔNG lặp lại trùng URL
+    if (images.length === 0) {
+        images = ['https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&auto=format&fit=crop&q=80'];
     }
 
-    return images.slice(0, 4);
+    const uniqueImages = Array.from(new Set(images));
+    return uniqueImages.slice(0, 4);
 }
 
 async function triggerMakeWebhook(blogData, isManual = false) {
@@ -838,8 +835,8 @@ async function triggerMakeWebhook(blogData, isManual = false) {
             image3: imagesList[2] || imagesList[0],
             image4: imagesList[3] || imagesList[0],
             images: imagesList,
-            facebook_photos: imagesList.map(url => ({ url: url, type: 'url', photo: url })),
-            thohong_facebook_photos: imagesList.map(url => ({ url: url, type: 'url', photo: url })),
+            facebook_photos: imagesList.map(url => ({ url: url })),
+            facebook_photo_url: finalImage,
             hashtags: smartHashtags,
             formatted_content: formattedContent,
             created_at: blogData.created_at || new Date().toISOString()
