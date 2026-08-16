@@ -599,8 +599,9 @@ async function triggerMakeWebhook(blogData) {
         const webhookUrl = result.rows && result.rows[0] ? result.rows[0].value.trim() : '';
         if (!webhookUrl) return { error: '⚠️ Chưa cấu hình Make.com Webhook URL!' };
 
-        let cleanSlug = String(blogData.slug || '').replace(/^\/blog\//, '');
-        let finalLink = `https://thohong.top/blog/${cleanSlug || blogData.id || ''}`;
+        let rawSlug = String(blogData.slug || blogData.id || '').trim();
+        rawSlug = rawSlug.replace(/^https?:\/\/[^\/]+/i, '').replace(/^\/?blog\/?/i, '').replace(/^\/+/, '');
+        let finalLink = `https://thohong.top/blog/${rawSlug}`;
         let finalImage = blogData.cover_image || blogData.image || '';
         if (finalImage && !finalImage.startsWith('http')) {
             finalImage = `https://thohong.top${finalImage.startsWith('/') ? '' : '/'}${finalImage}`;
