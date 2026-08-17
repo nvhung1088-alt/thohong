@@ -823,10 +823,6 @@ async function triggerMakeWebhook(blogData, isManual = false) {
 
         const formattedContent = `📌 ${blogData.title || ''}\n\n📝 ${cleanExcerpt}\n\n👉 Đọc bài viết chi tiết tại đây:\n${finalLink}\n\n${smartHashtags}`;
 
-        let fbPhotosList = imagesList.map((url) => {
-            return { type: 'url', photo: url, url: url };
-        });
-
         const payload = {
             id: blogData.id || blogData.slug || 'sample-post',
             title: blogData.title || 'Mẫu bài viết thử nghiệm từ Thỏ Hồng',
@@ -840,7 +836,6 @@ async function triggerMakeWebhook(blogData, isManual = false) {
             image3: imagesList[2] || imagesList[0],
             image4: imagesList[3] || imagesList[0],
             images: imagesList,
-            facebook_photos: fbPhotosList,
             facebook_photo_url: imagesList[0],
             hashtags: smartHashtags,
             formatted_content: formattedContent,
