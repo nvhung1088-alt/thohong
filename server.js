@@ -591,51 +591,6 @@ function generateSmartHashtags(blogData) {
     return tags.slice(0, 5).join(' ');
 }
 
-const STORE_STOCK_IMAGES = {
-    hair_accessories: [
-        'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1629198688000-71f23e745b6e?w=800&auto=format&fit=crop&q=80'
-    ],
-    jewelry_fashion: [
-        'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&auto=format&fit=crop&q=80'
-    ],
-    bags_accessories: [
-        'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=800&auto=format&fit=crop&q=80'
-    ],
-    stationery: [
-        'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=80'
-    ],
-    gifts_toys: [
-        'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=800&auto=format&fit=crop&q=80'
-    ],
-    packaging_supplies: [
-        'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&auto=format&fit=crop&q=80'
-    ],
-    general: [
-        'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&auto=format&fit=crop&q=80'
-    ]
-};
-
 function detectStoreTopic(text) {
     const slug = toAsciiSlug(text || '');
     const lower = (text || '').toLowerCase();
@@ -789,20 +744,9 @@ async function extractBlogImages(blogData) {
         }
     }
 
-    // 4. Nếu vẫn chưa đủ 4 ảnh, bổ sung các ảnh kho mẫu cao cấp CHUẨN KHÁC NHAU
-    if (images.length < 4) {
-        const stockList = STORE_STOCK_IMAGES[postTopic] || STORE_STOCK_IMAGES['general'];
-        for (const stockUrl of stockList) {
-            if (images.length >= 4) break;
-            if (!images.includes(stockUrl)) {
-                images.push(stockUrl);
-            }
-        }
-    }
-
     // 5. Đảm bảo mảng ảnh CHỈ CHỨA CÁC URL DUY NHẤT (Unique array), tuyệt đối KHÔNG lặp lại trùng URL
     if (images.length === 0) {
-        images = ['https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&auto=format&fit=crop&q=80'];
+        images = ['https://thohong.top/media__1784218914381.png'];
     }
 
     const uniqueImages = Array.from(new Set(images));
@@ -850,9 +794,9 @@ async function triggerMakeWebhook(blogData, isManual = false) {
             link: finalLink,
             image: imagesList[0],
             image1: imagesList[0],
-            image2: imagesList[1] || imagesList[0],
-            image3: imagesList[2] || imagesList[0],
-            image4: imagesList[3] || imagesList[0],
+            image2: imagesList[1],
+            image3: imagesList[2],
+            image4: imagesList[3],
             images: imagesList,
             facebook_photo_url: imagesList[0],
             hashtags: smartHashtags,
