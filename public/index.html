@@ -6285,7 +6285,19 @@ YÊU CẦU SEO CHI TIẾT:
                 const data = await res.json();
                 if (data.error) return showToast(data.error, 'error');
 
-                showToast(status === 'published' ? 'Đã xuất bản bài viết thành công!' : 'Đã lưu bản nháp!', 'success');
+                let msg = status === 'published' ? 'Đã xuất bản bài viết thành công!' : 'Đã lưu bản nháp!';
+                let type = 'success';
+                
+                if (data.makeResult) {
+                    if (data.makeResult.error) {
+                        msg += ' Tuy nhiên, lỗi gửi Webhook: ' + data.makeResult.error;
+                        type = 'warning';
+                    } else if (data.makeResult.skipped) {
+                        msg += ' (Đã bỏ qua gửi Webhook)';
+                    }
+                }
+
+                showToast(msg, type);
                 closeBlogEditor();
                 loadAdminBlog();
             } catch(e) { showToast('Lỗi lưu bài viết: ' + e.message, 'error'); }

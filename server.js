@@ -863,6 +863,12 @@ async function triggerMakeWebhook(blogData, isManual = false) {
             body: JSON.stringify(payload)
         });
 
+        if (!res.ok) {
+            let errorText = '';
+            try { errorText = await res.text(); } catch(e) {}
+            throw new Error(`Make.com trả về lỗi ${res.status}: ${errorText}`);
+        }
+
         // Update make_shared_at timestamp in DB
         try {
             await db.execute("ALTER TABLE blog_posts ADD COLUMN make_shared_at TEXT DEFAULT ''");
@@ -2278,6 +2284,7 @@ app.post('/api/admin/blog', authenticateToken, async (req, res) => {
             args: [id, title, slug, finalSummary, content, keyword || '', cover_image || '', status || 'draft', now, now]
         });
 
+        let makeResult = null;
         if (status === 'published') {
             const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
             const protocol = req.headers['x-forwarded-proto'] || 'https';
@@ -2290,11 +2297,17 @@ app.post('/api/admin/blog', authenticateToken, async (req, res) => {
             
             // Native Facebook Share bị loại bỏ vì đã dùng Make.com Webhook thay thế
             
-            try { await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, content, created_at: now }); } 
-            catch(e) { console.error('[MAKE WEBHOOK ERROR]', e.message); }
+            try { 
+                makeResult = await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, content, created_at: now }); 
+                if (makeResult && makeResult.error) console.error('[MAKE WEBHOOK ERROR]', makeResult.error);
+            } 
+            catch(e) { 
+                makeResult = { error: e.message };
+                console.error('[MAKE WEBHOOK EXCEPTION]', e.message); 
+            }
         }
 
-        res.json({ success: true, id, slug });
+        res.json({ success: true, id, slug, makeResult });
     } catch (e) {
         if (e.message && e.message.includes('UNIQUE')) {
             return res.status(400).json({ error: 'Slug đã tồn tại. Hãy đổi tiêu đề bài viết.' });
@@ -2319,6 +2332,7 @@ app.put('/api/admin/blog/:id', authenticateToken, async (req, res) => {
             args: [title, slug, finalSummary, content, keyword || '', cover_image || '', status || 'draft', now, id]
         });
 
+        let makeResult = null;
         if (status === 'published') {
             const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
             const protocol = req.headers['x-forwarded-proto'] || 'https';
@@ -2330,11 +2344,17 @@ app.put('/api/admin/blog/:id', authenticateToken, async (req, res) => {
             catch(e) { console.error('[TELEGRAM POST ERROR]', e.message); }
             // Native Facebook Share bị loại bỏ vì đã dùng Make.com Webhook thay thế
             
-            try { await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, content, created_at: now }); } 
-            catch(e) { console.error('[MAKE WEBHOOK ERROR]', e.message); }
+            try { 
+                makeResult = await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, content, created_at: now }); 
+                if (makeResult && makeResult.error) console.error('[MAKE WEBHOOK ERROR]', makeResult.error);
+            } 
+            catch(e) { 
+                makeResult = { error: e.message };
+                console.error('[MAKE WEBHOOK EXCEPTION]', e.message); 
+            }
         }
 
-        res.json({ success: true, id, slug });
+        res.json({ success: true, id, slug, makeResult });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
