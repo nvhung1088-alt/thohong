@@ -4598,6 +4598,9 @@
                         }
                     } else if (pathName === '/blog' || pathName === '/blog/') {
                         navigateTo('blog');
+                    } else if (pathName !== '/' && pathName !== '' && !pathName.startsWith('/?')) {
+                        navigateTo('404');
+                        return; // Stop parsing category/product if it's a 404
                     }
 
                     if (targetCategory) {
@@ -4935,13 +4938,23 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 if (history.pushState) history.pushState({ page: 'address' }, '', '/dia-chi');
                 renderAddressPage();
+            } else if (page === '404') {
+                if (mainView) mainView.style.display = 'none';
+                if (blogListView) blogListView.style.display = 'none';
+                if (blogDetailView) blogDetailView.style.display = 'none';
+                if (addressView) addressView.style.display = 'none';
+                const notFoundView = document.getElementById('notFoundView');
+                if (notFoundView) notFoundView.style.display = 'flex';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
                 if (blogListView) blogListView.style.display = 'none';
                 if (blogDetailView) blogDetailView.style.display = 'none';
                 if (addressView) addressView.style.display = 'none';
+                const notFoundView = document.getElementById('notFoundView');
+                if (notFoundView) notFoundView.style.display = 'none';
                 if (mainView) mainView.style.display = 'block';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                if (history.pushState) history.pushState({ page: 'home' }, '', '/');
+                if (history.pushState && window.location.pathname !== '/') history.pushState({ page: 'home' }, '', '/');
             }
         }
 
@@ -4954,8 +4967,12 @@
                 navigateTo('blog');
             } else if (path === '/dia-chi' || path === '/dia-chi/' || path === '/lien-he' || path === '/lien-he/') {
                 navigateTo('address');
-            } else {
+            } else if (path === '/' || path === '' || path.startsWith('/?')) {
                 navigateTo('home');
+            } else if (path.startsWith('/danh-muc/') || path.startsWith('/san-pham/')) {
+                // Handled in loadInitialData
+            } else {
+                navigateTo('404');
             }
         });
 
@@ -4969,6 +4986,12 @@
                 navigateTo('blog');
             } else if (path === '/dia-chi' || path === '/dia-chi/' || path === '/lien-he' || path === '/lien-he/') {
                 navigateTo('address');
+            } else if (path === '/' || path === '' || path.startsWith('/?')) {
+                // Handled in loadInitialData or default
+            } else if (path.startsWith('/danh-muc/') || path.startsWith('/san-pham/')) {
+                // Handled in loadInitialData
+            } else {
+                navigateTo('404');
             }
         }
         if (document.readyState === 'loading') {

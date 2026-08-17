@@ -53,6 +53,30 @@
       "dest": "/public/index.html"
     },
     {
+      "src": "/product-category/(.*)",
+      "dest": "/public/index.html"
+    },
+    {
+      "src": "/product-tag/(.*)",
+      "dest": "/public/index.html"
+    },
+    {
+      "src": "/product/(.*)",
+      "dest": "/public/index.html"
+    },
+    {
+      "src": "/category/(.*)",
+      "dest": "/public/index.html"
+    },
+    {
+      "src": "/tag/(.*)",
+      "dest": "/public/index.html"
+    },
+    {
+      "src": "/cua-hang(.*)",
+      "dest": "/public/index.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/public/$1"
     }
