@@ -755,13 +755,16 @@ async function extractBlogImages(blogData) {
 
     const postTopic = detectStoreTopic((blogData.title || '') + ' ' + (blogData.keyword || ''));
 
-    // 3. Nếu ít hơn 4 ảnh, chỉ tìm các sản phẩm trong CSDL KHỚP CHÍNH XÁC chủ đề bài viết
+    // 3. Nếu ít hơn 4 ảnh, ưu tiên tìm ảnh sản phẩm liên quan trong web trước (theo từ khóa bài viết)
     if (images.length < 4) {
         try {
             let topicKeywords = [];
-            if (postTopic === 'notebook') topicKeywords = ['sổ', 'vở', 'tập', 'bìa da'];
-            else if (postTopic === 'pen') topicKeywords = ['bút', 'chì', 'viết'];
-            else if (postTopic === 'pencil_case') topicKeywords = ['bóp', 'hộp bút', 'túi'];
+            const searchTerms = buildSmartSearchTerms((blogData.keyword || blogData.title || ''), postTopic);
+            topicKeywords = [...searchTerms.phrases, ...searchTerms.bigrams];
+            
+            if (topicKeywords.length === 0) {
+                topicKeywords = getTopicCategoryKeywords(postTopic);
+            }
 
             if (topicKeywords.length > 0) {
                 for (const kw of topicKeywords) {
