@@ -772,13 +772,14 @@ async function extractBlogImages(blogData) {
                 for (const kw of topicKeywords) {
                     if (images.length >= 4) break;
                     const pRes = await db.execute({
-                        sql: "SELECT imageUrl FROM products WHERE imageUrl IS NOT NULL AND imageUrl LIKE 'http%' AND (name LIKE ? OR category LIKE ?) LIMIT 5",
+                        sql: "SELECT imageUrl FROM products WHERE imageUrl IS NOT NULL AND imageUrl != '' AND (name LIKE ? OR category LIKE ?) LIMIT 5",
                         args: [`%${kw}%`, `%${kw}%`]
                     });
                     for (const p of (pRes.rows || [])) {
                         if (images.length >= 4) break;
-                        if (p.imageUrl && !images.includes(p.imageUrl)) {
-                            images.push(p.imageUrl);
+                        const pUrl = sanitizeImageUrl(p.imageUrl);
+                        if (pUrl && !images.includes(pUrl)) {
+                            images.push(pUrl);
                         }
                     }
                 }
