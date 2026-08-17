@@ -728,12 +728,24 @@ async function extractBlogImages(blogData) {
         if (coverImg) images.push(coverImg);
     }
 
-    // 2. Trích xuất tất cả ảnh nằm trong nội dung HTML của bài viết
+    // 2. Trích xuất tất cả ảnh nằm trong nội dung HTML/Markdown của bài viết
     if (blogData.content) {
+        // Hỗ trợ ảnh HTML: <img src="...">
         const imgRegex = /<img[^>]+src=["']([^"']+)["']/gi;
         let match;
         while ((match = imgRegex.exec(blogData.content)) !== null) {
             let src = match[1];
+            if (src) {
+                src = sanitizeImageUrl(src);
+                if (src && !images.includes(src)) images.push(src);
+            }
+        }
+
+        // Hỗ trợ ảnh Markdown: ![alt](url)
+        const mdImgRegex = /!\[.*?\]\((https?:\/\/[^\s\)]+)\)/gi;
+        let mdMatch;
+        while ((mdMatch = mdImgRegex.exec(blogData.content)) !== null) {
+            let src = mdMatch[1];
             if (src) {
                 src = sanitizeImageUrl(src);
                 if (src && !images.includes(src)) images.push(src);
