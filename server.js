@@ -19,12 +19,9 @@ if (!JWT_SECRET) {
 
 // Cho phep cac domain hop le
 const ALLOWED_ORIGINS = [
-    'https://dhtk.vercel.app',
     'https://thohong.top',
     'https://www.thohong.top',
     'https://thohong.vercel.app',
-    'https://thohong.top',
-    'https://www.thohong.top',
     'http://localhost:3000',
     'http://localhost:3500'
 ];

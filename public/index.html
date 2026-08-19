@@ -553,6 +553,23 @@
             </div>
         </div>
     </div>
+
+    <!-- 404 NOT FOUND VIEW -->
+    <div class="container" id="notFoundView" style="display:none; padding:80px 20px; text-align:center; min-height:60vh; flex-direction:column; justify-content:center; align-items:center;">
+        <div style="font-size:5rem; font-weight:900; color:var(--primary); line-height:1; margin-bottom:10px;">404</div>
+        <h1 style="font-size:1.8rem; font-weight:700; color:var(--text-main); margin-bottom:15px;">Trang không tồn tại</h1>
+        <p style="color:var(--text-muted); max-width:500px; margin:0 auto 30px; line-height:1.6; font-size:1.05rem;">
+            Đường dẫn bạn đang cố truy cập có thể đã bị thay đổi, xóa bỏ hoặc không bao giờ tồn tại trên hệ thống.
+        </p>
+        <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
+            <a href="/" onclick="event.preventDefault(); navigateTo('home');" class="btn" style="background:var(--primary); color:white; padding:12px 24px; font-weight:700; border-radius:30px; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                🏠 Về Trang Chủ
+            </a>
+            <a href="/blog" onclick="event.preventDefault(); navigateTo('blog');" class="btn" style="background:white; color:var(--primary); border:2px solid var(--primary); padding:10px 24px; font-weight:700; border-radius:30px; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                📰 Đọc Blog
+            </a>
+        </div>
+    </div>
     <!-- POS Sync Modal -->
     <div class="modal-overlay" id="posSyncModal" onclick="if(event.target === this) closeModal('posSyncModal')">
         <div class="admin-modal" style="max-width:650px;">
@@ -3614,8 +3631,14 @@
             }
         }
 
-        async function apShareMakePost(blogId) {
+        async function apShareMakePost(blogId, btnEl = null) {
             if (!confirm('Bạn có chắc muốn gửi bài viết này sang Make.com để phân phối Đa Kênh ngay bây giờ?')) return;
+            let origText = '';
+            if (btnEl) {
+                origText = btnEl.innerText;
+                btnEl.disabled = true;
+                btnEl.innerText = '⏳ Đang gửi...';
+            }
             try {
                 const res = await fetchAPI('/api/admin/social/make-share-now', {
                     method: 'POST',
@@ -3625,6 +3648,11 @@
                 if (typeof loadMakePosts === 'function') loadMakePosts();
             } catch(e) {
                 alert('❌ Lỗi Make.com: ' + e.message);
+            } finally {
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerText = origText || '⚡ Share Make.com';
+                }
             }
         }
 
@@ -3674,7 +3702,7 @@
                         </td>
                         <td style="padding:10px 12px;">${makeStatusHtml}</td>
                         <td style="padding:10px 12px; text-align:right;">
-                            <button class="btn" style="background:#4f46e5; color:white; font-size:0.75rem; font-weight:bold; padding:5px 10px; border-radius:6px;" onclick="apShareMakePost('${p.id}')">⚡ Share Make.com</button>
+                            <button class="btn" style="background:#4f46e5; color:white; font-size:0.75rem; font-weight:bold; padding:5px 10px; border-radius:6px;" onclick="apShareMakePost('${p.id}', this)">⚡ Share Make.com</button>
                         </td>
                     </tr>`;
                 });
