@@ -1448,6 +1448,31 @@
                                 </div>
                             </details>
 
+                            <!-- Khung Cấu Hình CronJob Tự Động 24/7 -->
+                            <details style="margin-bottom:12px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px;" open>
+                                <summary style="font-size:0.82rem; font-weight:700; color:#1e40af; cursor:pointer; user-select:none;">
+                                    ⏰ HƯỚNG DẪN CÀI ĐẶT CRON-JOB TỰ ĐỘNG CHẠY 24/7 (Bấm để xem)
+                                </summary>
+                                <div style="margin-top:10px; font-size:0.8rem; color:#1e293b;">
+                                    <div style="margin-bottom:8px; background:white; padding:8px 10px; border-radius:6px; border:1px solid #dbeafe;">
+                                        <div style="font-weight:700; color:#1e40af; margin-bottom:4px;">🌐 Cron Endpoint URL của Web:</div>
+                                        <div style="display:flex; gap:6px;">
+                                            <input type="text" id="cronEndpointInput" readonly style="flex:1; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-family:monospace; font-size:0.78rem; background:#f8fafc;" value="">
+                                            <button class="btn" style="background:#2563eb; color:white; font-size:0.75rem; font-weight:bold; padding:6px 10px; white-space:nowrap;" onclick="copyCronEndpoint()">📋 Copy URL</button>
+                                            <button class="btn" style="background:#0284c7; color:white; font-size:0.75rem; font-weight:bold; padding:6px 10px; white-space:nowrap;" onclick="testCronEndpoint()">🧪 Test Endpoint</button>
+                                        </div>
+                                    </div>
+                                    <div style="background:white; padding:8px 10px; border-radius:6px; border:1px solid #dbeafe; line-height:1.5;">
+                                        <div style="font-weight:700; color:#1e40af; margin-bottom:4px;">📝 3 Bước cài đặt trên cron-job.org (Miễn phí 100%):</div>
+                                        <ol style="margin:0; padding-left:18px; font-size:0.78rem; color:#334155;">
+                                            <li>Vào <a href="https://console.cron-job.org" target="_blank" style="color:#2563eb; font-weight:700;">console.cron-job.org</a> ➔ Bấm <b>Create Cronjob</b>.</li>
+                                            <li>Dán <b>Cron Endpoint URL</b> ở trên vào ô <i>URL</i> ➔ Chọn <b>Every 1 hour</b>.</li>
+                                            <li>Vào thẻ <b>Advanced</b> ➔ Đổi <i>Execution Timeout</i> lên <b>30 seconds</b> ➔ Bấm <b>Save</b>.</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </details>
+
                             <!-- Recent 3 Auto-Posts Log -->
                             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px;">
                                 <div style="font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:6px;">📜 3 BÀI ĐĂNG GẦN ĐÂY NHẤT:</div>
@@ -5512,6 +5537,7 @@
         }
 
         async function loadAutoBlogConfig() {
+            if (typeof updateCronEndpointUI === 'function') updateCronEndpointUI();
             const token = localStorage.getItem('dhtk_jwt');
             if (!token) return;
             try {
@@ -5614,6 +5640,39 @@
                 loadAutoBlogConfig();
             } catch(e) {
                 showToast('Lỗi: ' + e.message, 'error');
+            }
+        }
+
+        function updateCronEndpointUI() {
+            const el = document.getElementById('cronEndpointInput');
+            if (el) {
+                const origin = window.location.origin || 'https://thohong.top';
+                el.value = origin + '/api/cron/auto-blog';
+            }
+        }
+
+        function copyCronEndpoint() {
+            const el = document.getElementById('cronEndpointInput');
+            if (!el || !el.value) return;
+            navigator.clipboard.writeText(el.value).then(() => {
+                showToast('Đã copy Cron Endpoint URL vào bộ nhớ tạm!', 'success');
+            }).catch(() => {
+                el.select();
+                document.execCommand('copy');
+                showToast('Đã copy Cron Endpoint URL!', 'success');
+            });
+        }
+
+        async function testCronEndpoint() {
+            const el = document.getElementById('cronEndpointInput');
+            const url = el ? el.value : (window.location.origin + '/api/cron/auto-blog');
+            showToast('⏳ Đang gửi request test tới Cron Endpoint...', 'info');
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                alert('✅ Kết quả Cron Endpoint:\n' + JSON.stringify(data, null, 2));
+            } catch(e) {
+                alert('❌ Lỗi Test Endpoint: ' + e.message);
             }
         }
 
