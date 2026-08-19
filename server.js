@@ -45,6 +45,8 @@ app.use(express.static(path.join(__dirname, 'public'), {
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         }
     }
+}));
+
 const STORE_STOCK_IMAGES = {
     'hair_accessories': [
         'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800',
