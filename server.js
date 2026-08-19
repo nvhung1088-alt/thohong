@@ -774,12 +774,37 @@ async function extractBlogImages(blogData) {
         }
     }
 
-    // 5. Đảm bảo mảng ảnh CHỈ CHỨA CÁC URL DUY NHẤT (Unique array), tuyệt đối KHÔNG lặp lại trùng URL
-    if (images.length === 0) {
-        images = ['https://thohong.top/media__1784218914381.png'];
+    // Bổ sung ảnh dự phòng từ CSDL (lấy ngẫu nhiên 10 ảnh sản phẩm bất kỳ) nếu vẫn chưa đủ 4 ảnh
+    if (images.length < 4) {
+        try {
+            const fallbackRes = await db.execute({
+                sql: "SELECT imageUrl FROM products WHERE imageUrl IS NOT NULL AND imageUrl != '' ORDER BY RANDOM() LIMIT 10"
+            });
+            for (const p of (fallbackRes.rows || [])) {
+                if (images.length >= 4) break;
+                const pUrl = sanitizeImageUrl(p.imageUrl);
+                if (pUrl && !images.includes(pUrl)) images.push(pUrl);
+            }
+        } catch(e) {}
     }
 
-    const uniqueImages = Array.from(new Set(images));
+    let uniqueImages = Array.from(new Set(images));
+    
+    // Nếu thật sự CSDL quá ít ảnh hoặc rỗng, dùng ảnh cứng để đảm bảo tuyệt đối Make.com không bị lỗi
+    const absoluteFallback = [
+        'https://thohong.top/media__1784218914381.png',
+        'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800',
+        'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800',
+        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800'
+    ];
+
+    if (uniqueImages.length < 4) {
+        for (const url of absoluteFallback) {
+            if (uniqueImages.length >= 4) break;
+            if (!uniqueImages.includes(url)) uniqueImages.push(url);
+        }
+    }
+
     return uniqueImages.slice(0, 4);
 }
 
