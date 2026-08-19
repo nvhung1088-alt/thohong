@@ -3818,7 +3818,7 @@ app.all('/api/cron/auto-blog', async (req, res) => {
         const execResult = await executeAutoBlogCycle(host);
 
         if (execResult.error) {
-            return res.status(500).json({ status: 'error', error: execResult.error });
+            return res.json({ status: 'skipped', message: execResult.error });
         }
 
         res.json({
@@ -3828,7 +3828,7 @@ app.all('/api/cron/auto-blog', async (req, res) => {
         });
     } catch(e) {
         console.error('[CRON AUTO-BLOG ROUTE ERROR]', e.message);
-        res.status(500).json({ status: 'error', error: e.message });
+        res.json({ status: 'error', message: e.message });
     }
 });
 
