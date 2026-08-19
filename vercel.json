@@ -85,6 +85,10 @@
     {
       "path": "/api/pos/sync",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/auto-blog",
+      "schedule": "0 * * * *"
     }
   ]
 }
