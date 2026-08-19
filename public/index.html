@@ -5670,9 +5670,17 @@
             try {
                 const res = await fetch(url);
                 const data = await res.json();
-                alert('✅ Kết quả Cron Endpoint:\n' + JSON.stringify(data, null, 2));
+                if (data.status === 'success') {
+                    alert('🎉 TEST CRON THÀNH CÔNG!\n\nCron Endpoint hoạt động bình thường 100%.\nĐã kích hoạt AI viết bài mới thành công!');
+                } else if (data.status === 'waiting') {
+                    alert('⏱️ CRON ENDPOINT HOẠT ĐỘNG TỐT (ĐANG CHỜ CHU KỲ)\n\n' + (data.message || 'Chưa đến giờ viết bài tiếp theo.'));
+                } else if (data.status === 'skipped') {
+                    alert('ℹ️ CRON ENDPOINT HOẠT ĐỘNG TỐT (ĐÃ BỎ QUA)\n\nThông báo: ' + (data.message || 'Tự động viết bài đang Tắt hoặc chưa đến lịch.'));
+                } else {
+                    alert('⚠️ THÔNG BÁO TỪ CRON ENDPOINT:\n\n' + (data.message || JSON.stringify(data)));
+                }
             } catch(e) {
-                alert('❌ Lỗi Test Endpoint: ' + e.message);
+                alert('❌ Lỗi Kết Nối Endpoint: ' + e.message);
             }
         }
 

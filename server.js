@@ -45,7 +45,38 @@ app.use(express.static(path.join(__dirname, 'public'), {
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         }
     }
-}));
+const STORE_STOCK_IMAGES = {
+    'hair_accessories': [
+        'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800',
+        'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=800'
+    ],
+    'jewelry_fashion': [
+        'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800',
+        'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800'
+    ],
+    'bags_accessories': [
+        'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800',
+        'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800'
+    ],
+    'stationery': [
+        'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=800',
+        'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=800'
+    ],
+    'gifts_toys': [
+        'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=800',
+        'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800'
+    ],
+    'wholesale_general': [
+        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800'
+    ],
+    'packaging_supplies': [
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800',
+        'https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=800'
+    ],
+    'general': [
+        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800'
+    ]
+};
 
 // --- NATIVE TURSO HTTP CLIENT ---
 async function executeTurso(sql, args = []) {
