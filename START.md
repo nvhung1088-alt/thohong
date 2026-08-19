@@ -11,6 +11,7 @@
 1. **Turso Engine**: Tự động chuyển đổi truy vấn SQLite sang Native HTTP Pipeline REST endpoint, giúp ứng dụng không bị timeout hoặc vỡ connection pool trên Serverless.
 2. **Pancake POS V2**: Kết nối trực tiếp POS V2 qua API Key & Shop ID, đẩy thông tin đơn hàng đầy đủ địa chỉ shipping và thông tin khách hàng.
 3. **Bảo mật**: Sử dụng JWT token bảo vệ các route cấu hình nhạy cảm và tiến trình sync.
+4. **Auto-Blog Trigger (Lưu ý bài học)**: Vercel Free Plan giới hạn Cron Job (1 cron/ngày). TUYỆT ĐỐI KHÔNG thêm cron tần suất cao vào `vercel.json`. Bắt buộc dùng Dịch vụ CronJob bên ngoài (`cron-job.org`) ping định kỳ route `/api/cron/auto-blog` để đánh thức Serverless Function.
 
 ## 📝 Nhật Ký Sprint
 - **Sprint 1**: Chuẩn hóa giao diện Thỏ Hồng Store, tối ưu hóa CSS & trải nghiệm người dùng mobile.
