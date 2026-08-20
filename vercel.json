@@ -30,19 +30,23 @@
     },
     {
       "src": "/blog",
-      "dest": "/public/index.html"
+      "dest": "server.js"
     },
     {
       "src": "/blog/(.*)",
-      "dest": "/public/index.html"
+      "dest": "server.js"
     },
     {
       "src": "/san-pham/(.*)",
-      "dest": "/public/index.html"
+      "dest": "server.js"
     },
     {
       "src": "/danh-muc/(.*)",
-      "dest": "/public/index.html"
+      "dest": "server.js"
+    },
+    {
+      "src": "/p/(.*)",
+      "dest": "server.js"
     },
     {
       "src": "/dia-chi",
