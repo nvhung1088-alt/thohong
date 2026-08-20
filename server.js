@@ -4091,9 +4091,10 @@ app.use(async (req, res, next) => {
                 let storeName = 'Thỏ Hồng';
 
                 if (isBlog) {
+                    const cleanBlogSlug = decodedSlug.replace(/^\/?blog\/?/i, '').trim();
                     const batchRes = await db.executeBatch([
                         { sql: "SELECT key, value FROM settings WHERE key IN ('storeName')", args: [] },
-                        { sql: "SELECT title, summary, content, cover_image, created_at, updated_at FROM blog_posts WHERE slug = ? OR slug = ? OR id = ? LIMIT 1", args: [slug, decodedSlug, decodedSlug] }
+                        { sql: "SELECT id, title, summary, content, imageUrl, createdAt, updatedAt FROM blogs WHERE slug = ? OR id = ? OR LOWER(slug) = ? LIMIT 1", args: [cleanBlogSlug, cleanBlogSlug, cleanBlogSlug.toLowerCase()] }
                     ]);
                     const settingsRows = batchRes.results?.[0]?.response?.result?.rows || [];
                     settingsRows.forEach(r => { if (r[0]?.value === 'storeName') storeName = r[1]?.value || storeName; });
@@ -4101,23 +4102,26 @@ app.use(async (req, res, next) => {
                     let blogRows = batchRes.results?.[1]?.response?.result?.rows || [];
                     if (blogRows.length === 0) {
                         const fbRes = await db.execute({
-                            sql: "SELECT title, summary, content, cover_image, created_at, updated_at FROM blog_posts WHERE slug LIKE ? LIMIT 1",
-                            args: [`%${decodedSlug}%`]
+                            sql: "SELECT id, title, summary, content, imageUrl, createdAt, updatedAt FROM blogs WHERE LOWER(title) LIKE ? OR LOWER(slug) LIKE ? LIMIT 1",
+                            args: [`%${cleanBlogSlug.toLowerCase()}%`, `%${cleanBlogSlug.toLowerCase()}%`]
                         });
                         blogRows = fbRes.rows || [];
                     }
 
                     if (blogRows.length > 0) {
                         const row = blogRows[0];
-                        const bTitle = row.title || row[0]?.value || '';
-                        const bSummary = row.summary || row[1]?.value || '';
-                        const bContent = row.content || row[2]?.value || '';
-                        const bCover = row.cover_image || row[3]?.value || '';
-                        const bCreated = row.created_at || row[4]?.value || new Date().toISOString();
-                        const bUpdated = row.updated_at || row[5]?.value || bCreated;
+                        const bTitle = row.title || row[1]?.value || row[1] || '';
+                        const bSummary = row.summary || row[2]?.value || row[2] || '';
+                        const bContent = row.content || row[3]?.value || row[3] || '';
+                        const bCover = row.imageUrl || row[4]?.value || row[4] || '';
+                        const bCreated = row.createdAt || row[5]?.value || row[5] || new Date().toISOString();
+                        const bUpdated = row.updatedAt || row[6]?.value || row[6] || bCreated;
+
+                        const rawText = bSummary || bContent;
+                        const cleanSummary = String(rawText).replace(/<[^>]*>/g, '').replace(/[#*>\-\n\r]/g, ' ').replace(/\s+/g, ' ').trim();
 
                         title = `${bTitle} | ${storeName}`;
-                        desc = bSummary || bContent.replace(/[#*>\-\n]/g, ' ').substring(0, 160).trim();
+                        desc = cleanSummary.substring(0, 155) || `Đọc bài viết ${bTitle} mới nhất tại ${storeName}. Mẹo hay và báo giá văn phòng phẩm tốt nhất.`;
                         if (bCover) image = bCover;
                         blogPostObj = { title: bTitle, desc, image, created: bCreated, updated: bUpdated };
                     }
@@ -4209,8 +4213,9 @@ app.use(async (req, res, next) => {
         }
     }
 
-    // Inject dynamic Meta and Open Graph tags into HTML response
+    // Inject dynamic Meta, Canonical and Open Graph tags into HTML response
     let out = html
+        .replace(/<head>/i, `<head>\n    <link rel="canonical" href="${escapeHtmlServer(fullUrl)}">`)
         .replace(/<title>.*?<\/title>/i, `<title>${escapeHtmlServer(title)}</title>`)
         .replace(/<meta name="description" id="seoDescription" content=".*?">/i, `<meta name="description" id="seoDescription" content="${escapeHtmlServer(desc)}">`)
         .replace(/<meta property="og:title" id="ogTitle" content=".*?">/i, `<meta property="og:title" id="ogTitle" content="${escapeHtmlServer(title)}">`)

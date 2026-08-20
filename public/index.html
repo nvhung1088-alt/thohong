@@ -2965,7 +2965,7 @@
                 <div class="detail-right">
                     <div>
                         <div class="cat-badge" ${editAttr} onblur="updateProductInfo('${p.id}', 'category', this.innerText)">${p.category}</div>
-                        <h2 style="font-size: 1.8rem; color: var(--primary); margin-bottom: 0.5rem; line-height:1.2;" ${editAttr} onblur="updateProductInfo('${p.id}', 'name', this.innerText)">${p.name}</h2>
+                        <h1 class="product-detail-title" style="font-size: 1.8rem; color: var(--primary); margin-bottom: 0.5rem; line-height:1.2; font-weight:700;" ${editAttr} onblur="updateProductInfo('${p.id}', 'name', this.innerText)">${p.name}</h1>
                         
                         <div style="margin-bottom:10px;">
                             <button class="btn" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.8rem; display:inline-flex; align-items:center; gap:5px;" onclick="copyShareLink('${p.id}', 'product')">🔗 Sao chép Link Chia Sẻ Sản Phẩm</button>
@@ -3264,11 +3264,11 @@
             }
         }
 
-        function updateSEO(customTitle, customDesc, customImage) {
+        function updateSEO(customTitle, customDesc, customImage, customCanonical) {
             const title = customTitle || storeSettings.metaTitle || 'Tổng Kho Sỉ Lẻ Thỏ Hồng - Hệ Thống Đặt Hàng Thông Minh';
             const desc = customDesc || storeSettings.metaDescription || 'Hệ thống đặt hàng sỉ lẻ thông minh Thỏ Hồng / ĐHTK, tự động tính toán chiết khấu, đồng bộ tồn kho POS trực tuyến.';
             const image = customImage || (storeSettings.logoUrl || 'https://thohong.top/media__1784598666512.png');
-            const currentUrl = window.location.href;
+            const currentUrl = customCanonical || window.location.href.split('?')[0];
 
             document.title = title;
 
@@ -3288,6 +3288,14 @@
             setMeta('twitterTitle', 'twitter:title', 'name', title);
             setMeta('twitterDescription', 'twitter:description', 'name', desc);
             setMeta('twitterImage', 'twitter:image', 'name', image);
+
+            let canonicalEl = document.querySelector('link[rel="canonical"]');
+            if (!canonicalEl) {
+                canonicalEl = document.createElement('link');
+                canonicalEl.setAttribute('rel', 'canonical');
+                document.head.appendChild(canonicalEl);
+            }
+            canonicalEl.setAttribute('href', currentUrl);
         }
 
         function renderPolicy() {
@@ -5165,7 +5173,18 @@
                     return;
                 }
                 const p = await res.json();
-                document.title = p.title + ' | Thỏ Hồng / ĐHTK';
+                const cleanBlogSummary = String(p.summary || p.content || '')
+                    .replace(/<[^>]*>/g, '')
+                    .replace(/[#*>\-\n\r]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .substring(0, 155);
+                const blogTitle = `${p.title} | ${storeSettings.storeName || 'Thỏ Hồng'}`;
+                const blogDesc = cleanBlogSummary || `Đọc bài viết ${p.title} mới nhất tại ${storeSettings.storeName || 'Thỏ Hồng'}. Báo giá và kinh nghiệm chọn mua văn phòng phẩm.`;
+                const blogImg = p.cover_image || p.imageUrl || p.image || '';
+                const blogCanonical = `${window.location.origin}/blog/${p.slug || p.id || slug}`;
+                
+                updateSEO(blogTitle, blogDesc, blogImg, blogCanonical);
 
                 const dateStr = p.created_at ? new Date(p.created_at).toLocaleDateString('vi-VN') : '';
                 const coverHtml = p.cover_image ? `<img src="${p.cover_image}" class="blog-detail-cover" alt="${p.title}">` : '';
