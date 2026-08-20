@@ -2142,12 +2142,12 @@
             let isFirst = !appendMode; // Xóa DB ở chunk đầu tiên nếu chọn Ghi đè
 
             async function uploadChunks() {
-                for (let i = 0; i < products.length; i += CHUNK_SIZE) {
-                    const chunk = products.slice(i, i + CHUNK_SIZE);
-                    let current = Math.min(i + CHUNK_SIZE, products.length);
-                    let percent = Math.floor((current / products.length) * 100);
+                for (let i = 0; i < newImportedProducts.length; i += CHUNK_SIZE) {
+                    const chunk = newImportedProducts.slice(i, i + CHUNK_SIZE);
+                    let current = Math.min(i + CHUNK_SIZE, newImportedProducts.length);
+                    let percent = Math.floor((current / newImportedProducts.length) * 100);
                     
-                    document.getElementById('importProgressText').innerHTML = `⏳ Đang đẩy lên máy chủ: <strong>${current} / ${products.length}</strong> sản phẩm...`;
+                    document.getElementById('importProgressText').innerHTML = `⏳ Đang đẩy lên máy chủ: <strong>${current} / ${newImportedProducts.length}</strong> sản phẩm vừa đọc từ Excel...`;
                     document.getElementById('importProgressBar').style.width = percent + '%';
                     
                     await fetchAPI('/api/products/import', {
@@ -2155,30 +2155,28 @@
                         body: { products: chunk, clearFirst: (i === 0) ? isFirst : false }
                     });
                     
-                    // Thêm delay 100ms để tránh hammer server Vercel quá nhanh
                     await new Promise(resolve => setTimeout(resolve, 100));
                 }
+
+                if (!appendMode) {
+                    products = newImportedProducts;
+                } else {
+                    newImportedProducts.forEach(newP => {
+                        let matchIdx = products.findIndex(p => p.id === newP.id);
+                        if (matchIdx > -1) products[matchIdx] = newP;
+                        else products.push(newP);
+                    });
+                }
+
+                renderUI(); 
+                if (typeof closeModal === 'function') closeModal('excelModal');
+                else document.getElementById('excelModal').classList.remove('active');
+
+                alert(`✅ Đã nhập thành công đủ ${newImportedProducts.length} sản phẩm từ file Excel!`);
             }
 
-            uploadChunks().then(() => {
-                renderUI(); 
-                closeModal('excelModal'); 
-                alert(appendMode ? "Đã nối tiếp/Cập nhật dữ liệu thành công!" : "Đã Import đè thành công!");
-                
-                // Khôi phục HTML của excelStep2 cho lần dùng sau
-                document.getElementById('excelStep2').innerHTML = `
-                <p style="font-size:0.95rem; color:#1e293b; margin-bottom: 10px;">✅ Đã đọc thành công <strong id="importCount2" style="color:#10b981;">0</strong> sản phẩm từ file Excel.</p>
-                <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px; margin-bottom:1rem; font-size:0.85rem; color:#1e40af;">
-                    ℹ️ Hệ thống sẽ tự động tách Giá và Điều kiện mua sỉ (Ví dụ: <strong>8000 >= 10</strong> sẽ tách thành 8000đ khi mua từ 10).
-                </div>
-                <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
-                    <button class="btn btn-secondary" onclick="document.getElementById('excelStep1').style.display='block'; document.getElementById('excelStep2').style.display='none';">Quay lại</button>
-                    <button class="btn btn-primary" style="background:#10b981; flex:2;" onclick="executeExcelImport(true)">Thêm (Nối tiếp dữ liệu)</button>
-                    <button class="btn btn-primary" style="background:#ef4444; flex:1;" onclick="executeExcelImport(false)">Import (Ghi Đè Xoá Cũ)</button>
-                </div>`;
-            }).catch(e => {
-                alert("Lỗi khi import: " + e.message);
-                closeModal('excelModal');
+            uploadChunks().catch(e => {
+                alert("❌ Lỗi khi nhập sản phẩm: " + e.message);
             });
         }
 
