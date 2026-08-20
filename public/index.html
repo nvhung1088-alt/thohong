@@ -1916,7 +1916,7 @@
             const normalizeStr = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
             let map = { 
                 sku: -1, name: -1, desc: -1, image: -1, cat: -1, weight: -1, retail: -1, cost: -1,
-                si1_cond: -1, si1_price: -1, si2_cond: -1, si2_price: -1
+                si1_cond: -1, si1_price: -1, si2_cond: -1, si2_price: -1, si3_cond: -1, si3_price: -1
             };
 
             excelHeader.forEach((origH, i) => {
@@ -1929,11 +1929,13 @@
                 else if (map.cost === -1 && (h.includes('von') || h.includes('nhap'))) map.cost = i;
                 else if (map.retail === -1 && (h.includes('ban le') || h.includes('gia le') || (h.includes('gia ban') && !h.includes('si')))) map.retail = i;
                 else if (map.desc === -1 && h.includes('mo ta')) map.desc = i;
-                // Auto-detect Sỉ 1 & Sỉ 2
+                // Auto-detect Sỉ 1, Sỉ 2 & Sỉ 3
                 else if (map.si1_cond === -1 && (h.includes('yeu cau si 1') || h.includes('yeu cau s1') || h.includes('dieu kien s1') || h.includes('dk si 1') || (h.includes('si 1') && (h.includes('yc') || h.includes('dk') || h.includes('cau'))))) map.si1_cond = i;
                 else if (map.si1_price === -1 && (h.includes('gia si 1') || h.includes('gia s1') || (h.includes('si 1') && h.includes('gia')) || h.endsWith('si 1'))) map.si1_price = i;
                 else if (map.si2_cond === -1 && (h.includes('yeu cau si 2') || h.includes('yeu cau s2') || h.includes('dieu kien s2') || h.includes('dk si 2') || (h.includes('si 2') && (h.includes('yc') || h.includes('dk') || h.includes('cau'))))) map.si2_cond = i;
                 else if (map.si2_price === -1 && (h.includes('gia si 2') || h.includes('gia s2') || (h.includes('si 2') && h.includes('gia')) || h.endsWith('si 2'))) map.si2_price = i;
+                else if (map.si3_cond === -1 && (h.includes('yeu cau si 3') || h.includes('yeu cau s3') || h.includes('dieu kien s3') || h.includes('dk si 3') || (h.includes('si 3') && (h.includes('yc') || h.includes('dk') || h.includes('cau'))))) map.si3_cond = i;
+                else if (map.si3_price === -1 && (h.includes('gia si 3') || h.includes('gia s3') || (h.includes('si 3') && h.includes('gia')) || h.endsWith('si 3'))) map.si3_price = i;
             });
 
             // Generate UI
@@ -1949,7 +1951,9 @@
                 { id: 'si1_cond', label: 'Yêu Cầu Sỉ 1 (VD: >= 10)' },
                 { id: 'si1_price', label: 'Giá Sỉ 1' },
                 { id: 'si2_cond', label: 'Yêu Cầu Sỉ 2 (VD: >= 100)' },
-                { id: 'si2_price', label: 'Giá Sỉ 2' }
+                { id: 'si2_price', label: 'Giá Sỉ 2' },
+                { id: 'si3_cond', label: 'Yêu Cầu Sỉ 3 (VD: >= 500)' },
+                { id: 'si3_price', label: 'Giá Sỉ 3' }
             ];
 
             let html = '';
@@ -2002,7 +2006,9 @@
                 si1_cond: parseInt(document.getElementById('map_si1_cond') ? document.getElementById('map_si1_cond').value : -1),
                 si1_price: parseInt(document.getElementById('map_si1_price') ? document.getElementById('map_si1_price').value : -1),
                 si2_cond: parseInt(document.getElementById('map_si2_cond') ? document.getElementById('map_si2_cond').value : -1),
-                si2_price: parseInt(document.getElementById('map_si2_price') ? document.getElementById('map_si2_price').value : -1)
+                si2_price: parseInt(document.getElementById('map_si2_price') ? document.getElementById('map_si2_price').value : -1),
+                si3_cond: parseInt(document.getElementById('map_si3_cond') ? document.getElementById('map_si3_cond').value : -1),
+                si3_price: parseInt(document.getElementById('map_si3_price') ? document.getElementById('map_si3_price').value : -1)
             };
 
             let newImportedProducts = [];
@@ -2055,6 +2061,20 @@
                             name: 'Giá Sỉ 2',
                             price: p2,
                             condition: c2 > 0 ? c2 : 100
+                        });
+                    }
+                }
+
+                // Sỉ 3
+                if (map.si3_price !== -1) {
+                    let p3 = parseMoneyNumber(r[map.si3_price]);
+                    let c3 = map.si3_cond !== -1 ? extractConditionNumber(r[map.si3_cond]) : 500;
+                    if (p3 > 0) {
+                        tiers.push({
+                            id: 't3',
+                            name: 'Giá Sỉ 3',
+                            price: p3,
+                            condition: c3 > 0 ? c3 : 500
                         });
                     }
                 }
