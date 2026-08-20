@@ -300,22 +300,31 @@
         .apanel-tab-bar {
             display: flex;
             gap: 6px;
-            padding: 10px 14px;
+            padding: 8px 14px 10px 14px;
             background: #f1f5f9;
-            border-bottom: 1px solid #e2e8f0;
-            overflow-x: auto;
+            border-bottom: 1px solid #cbd5e1;
+            overflow-x: scroll !important;
             overflow-y: hidden;
             flex-shrink: 0;
             white-space: nowrap;
             -webkit-overflow-scrolling: touch;
-            scrollbar-width: none !important;
-            -ms-overflow-style: none !important;
+            scrollbar-width: thin !important;
+            scrollbar-color: #94a3b8 #e2e8f0 !important;
         }
         .apanel-tab-bar::-webkit-scrollbar {
-            width: 0 !important;
-            height: 0 !important;
-            display: none !important;
-            background: transparent !important;
+            height: 6px !important;
+            display: block !important;
+        }
+        .apanel-tab-bar::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+        .apanel-tab-bar::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 3px;
+        }
+        .apanel-tab-bar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
         }
         .apanel-tab { 
             background: transparent; 
@@ -4625,6 +4634,19 @@
             const collapsed = el.classList.toggle('blog-sec-collapsed');
             try { const st = JSON.parse(localStorage.getItem('blogSecStates') || '{}'); st[id] = collapsed; localStorage.setItem('blogSecStates', JSON.stringify(st)); } catch(e) {}
         }
+        // Enable Mousewheel Horizontal Scroll on Admin Tab Bar
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabBar = document.querySelector('.apanel-tab-bar');
+            if (tabBar) {
+                tabBar.addEventListener('wheel', function(e) {
+                    if (e.deltaY !== 0) {
+                        e.preventDefault();
+                        tabBar.scrollLeft += e.deltaY;
+                    }
+                }, { passive: false });
+            }
+        });
+
         (function initBlogSections() {
             try {
                 const st = JSON.parse(localStorage.getItem('blogSecStates') || '{}');
@@ -4651,7 +4673,11 @@
                 'tab-indexing': 't-indexing'
             };
             if (tabMap[tabId] && document.getElementById(tabMap[tabId])) {
-                document.getElementById(tabMap[tabId]).classList.add('active');
+                const btn = document.getElementById(tabMap[tabId]);
+                btn.classList.add('active');
+                try {
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                } catch(e) {}
             }
             if (tabId === 'tab-indexing') {
                 loadGoogleIndexingConfig();
