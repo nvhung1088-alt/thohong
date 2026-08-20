@@ -4083,8 +4083,11 @@ app.use(async (req, res, next) => {
         if (c.blogPostObj) blogPostObj = c.blogPostObj;
     } else {
         try {
-            const DB_TIMEOUT = 3500;
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('DB_TIMEOUT')), DB_TIMEOUT));
+            const DB_TIMEOUT = 2500;
+            let isDone = false;
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => {
+                if (!isDone) reject(new Error('DB_TIMEOUT'));
+            }, DB_TIMEOUT));
 
             const dbQueryPromise = (async () => {
                 const decodedSlug = decodeURIComponent(slug);
@@ -4199,6 +4202,7 @@ app.use(async (req, res, next) => {
                     }
                 }
 
+                isDone = true;
                 // Save to Cache
                 ssrSeoCache[cacheKey] = { title, desc, image, blogPostObj };
             })();
@@ -4206,7 +4210,7 @@ app.use(async (req, res, next) => {
             await Promise.race([dbQueryPromise, timeoutPromise]);
         } catch(err) {
             if (err.message === 'DB_TIMEOUT') {
-                console.warn('[SEO SSR] DB query timed out after 8.5s, serving static HTML fallback.');
+                console.warn('[SEO SSR] DB query timed out after 2.5s, serving static HTML fallback.');
             } else {
                 console.error('[SEO SSR ERROR]', err.message);
             }
