@@ -342,12 +342,25 @@
             font-weight: 700 !important;
         }
         
-        /* Admin Panel Body & Force Vertical Scrollbar 10px */
+        /* === ADMIN PANEL MODAL SCROLL FIX === */
+        /* Ép admin panel modal không tự cuộn — chỉ .apanel-body cuộn */
+        #adminPanelModal .admin-modal {
+            overflow: hidden !important;
+            overflow-y: hidden !important;
+        }
+        #adminPanelModal .admin-modal > div:first-child,
+        #adminPanelModal .apanel-tab-bar {
+            flex-shrink: 0 !important;
+        }
+
+        /* Admin Panel Body — Scroll Container chính */
         .apanel-body {
             padding: 1rem 1.2rem;
-            flex: 1;
+            flex: 1 1 0% !important;
+            height: 0 !important;
+            min-height: 0 !important;
             overflow-y: scroll !important;
-            min-height: 0;
+            overflow-x: hidden !important;
             scrollbar-width: auto !important;
             scrollbar-color: #64748b #f1f5f9;
         }
