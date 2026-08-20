@@ -2801,14 +2801,17 @@
                 modal = document.createElement('div');
                 modal.id = 'product404Modal';
                 modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:99999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); padding:20px;';
+                modal.setAttribute('onclick', 'if(event.target === this) closeProduct404Modal();');
                 modal.innerHTML = `
-                    <div style="background:white; border-radius:16px; max-width:440px; width:100%; padding:30px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.2); animation: popIn 0.25s ease;">
+                    <div style="background:white; border-radius:16px; max-width:440px; width:100%; padding:30px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.2); animation: popIn 0.25s ease; position:relative;" onclick="event.stopPropagation()">
+                        <button onclick="closeProduct404Modal();" style="position:absolute; top:12px; right:15px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#94a3b8; line-height:1;" title="Đóng">&times;</button>
                         <div style="font-size:3.5rem; margin-bottom:10px;">🔍</div>
                         <h3 style="font-size:1.3rem; color:#1e293b; margin-bottom:10px; font-weight:700;">Không tìm thấy sản phẩm (404)</h3>
                         <p style="color:#64748b; font-size:0.92rem; line-height:1.5; margin-bottom:24px;">Sản phẩm bạn đang xem có thể đã thay đổi đường dẫn, hết hàng hoặc đã gỡ khỏi hệ thống.</p>
-                        <div style="display:flex; gap:10px; justify-content:center;">
-                            <button onclick="closeProduct404Modal(); navigateTo('home');" class="btn" style="background:#ef4444; color:white; font-weight:700; padding:10px 20px; border-radius:8px;">🏠 Trang Chủ</button>
-                            <button onclick="closeProduct404Modal(); navigateTo('blog');" class="btn" style="background:#f1f5f9; color:#334155; font-weight:700; padding:10px 20px; border-radius:8px;">📰 Xem Blog</button>
+                        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+                            <button onclick="closeProduct404Modal(); navigateTo('home');" class="btn" style="background:#ef4444; color:white; font-weight:700; padding:10px 16px; border-radius:8px; font-size:0.88rem;">🏠 Trang Chủ</button>
+                            <button onclick="closeProduct404Modal(); navigateTo('blog');" class="btn" style="background:#3b82f6; color:white; font-weight:700; padding:10px 16px; border-radius:8px; font-size:0.88rem;">📰 Xem Blog</button>
+                            <button onclick="closeProduct404Modal();" class="btn" style="background:#f1f5f9; color:#334155; font-weight:700; padding:10px 16px; border-radius:8px; font-size:0.88rem;">❌ Đóng & Đọc Tiếp</button>
                         </div>
                     </div>
                 `;
@@ -5194,7 +5197,13 @@
                 let safeProductsList = [];
                 try {
                     if (typeof products !== 'undefined' && Array.isArray(products)) {
-                        safeProductsList = [...products];
+                        safeProductsList = products.filter(p => {
+                            if (!p) return false;
+                            if (typeof isProductOutOfStock === 'function') {
+                                return !isProductOutOfStock(p);
+                            }
+                            return true;
+                        });
                     }
                 } catch (pe) {}
 
