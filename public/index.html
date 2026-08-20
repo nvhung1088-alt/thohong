@@ -2188,6 +2188,18 @@
             });
         }
 
+        function isHideOutOfStockEnabled() {
+            return storeSettings.hideOutOfStock === true || storeSettings.hideOutOfStock === 'true';
+        }
+
+        function isProductOutOfStock(p) {
+            if (!p) return true;
+            const totalStock = (p.variants && p.variants.length > 0)
+                ? p.variants.reduce((s, v) => s + (Number(v.stock) || 0), 0)
+                : (Number(p.quantity) || 0);
+            return totalStock <= 0;
+        }
+
         // --- VIEW LOGIC ---
         function setViewMode(mode) {
             currentViewMode = mode;
@@ -2221,12 +2233,7 @@
             let totalCount = 0;
             
             products.forEach(p => {
-                if (!isAdmin && storeSettings.hideOutOfStock) {
-                    const totalStock = p.variants && p.variants.length > 0
-                        ? p.variants.reduce((s, v) => s + (Number(v.stock) || 0), 0)
-                        : (Number(p.quantity) || 0);
-                    if (totalStock <= 0) return;
-                }
+                if (!isAdmin && isHideOutOfStockEnabled() && isProductOutOfStock(p)) return;
                 
                 const cat = (p.category || 'Khác').trim();
                 if (cat) {
@@ -2260,12 +2267,7 @@
             let totalCount = 0;
             
             products.forEach(p => {
-                if (!isAdmin && storeSettings.hideOutOfStock) {
-                    const totalStock = p.variants && p.variants.length > 0
-                        ? p.variants.reduce((s, v) => s + (Number(v.stock) || 0), 0)
-                        : (Number(p.quantity) || 0);
-                    if (totalStock <= 0) return;
-                }
+                if (!isAdmin && isHideOutOfStockEnabled() && isProductOutOfStock(p)) return;
                 
                 const cat = (p.category || 'Khác').trim();
                 if (cat) {
@@ -2282,19 +2284,11 @@
                 const label = isAll ? 'Tất cả sản phẩm' : c;
                 const count = isAll ? totalCount : catCounts[c];
                 const isActive = activeCategory === c;
-                return `
-                    <div class="cat-tab ${isActive ? 'active' : ''}" onclick="setCategory('${c}')">
-                        <span>${label}</span>
-                        <span class="cat-badge-count">${count}</span>
-                    </div>
-                `;
+                return `<button class="cat-pill ${isActive ? 'active' : ''}" onclick="setCategory('${c}')">${label} (${count})</button>`;
             }).join('');
 
-            const container = document.getElementById('categoryTabs');
+            const container = document.getElementById('categoryList');
             if (container) container.innerHTML = html;
-
-            const badge = document.getElementById('catTotalBadge');
-            if (badge) badge.textContent = sortedCats.length;
         }
 
         function getActiveVariant(pId) {
@@ -2464,8 +2458,14 @@
                 const sku = activeV?activeV.sku:p.sku;
                 const stock = activeV?activeV.stock:'?';
 
+                const isOOS = isProductOutOfStock(p);
+                const adminBadge = (isAdmin && isOOS && isHideOutOfStockEnabled()) 
+                    ? `<div style="position:absolute; top:8px; left:8px; z-index:10; background:#ef4444; color:white; font-size:0.7rem; font-weight:800; padding:4px 8px; border-radius:6px; box-shadow:0 2px 4px rgba(239,68,68,0.3);">🚫 ĐÃ ẨN KHỎI KHÁCH (HẾT HÀNG)</div>` 
+                    : '';
+
                 htmlChunk += `
-                    <div class="product-card ${isAdmin?'admin-mode':''}">
+                    <div class="product-card ${isAdmin?'admin-mode':''}" style="position:relative;">
+                        ${adminBadge}
                         <div class="product-image ${imgUrl?'':'no-img'}" onclick="openDetailModal('${p.id}')">
                             ${imgTag}
                         </div>
@@ -2839,6 +2839,11 @@
             const p = findProductByAnyId(id, urlSlug);
             if (!p) {
                 showToast('⚠️ Sản phẩm không tồn tại hoặc đã bị gỡ', 'warning');
+                showProduct404Modal();
+                return;
+            }
+            if (!isAdmin && isHideOutOfStockEnabled() && isProductOutOfStock(p)) {
+                showToast('⚠️ Sản phẩm này hiện đang hết hàng và đã ẩn khỏi gian hàng', 'warning');
                 showProduct404Modal();
                 return;
             }
