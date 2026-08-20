@@ -304,14 +304,18 @@
             background: #f1f5f9;
             border-bottom: 1px solid #e2e8f0;
             overflow-x: auto;
+            overflow-y: hidden;
             flex-shrink: 0;
             white-space: nowrap;
             -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
         }
         .apanel-tab-bar::-webkit-scrollbar {
-            height: 0;
-            display: none;
+            width: 0 !important;
+            height: 0 !important;
+            display: none !important;
+            background: transparent !important;
         }
         .apanel-tab { 
             background: transparent; 
