@@ -110,16 +110,17 @@ async function syncNow() {
 
     const skuStockMap = {};
     const getStock = (obj) => {
-        if (obj.inventories && Array.isArray(obj.inventories) && obj.inventories.length > 0) {
+        const warehouses = obj.variations_warehouses || obj.inventories || [];
+        if (warehouses.length > 0) {
             if (posCredentials.warehouseId) {
-                const whInv = obj.inventories.find(inv => 
+                const whInv = warehouses.find(inv => 
                     String(inv.warehouse_id) === String(posCredentials.warehouseId) || String(inv.id) === String(posCredentials.warehouseId)
                 );
-                if (whInv) return whInv.available_quantity ?? whInv.available ?? whInv.quantity ?? 0;
+                if (whInv) return whInv.remain_quantity ?? whInv.actual_remain_quantity ?? whInv.available_quantity ?? whInv.available ?? whInv.quantity ?? 0;
             }
-            return obj.inventories.reduce((sum, inv) => sum + (inv.available_quantity ?? inv.available ?? inv.quantity ?? 0), 0);
+            return warehouses.reduce((sum, inv) => sum + (inv.remain_quantity ?? inv.actual_remain_quantity ?? inv.available_quantity ?? inv.available ?? inv.quantity ?? 0), 0);
         }
-        return obj.available_quantity ?? obj.available ?? obj.stock ?? 0;
+        return obj.remain_quantity ?? obj.available_quantity ?? obj.available ?? obj.stock ?? 0;
     };
 
     allPosProducts.forEach(posProduct => {
