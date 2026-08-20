@@ -1786,118 +1786,7 @@
                 
                 if(hasOpt1) {
                     let v = new Set(); rG.forEach(r=>{if(r[2] && r[2].trim() !== '') v.add(r[2].trim())});
-                    opts.push({id:'opt_1', name:'Phân loại 1', values:Array.from(v), hidden:false});
-                }
-                if(hasOpt2) {
-                    let v = new Set(); rG.forEach(r=>{if(r[3] && r[3].trim() !== '') v.add(r[3].trim())});
-                    opts.push({id:'opt_2', name:'Phân loại 2', values:Array.from(v), hidden:false});
-                }
-
-                let tiers = [
-                    { id: pId+'_t0', name: 'Giá Bán Lẻ', condition: 0, price: 0 },
-                    { id: pId+'_t1', name: 'Giá Sỉ 1', condition: 10, price: 0 },
-                    { id: pId+'_t2', name: 'Giá Sỉ 2', condition: 100, price: 0 }
-                ];
-
-                let product = {
-                    id: pId, name: pName, category: cat, images: [rG[0][5]||''], description: "Sản phẩm chất lượng cao, chuyên đổ sỉ cho các shop toàn quốc.", 
-                    sku: rG[0][0] || pName, unit: "sp", weight: "0", pricingTiers: tiers, options: opts, variants: []
-                };
-
-                rG.forEach((r, idx) => {
-                    let optionValues = {};
-                    let labelArr = [];
-                    if(hasOpt1 && r[2] && r[2].trim() !== '') { optionValues['opt_1'] = r[2].trim(); labelArr.push(r[2].trim()); }
-                    if(hasOpt2 && r[3] && r[3].trim() !== '') { optionValues['opt_2'] = r[3].trim(); labelArr.push(r[3].trim()); }
-                    
-                    let prices = {};
-                    prices[pId+'_t0'] = parseMoney(r[6]);
-                    prices[pId+'_t1'] = parseMoney(r[7]);
-                    prices[pId+'_t2'] = parseMoney(r[8]);
-                    
-                    product.variants.push({
-                        id: 'v_' + pId + '_' + idx,
-                        label: labelArr.length > 0 ? labelArr.join(' - ') : 'Mặc định',
-                        optionValues: optionValues,
-                        sku: r[0] ? r[0].trim() : (pName + '-' + idx),
-                        weight: "0",
-                        stock: Math.floor(Math.random()*500) + 50,
-                        image: r[5] ? r[5].trim() : '',
-                        prices: prices
-                    });
-                });
-
-                if(product.variants.length > 0) {
-                    tiers[0].price = product.variants[0].prices[pId+'_t0'];
-                    tiers[1].price = product.variants[0].prices[pId+'_t1'];
-                    tiers[2].price = product.variants[0].prices[pId+'_t2'];
-                }
-                products.push(product);
-                
-                // Auto-select the first variant
-                if(!selections[pId]) selections[pId] = {};
-                if(product.variants.length > 0) {
-                    for(let k in product.variants[0].optionValues) {
-                        selections[pId][k] = product.variants[0].optionValues[k];
-                    }
-                }
-            }
-            saveData();
-        }
-
-        async function saveData() {
-            try {
-                await fetchAPI('/api/products/import', {
-                    method: 'POST',
-                    body: { products }
-                });
-            } catch(e) {
-                console.error("Lỗi đồng bộ sản phẩm lên server:", e);
-            }
-        }
-
-        // --- EXCEL IMPORT LOGIC ---
-        function openExcelImport() {
-            document.getElementById('excelStep1').style.display = 'block';
-            document.getElementById('excelStep2').style.display = 'none';
-            document.getElementById('excelModal').classList.add('active');
-        }
-
-        function parseCSV(raw, delimiter = '\t') {
-            let rows = [];
-            let row = [];
-            let cell = '';
-            let inQuotes = false;
-            for (let i = 0; i < raw.length; i++) {
-                let c = raw[i];
-                if (c === '"') {
-                    if (inQuotes && raw[i + 1] === '"') {
-                        cell += '"';
-                        i++;
-                    } else {
-                        inQuotes = !inQuotes;
-                    }
-                } else if (c === delimiter && !inQuotes) {
-                    row.push(cell.trim());
-                    cell = '';
-                } else if ((c === '\n' || c === '\r') && !inQuotes) {
-                    if (c === '\r' && raw[i + 1] === '\n') i++;
-                    row.push(cell.trim());
-                    if (row.some(x => x)) rows.push(row); 
-                    row = [];
-                    cell = '';
-                } else {
-                    cell += c;
-                }
-            }
-            if (cell || row.length > 0) {
-                row.push(cell.trim());
-                if (row.some(x => x)) rows.push(row);
-            }
-            return rows;
-        }
-
-        function processExcelRaw() {
+                    opts.push({id:'opt_1', name:'Phân loại 1', values:Array.        function processExcelRaw() {
             const raw = document.getElementById('excelRawData').value.trim();
             if(!raw) return alert("Vui lòng dán dữ liệu!");
             
@@ -1913,7 +1802,11 @@
             
             // Auto-detect columns
             const normalizeStr = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            let map = { sku: -1, name: -1, desc: -1, image: -1, cat: -1, weight: -1, retail: -1, cost: -1 };
+            let map = { 
+                sku: -1, name: -1, desc: -1, image: -1, cat: -1, weight: -1, retail: -1, cost: -1,
+                si1_cond: -1, si1_price: -1, si2_cond: -1, si2_price: -1
+            };
+
             excelHeader.forEach((origH, i) => {
                 let h = normalizeStr(origH);
                 if (map.sku === -1 && (h.match(/\bma\b/) || h.includes('sku'))) map.sku = i;
@@ -1922,16 +1815,29 @@
                 else if (map.cat === -1 && (h.includes('danh muc') || h.includes('nhom'))) map.cat = i;
                 else if (map.weight === -1 && (h.includes('trong luong') || h.includes('can nang') || h.includes('weight'))) map.weight = i;
                 else if (map.cost === -1 && (h.includes('von') || h.includes('nhap'))) map.cost = i;
-                else if (map.retail === -1 && (h.includes('ban le') || h.includes('gia le'))) map.retail = i;
-                else if (map.desc === -1 && h.includes('mo ta')) map.desc = i; 
+                else if (map.retail === -1 && (h.includes('ban le') || h.includes('gia le') || (h.includes('gia ban') && !h.includes('si')))) map.retail = i;
+                else if (map.desc === -1 && h.includes('mo ta')) map.desc = i;
+                // Auto-detect Sỉ 1 & Sỉ 2
+                else if (map.si1_cond === -1 && (h.includes('yeu cau si 1') || h.includes('yeu cau s1') || h.includes('dieu kien s1') || h.includes('dk si 1') || (h.includes('si 1') && (h.includes('yc') || h.includes('dk') || h.includes('cau'))))) map.si1_cond = i;
+                else if (map.si1_price === -1 && (h.includes('gia si 1') || h.includes('gia s1') || (h.includes('si 1') && h.includes('gia')) || h.endsWith('si 1'))) map.si1_price = i;
+                else if (map.si2_cond === -1 && (h.includes('yeu cau si 2') || h.includes('yeu cau s2') || h.includes('dieu kien s2') || h.includes('dk si 2') || (h.includes('si 2') && (h.includes('yc') || h.includes('dk') || h.includes('cau'))))) map.si2_cond = i;
+                else if (map.si2_price === -1 && (h.includes('gia si 2') || h.includes('gia s2') || (h.includes('si 2') && h.includes('gia')) || h.endsWith('si 2'))) map.si2_price = i;
             });
 
             // Generate UI
             const fields = [
-                { id: 'sku', label: 'Mã SP' }, { id: 'name', label: 'Tên Sản phẩm (*)' },
-                { id: 'image', label: 'Link Ảnh' }, { id: 'cat', label: 'Danh mục' },
-                { id: 'weight', label: 'Trọng lượng (g)' }, { id: 'desc', label: 'Mô tả ngắn' },
-                { id: 'cost', label: 'Giá Vốn' }, { id: 'retail', label: 'Giá Bán Lẻ' }
+                { id: 'sku', label: 'Mã SP (SKU)' }, 
+                { id: 'name', label: 'Tên Sản phẩm (*)' },
+                { id: 'image', label: 'Link Ảnh' }, 
+                { id: 'cat', label: 'Danh mục' },
+                { id: 'weight', label: 'Trọng lượng (g)' }, 
+                { id: 'desc', label: 'Mô tả ngắn' },
+                { id: 'cost', label: 'Giá Vốn / Nhập' }, 
+                { id: 'retail', label: 'Giá Bán Lẻ' },
+                { id: 'si1_cond', label: 'Yêu Cầu Sỉ 1 (VD: >= 10)' },
+                { id: 'si1_price', label: 'Giá Sỉ 1' },
+                { id: 'si2_cond', label: 'Yêu Cầu Sỉ 2 (VD: >= 100)' },
+                { id: 'si2_price', label: 'Giá Sỉ 2' }
             ];
 
             let html = '';
@@ -1959,17 +1865,18 @@
         function executeExcelImport(appendMode) {
             if(!appendMode && !confirm("Hành động này sẽ XÓA TOÀN BỘ kho hiện tại và GHI ĐÈ bằng dữ liệu mới. Bạn chắc chắn chứ?")) return;
             
-            if(!appendMode) {
-                products = [];
-            }
-
             const parseMoneyNumber = (str) => {
                 if(!str) return 0;
-                let num = parseInt(str.replace(/\D/g, ''));
+                let num = parseInt(String(str).replace(/\D/g, ''));
                 return isNaN(num) ? 0 : num;
             };
 
-            const normalizeStr = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const extractConditionNumber = (str) => {
+                if (!str) return 0;
+                let clean = String(str).replace(/[^0-9]/g, '');
+                let num = parseInt(clean, 10);
+                return isNaN(num) ? 0 : num;
+            };
 
             let map = {
                 sku: parseInt(document.getElementById('map_sku').value),
@@ -1979,13 +1886,19 @@
                 cat: parseInt(document.getElementById('map_cat').value),
                 weight: parseInt(document.getElementById('map_weight').value),
                 retail: parseInt(document.getElementById('map_retail').value),
-                cost: parseInt(document.getElementById('map_cost').value)
+                cost: parseInt(document.getElementById('map_cost').value),
+                si1_cond: parseInt(document.getElementById('map_si1_cond') ? document.getElementById('map_si1_cond').value : -1),
+                si1_price: parseInt(document.getElementById('map_si1_price') ? document.getElementById('map_si1_price').value : -1),
+                si2_cond: parseInt(document.getElementById('map_si2_cond') ? document.getElementById('map_si2_cond').value : -1),
+                si2_price: parseInt(document.getElementById('map_si2_price') ? document.getElementById('map_si2_price').value : -1)
             };
 
+            let newImportedProducts = [];
+
             excelRows.forEach((r, idx) => {
-                const sku = map.sku !== -1 ? String(r[map.sku] || '').trim() : `SP${Date.now()}${idx}`;
+                const sku = map.sku !== -1 ? String(r[map.sku] || '').trim() : '';
                 const pName = map.name !== -1 ? String(r[map.name] || '').trim() : '';
-                if(!pName) return;
+                if(!pName && !sku) return;
 
                 const description = map.desc !== -1 ? String(r[map.desc] || '').trim() : '';
                 const imageStr = map.image !== -1 ? String(r[map.image] || '').trim() : '';
@@ -2006,29 +1919,146 @@
                     });
                 }
 
-                let wholesaleCols = [];
-                for(let i=0; i<excelHeader.length; i++) {
-                    if (Object.values(map).includes(i)) continue;
-                    let h = normalizeStr(excelHeader[i]);
-                    if (h.includes('si') || h.includes('gia') || h.includes('dieu kien')) {
-                        wholesaleCols.push(i);
+                // Sỉ 1
+                if (map.si1_price !== -1) {
+                    let p1 = parseMoneyNumber(r[map.si1_price]);
+                    let c1 = map.si1_cond !== -1 ? extractConditionNumber(r[map.si1_cond]) : 10;
+                    if (p1 > 0) {
+                        tiers.push({
+                            id: 't1',
+                            name: 'Giá Sỉ 1',
+                            price: p1,
+                            condition: c1 > 0 ? c1 : 10
+                        });
                     }
                 }
 
-                let wIndex = 1;
-                for(let k = 0; k < wholesaleCols.length; k++) {
-                    let colIdx = wholesaleCols[k];
-                    let h = normalizeStr(excelHeader[colIdx]);
-                    let cell = String(r[colIdx] || '').trim();
-                    if(!cell) continue;
+                // Sỉ 2
+                if (map.si2_price !== -1) {
+                    let p2 = parseMoneyNumber(r[map.si2_price]);
+                    let c2 = map.si2_cond !== -1 ? extractConditionNumber(r[map.si2_cond]) : 100;
+                    if (p2 > 0) {
+                        tiers.push({
+                            id: 't2',
+                            name: 'Giá Sỉ 2',
+                            price: p2,
+                            condition: c2 > 0 ? c2 : 100
+                        });
+                    }
+                }
 
-                    let tPrice = 0, tCond = 0;
+                // LỌC TRÙNG THEO MÃ SKU HOẶC TÊN TẠI CƠ SỞ DỮ LIỆU
+                const cleanSku = (sku || pName).trim().toUpperCase();
+                const cleanName = pName.trim().toLowerCase();
 
-                    if (cell.includes('>=')) {
-                        let parts = cell.split('>=');
-                        tPrice = parseMoneyNumber(parts[0]);
-                        tCond = parseMoneyNumber(parts[1]);
-                    } else if (cell.includes('>')) {
+                let targetId = 'SP' + Date.now() + '_' + idx;
+                let existingIndex = products.findIndex(p => 
+                    (p.sku && String(p.sku).trim().toUpperCase() === cleanSku) || 
+                    (cleanName && p.name && String(p.name).trim().toLowerCase() === cleanName)
+                );
+
+                let inBatchIndex = newImportedProducts.findIndex(p => 
+                    (p.sku && String(p.sku).trim().toUpperCase() === cleanSku) || 
+                    (cleanName && p.name && String(p.name).trim().toLowerCase() === cleanName)
+                );
+
+                if (existingIndex > -1) {
+                    targetId = products[existingIndex].id; // CẬP NHẬT sản phẩm cũ đã có trên Web
+                } else if (inBatchIndex > -1) {
+                    targetId = newImportedProducts[inBatchIndex].id; // CẬP NHẬT sản phẩm trùng trong cùng file Excel
+                }
+
+                let prices = {};
+                tiers.forEach(t => {
+                    prices[t.id] = t.price;
+                });
+
+                let defaultVariant = {
+                    id: 'v_' + targetId + '_0',
+                    label: 'Mặc định',
+                    optionValues: {},
+                    sku: sku || pName,
+                    weight: weight,
+                    stock: 0,
+                    prices: prices,
+                    image: images.length > 0 ? images[0] : ''
+                };
+
+                let product = { 
+                    id: targetId, 
+                    name: pName || sku, 
+                    category: cat, 
+                    images: images, 
+                    description: description, 
+                    sku: sku || pName, 
+                    unit: "sp", 
+                    weight: weight, 
+                    costPrice: costPrice,
+                    price: retailPrice,
+                    pricingTiers: tiers, 
+                    options: [], 
+                    variants: [defaultVariant] 
+                };
+
+                if (inBatchIndex > -1) {
+                    newImportedProducts[inBatchIndex] = product;
+                } else {
+                    newImportedProducts.push(product);
+                }
+            });
+
+            document.getElementById('excelStep2').innerHTML = `
+                <div style="text-align:center; padding: 20px;">
+                    <p id="importProgressText" style="margin-bottom:10px; font-weight:bold; color:#1e3a8a;">⏳ Đang chuẩn bị lưu dữ liệu...</p>
+                    <div style="width:100%; background:#e2e8f0; border-radius:10px; height:20px; overflow:hidden;">
+                        <div id="importProgressBar" style="width:0%; height:100%; background:#10b981; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            `;
+            
+            const CHUNK_SIZE = 50; 
+            let isFirst = !appendMode; // Xóa DB ở chunk đầu tiên nếu chọn Ghi đè
+
+            async function uploadChunks() {
+                for (let i = 0; i < newImportedProducts.length; i += CHUNK_SIZE) {
+                    const chunk = newImportedProducts.slice(i, i + CHUNK_SIZE);
+                    let current = Math.min(i + CHUNK_SIZE, newImportedProducts.length);
+                    let percent = Math.floor((current / newImportedProducts.length) * 100);
+                    
+                    document.getElementById('importProgressText').innerHTML = `⏳ Đang đẩy lên máy chủ: <strong>${current} / ${newImportedProducts.length}</strong> sản phẩm...`;
+                    document.getElementById('importProgressBar').style.width = percent + '%';
+                    
+                    await fetchAPI('/api/products/import', {
+                        method: 'POST',
+                        body: { products: chunk, clearFirst: (i === 0) ? isFirst : false }
+                    });
+                    
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                // Cập nhật lại mảng products ở bộ nhớ Local
+                if (!appendMode) {
+                    products = newImportedProducts;
+                } else {
+                    newImportedProducts.forEach(newP => {
+                        let matchIdx = products.findIndex(p => p.id === newP.id);
+                        if (matchIdx > -1) {
+                            products[matchIdx] = newP;
+                        } else {
+                            products.push(newP);
+                        }
+                    });
+                }
+
+                renderUI();
+                document.getElementById('excelModal').classList.remove('active');
+                alert(`✅ Đã nhập thành công ${newImportedProducts.length} sản phẩm (Tự động lọc trùng và cập nhật sản phẩm cũ)!`);
+            }
+
+            uploadChunks().catch(e => {
+                alert("Lỗi khi nhập sản phẩm: " + e.message);
+            });
+        }              } else if (cell.includes('>')) {
                         let parts = cell.split('>');
                         tPrice = parseMoneyNumber(parts[0]);
                         tCond = parseMoneyNumber(parts[1]) + 1;
