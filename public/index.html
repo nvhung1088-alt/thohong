@@ -2467,12 +2467,17 @@
                 const stock = activeV?activeV.stock:'?';
 
                 const isOOS = isProductOutOfStock(p);
+                const oosBadge = isOOS
+                    ? `<div style="position:absolute; top:8px; left:8px; z-index:10; background:#64748b; color:white; font-size:0.7rem; font-weight:800; padding:4px 8px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.2);">⚠️ TẠM HẾT HÀNG</div>` 
+                    : '';
                 const adminBadge = (isAdmin && isOOS && isHideOutOfStockEnabled()) 
                     ? `<div style="position:absolute; top:8px; left:8px; z-index:10; background:#ef4444; color:white; font-size:0.7rem; font-weight:800; padding:4px 8px; border-radius:6px; box-shadow:0 2px 4px rgba(239,68,68,0.3);">🚫 ĐÃ ẨN KHỎI KHÁCH (HẾT HÀNG)</div>` 
-                    : '';
+                    : oosBadge;
+
+                const canBuyGrid = canBuy && !isOOS;
 
                 htmlChunk += `
-                    <div class="product-card ${isAdmin?'admin-mode':''}" style="position:relative;">
+                    <div class="product-card ${isAdmin?'admin-mode':''} ${isOOS?'oos-card':''}" style="position:relative;">
                         ${adminBadge}
                         <div class="product-image ${imgUrl?'':'no-img'}" onclick="openDetailModal('${p.id}')">
                             ${imgTag}
@@ -2481,18 +2486,21 @@
                             <div class="info-main">
                                 <div class="cat-badge" ${editAttr} onblur="updateProductInfo('${p.id}', 'category', this.innerText)">${p.category}</div>
                                 <h3 class="product-title" style="cursor:pointer;" onclick="openDetailModal('${p.id}')" ${editAttr} onblur="updateProductInfo('${p.id}', 'name', this.innerText)">${p.name}</h3>
-                                <div class="product-meta">Mã: <span class="meta-val">${sku}</span> | Trọng lượng: <span class="meta-val">${p.weight || '0'}g</span> | Tồn kho: <span class="meta-val" style="color:var(--accent);">${stock}</span></div>
+                                <div class="product-meta">Mã: <span class="meta-val">${sku}</span> | Trọng lượng: <span class="meta-val">${p.weight || '0'}g</span> | Tồn kho: <span class="meta-val" style="color:${isOOS?'#ef4444':'var(--accent)'};font-weight:700;">${stock}</span></div>
                                 ${optsHtml}
                             </div>
                             <div class="price-container">${pricesHtml}</div>
                             <div class="controls">
                                 <div style="display:flex; gap:0.5rem; align-items: center; margin-bottom:0.75rem;">
                                     <label style="font-size:0.85rem; font-weight:600; width:50px;">Mua:</label>
-                                    <input type="number" id="qty-${p.id}" value="1" min="1" style="flex:1;" ${!canBuy?'disabled':''} aria-label="Số lượng mua sản phẩm ${p.name}">
+                                    <input type="number" id="qty-${p.id}" value="1" min="1" style="flex:1;" ${!canBuyGrid?'disabled':''} aria-label="Số lượng mua sản phẩm ${p.name}">
                                 </div>
                                 <div class="action-buttons">
                                     <button class="btn btn-secondary" onclick="openDetailModal('${p.id}')">Xem Chi Tiết</button>
-                                    <button class="btn btn-primary" onclick="addFromGrid('${p.id}')" ${!canBuy?'disabled':''}>${canBuy?'🛒 Giỏ hàng':'Chọn Phân loại'}</button>
+                                    ${isOOS 
+                                        ? `<button class="btn btn-secondary" disabled style="background:#e2e8f0; color:#94a3b8; cursor:not-allowed; border:none; font-weight:600;">⚠️ Hết Hàng</button>`
+                                        : `<button class="btn btn-primary" onclick="addFromGrid('${p.id}')" ${!canBuy?'disabled':''}>${canBuy?'🛒 Giỏ hàng':'Chọn Phân loại'}</button>`
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -2946,6 +2954,9 @@
             const sku = activeV?activeV.sku:p.sku;
             const stock = activeV?activeV.stock:'0';
 
+            const isOOSModal = isProductOutOfStock(p);
+            const canBuyModal = canBuy && !isOOSModal;
+
             const content = document.getElementById('detailModalContent');
             content.innerHTML = `
                 <div class="detail-left">
@@ -2987,11 +2998,14 @@
                     <div style="display:flex; gap: 1rem; align-items:center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 1.5rem 0; margin: 1rem 0;">
                         <div style="display:flex; flex-direction:column;">
                             <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:5px;">Số lượng:</label>
-                            <input type="number" id="qty-modal-${p.id}" value="1" min="1" style="width: 100px; padding: 0.8rem; border-radius: 8px; border: 2px solid var(--border); font-size:1.1rem; text-align:center;" ${!canBuy?'disabled':''} aria-label="Số lượng mua sản phẩm ${p.name}">
+                            <input type="number" id="qty-modal-${p.id}" value="1" min="1" style="width: 100px; padding: 0.8rem; border-radius: 8px; border: 2px solid var(--border); font-size:1.1rem; text-align:center;" ${!canBuyModal?'disabled':''} aria-label="Số lượng mua sản phẩm ${p.name}">
                         </div>
-                        <button class="btn btn-primary" style="flex:1; padding: 1.2rem; font-size: 1.2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(59,130,246,0.5);" onclick="addFromModal('${p.id}')" ${!canBuy?'disabled':''}>
-                            ${canBuy?'🛒 Thêm vào Giỏ hàng':'Vui lòng chọn Phân loại'}
-                        </button>
+                        ${isOOSModal 
+                            ? `<button class="btn btn-secondary" disabled style="flex:1; padding: 1.2rem; font-size: 1.1rem; border-radius: 12px; background:#94a3b8; color:white; cursor:not-allowed; border:none; font-weight:700;">⚠️ TẠM HẾT HÀNG</button>`
+                            : `<button class="btn btn-primary" style="flex:1; padding: 1.2rem; font-size: 1.2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(59,130,246,0.5);" onclick="addFromModal('${p.id}')" ${!canBuy?'disabled':''}>
+                                ${canBuy?'🛒 Thêm vào Giỏ hàng':'Vui lòng chọn Phân loại'}
+                               </button>`
+                        }
                     </div>
 
                     <div style="margin-top: 0.5rem; margin-bottom: 1.5rem;">
@@ -3029,6 +3043,10 @@
 
         function addToCart(pId, vId, qty) {
             if(isNaN(qty)||qty<=0) return alert("Số lượng sai!");
+            const pObj = products.find(x => String(x.id) === String(pId));
+            if (pObj && isProductOutOfStock(pObj)) {
+                return showToast("⚠️ Sản phẩm này hiện đang tạm hết hàng!", "warning");
+            }
             const exist = cart.find(c => c.productId === pId && c.variantId === vId);
             if (exist) exist.qty += qty; else cart.push({ productId: pId, variantId: vId, qty });
             updateCartUI(); 
