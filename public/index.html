@@ -296,10 +296,60 @@
         .admin-toggle { background: #f1f5f9; border: 1px solid #cbd5e1; color: #64748b; font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; cursor: pointer; opacity: 0.6; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; }
         .admin-toggle:hover { opacity: 1; background: #e2e8f0; color: #0f172a; border-color: #94a3b8; }
         
-        /* Admin Panel Tabs */
-        .apanel-tab { background:none; border:none; padding:12px 18px; cursor:pointer; font-size:0.9rem; font-weight:600; color:#64748b; border-bottom:3px solid transparent; transition:0.2s; white-space:nowrap; }
-        .apanel-tab:hover { color:#0f172a; }
-        .apanel-tab.active { color:#3b82f6; border-bottom-color:#3b82f6; background:white; }
+        /* Admin Panel Tabs (Vercel / Apple Segmented Control Style) */
+        .apanel-tab-bar {
+            display: flex;
+            gap: 6px;
+            padding: 10px 14px;
+            background: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            overflow-x: auto;
+            flex-shrink: 0;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+        .apanel-tab-bar::-webkit-scrollbar {
+            height: 5px;
+        }
+        .apanel-tab-bar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .apanel-tab-bar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .apanel-tab-bar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .apanel-tab { 
+            background: transparent; 
+            border: 1px solid transparent; 
+            padding: 8px 16px; 
+            cursor: pointer; 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            color: #64748b; 
+            border-radius: 8px; 
+            transition: all 0.2s ease; 
+            white-space: nowrap; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .apanel-tab:hover { 
+            color: #0f172a; 
+            background: rgba(255,255,255,0.7); 
+            border-color: #cbd5e1;
+        }
+        .apanel-tab.active { 
+            color: #2563eb !important; 
+            background: #ffffff !important; 
+            border-color: #cbd5e1 !important; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06); 
+            font-weight: 700 !important;
+        }
         .apanel-content { animation: fadeIn 0.2s ease; }
         @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
         
@@ -737,25 +787,25 @@
 
     <!-- Admin Panel Modal -->
     <div class="modal-overlay" id="adminPanelModal" onclick="if(event.target===this) closeAdminPanel()">
-        <div class="admin-modal" style="max-width:920px; width:95%; padding:0; display:flex; flex-direction:column;">
+        <div class="admin-modal" style="max-width:1080px; width:95%; padding:0; display:flex; flex-direction:column; border-radius:16px; overflow:hidden;">
             <!-- Header -->
             <div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; padding:1.2rem 1.8rem; display:flex; justify-content:space-between; align-items:center;">
                 <div>
-                    <div style="font-size:1.3rem; font-weight:800;">⚙️ Admin Panel — ĐHTK</div>
-                    <div style="font-size:0.8rem; opacity:0.7; margin-top:2px;" id="adminWelcome">Xin chào!</div>
+                    <div style="font-size:1.3rem; font-weight:800; display:flex; align-items:center; gap:8px;">⚙️ Admin Panel — ĐHTK</div>
+                    <div style="font-size:0.8rem; opacity:0.75; margin-top:2px;" id="adminWelcome">Xin chào!</div>
                 </div>
                 <div style="display:flex; gap:10px; align-items:center;">
-                    <button onclick="closeAdminPanel()" style="background:rgba(255,255,255,0.15); border:none; color:white; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.9rem;">✕ Đóng</button>
-                    <button onclick="adminLogout()" style="background:#ef4444; border:none; color:white; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.9rem;">🚪 Đăng xuất</button>
+                    <button onclick="closeAdminPanel()" style="background:rgba(255,255,255,0.15); border:none; color:white; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.9rem; font-weight:600;">✕ Đóng</button>
+                    <button onclick="adminLogout()" style="background:#ef4444; border:none; color:white; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.9rem; font-weight:600;">🚪 Đăng xuất</button>
                 </div>
             </div>
-            <!-- Tabs -->
-            <div style="display:flex; gap:4px; padding:8px 12px; border-bottom:2px solid #e2e8f0; background:#f8fafc; overflow-x:auto; flex-shrink:0; scrollbar-width:none; -webkit-overflow-scrolling:touch;">
+            <!-- Tabs Bar (Vercel / Apple Segmented Control Style) -->
+            <div class="apanel-tab-bar">
                 <button class="apanel-tab active" onclick="switchTab('tab-store')" id="t-store">🏪 Cửa hàng</button>
                 <button class="apanel-tab" onclick="switchTab('tab-category'); loadAdminCategories();" id="t-category">📁 Danh mục</button>
-                <button class="apanel-tab" onclick="switchTab('tab-blog'); loadAdminBlog();" id="t-blog" style="background:#fef3c7; color:#92400e; font-weight:700; border:1px solid #fde68a;">📝 Blog AI</button>
+                <button class="apanel-tab" onclick="switchTab('tab-blog'); loadAdminBlog();" id="t-blog">📝 Blog AI</button>
                 <button class="apanel-tab" onclick="switchTab('tab-seo')" id="t-seo">🚀 SEO & iSocial</button>
-                <button class="apanel-tab" onclick="switchTab('tab-make'); if(typeof loadMakePosts==='function')loadMakePosts();" id="t-make" style="background:#e0e7ff; color:#3730a3; font-weight:700; border:1px solid #c7d2fe;">⚡ Make.com Automation</button>
+                <button class="apanel-tab" onclick="switchTab('tab-make'); if(typeof loadMakePosts==='function')loadMakePosts();" id="t-make">⚡ Make.com Automation</button>
                 <button class="apanel-tab" onclick="switchTab('tab-telegram')" id="t-telegram">✈️ Telegram</button>
                 <button class="apanel-tab" onclick="switchTab('tab-indexing'); loadGoogleIndexingConfig();" id="t-indexing">🚀 Google Index</button>
                 <button class="apanel-tab" onclick="switchTab('tab-analytics'); loadAnalytics();" id="t-analytics">📈 Thống kê</button>
