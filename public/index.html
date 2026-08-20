@@ -351,13 +351,12 @@
             font-weight: 700 !important;
         }
         
-        /* Admin Panel Body & Vertical Scrollbar (Flow Display Standard) */
+        /* Admin Panel Body & Vertical Scrollbar */
         .apanel-body {
             padding: 1.5rem;
             flex: 1;
             overflow-y: auto !important;
             min-height: 0;
-            display: block !important;
             scrollbar-width: thin;
             scrollbar-color: #cbd5e1 #f8fafc;
         }
@@ -377,12 +376,6 @@
 
         .apanel-content { 
             animation: fadeIn 0.2s ease; 
-            display: block !important; 
-            height: auto !important; 
-            min-height: auto !important;
-        }
-        .apanel-content > div {
-            height: auto !important;
         }
         @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
         
