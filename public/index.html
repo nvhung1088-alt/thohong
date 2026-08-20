@@ -4363,7 +4363,7 @@
                         </div>
 
                         <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px; font-size:0.85rem; color:#334155; line-height:1.7; display:flex; flex-wrap:wrap; gap:16px;">
-                            <div>📰 Blog AI: <b style="color:#0f172a;">${totalBlogs} bài viết</b></div>
+                            <div>📰 Blog AI: <b id="statTotalBlogsVal" style="color:#0f172a;">⏳ Đang kiểm tra...</b></div>
                             <div>📁 Danh mục: <b style="color:#0f172a;">${categories} danh mục</b></div>
                             <div>✈️ Telegram: <b style="color:${hasTg?'#16a34a':'#dc2626'};">${hasTg ? '✅ Đã kết nối' : '⚠️ Chưa kết nối'}</b></div>
                             <div>🔄 POS Pancake: <b style="color:${hasPos?'#16a34a':'#dc2626'};">${hasPos ? '✅ Đã đồng bộ' : '⚠️ Chưa đồng bộ'}</b></div>
@@ -4373,6 +4373,23 @@
                 }
 
                 renderOutOfStockListContainer(outOfStockProds);
+
+                // Fetch số lượng bài viết Blog AI thực tế từ API CSDL Turso
+                try {
+                    fetch('/api/blog?page=1&limit=1')
+                        .then(r => r.json())
+                        .then(data => {
+                            const blogValEl = document.getElementById('statTotalBlogsVal');
+                            if (blogValEl) {
+                                const count = (data && data.pagination) ? data.pagination.total : ((data && data.posts) ? data.posts.length : 0);
+                                blogValEl.innerText = `${count} bài viết`;
+                            }
+                        })
+                        .catch(() => {
+                            const blogValEl = document.getElementById('statTotalBlogsVal');
+                            if (blogValEl) blogValEl.innerText = '0 bài viết';
+                        });
+                } catch(errBlogStats) {}
             } catch(err) {
                 console.error("Lỗi khi mở Admin Panel:", err);
             }
