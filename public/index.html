@@ -1397,6 +1397,30 @@
                 <div id="tab-blog" class="apanel-content" style="display:none; padding-bottom:50px;">
                     <h3 style="margin-bottom:1rem; color:#0f172a;">📝 Blog AI — Viết Bài Tự Động Chuẩn SEO (DeepSeek v4 Pro)</h3>
 
+                    <!-- 1. Cấu hình DeepSeek API Key -->
+                    <div id="blogSec1" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1.2rem; margin-bottom:1rem; transition:all 0.2s;">
+                        <div onclick="toggleBlogSection('blogSec1',event)" style="font-weight:700; color:#0f172a; padding-bottom:6px; margin-bottom:10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;"><span>🔑 1. Cấu Hình DeepSeek API Key</span><span class="sec-toggle-arrow">▾</span></div>
+                        <div style="display:flex; gap:10px;">
+                            <input type="password" id="ap_deepseek_key" placeholder="Nhập API Key sk-..." style="flex:1; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px;">
+                            <button class="btn btn-primary" onclick="apSaveDeepseekKey()">💾 Lưu Key</button>
+                        </div>
+                        <div style="font-size:0.75rem; color:#64748b; margin-top:6px;">Lấy API Key tại: <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:#2563eb;">platform.deepseek.com</a></div>
+                    </div>
+
+                    <!-- 2. Quản Lý Hàng Đợi Từ Khóa SEO (Keyword Pipeline) -->
+                    <div id="blogSec2" style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:1.2rem; margin-bottom:1rem; transition:all 0.2s;">
+                        <div onclick="toggleBlogSection('blogSec2',event)" style="font-weight:700; color:#1e40af; padding-bottom:6px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; cursor:pointer; user-select:none;">
+                            <span style="display:flex;align-items:center;gap:8px;">🎯 2. Hàng Đợi Từ Khóa SEO (Keyword Backlog) <span class="sec-toggle-arrow">▾</span></span>
+                            <button class="btn" style="background:#3b82f6; color:white; font-size:0.85rem; padding:6px 14px;" onclick="suggestKeywords()" id="btnSuggestKw">✨ AI Gợi Ý & Thêm Hàng Đợi</button>
+                        </div>
+                        
+                        <!-- Form nhập từ khóa thủ công -->
+                        <div style="display:flex; gap:8px; margin-bottom:12px;">
+                            <input type="text" id="ap_manual_kw" placeholder="Nhập từ khóa SEO thủ công (VD: nguồn sỉ gia dụng Hà Nội)" style="flex:1; padding:8px 12px; border:1px solid #93c5fd; border-radius:8px; font-size:0.9rem;">
+                            <button class="btn btn-primary" style="padding:8px 14px; font-size:0.85rem; background:#2563eb;" onclick="addManualKeyword()">+ Thêm Vào Hàng Đợi</button>
+                        </div>
+                    </div>
+
                     <!-- Admin Blog Dashboard Stat Cards Bar -->
                     <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:1.2rem;">
                         <div style="background:linear-gradient(135deg, #eff6ff, #dbeafe); border:1px solid #bfdbfe; border-radius:10px; padding:12px 16px; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;" onclick="openSEOManagerModal('posts')" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
@@ -1426,58 +1450,6 @@
                             <div style="font-size:0.88rem; font-weight:800; color:#86198f; margin-top:10px; display:flex; align-items:center; gap:4px;">
                                 <span>⚙️ Sửa Prompt AI</span>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- BẢNG TỔNG QUAN DANH SÁCH BÀI VIẾT BLOG AI (BẢNG CHÍNH MỞ RỘNG 550PX HIỂN THỊ TRUNG TÂM) -->
-                    <div style="background:white; border:1px solid #bae6fd; border-radius:12px; padding:16px; margin-bottom:1.5rem; box-shadow:0 4px 15px rgba(2,132,199,0.06);">
-                        <div style="font-size:0.95rem; font-weight:800; color:#0369a1; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                            <span>📚 BÀI VIẾT BLOG AI & TRẠNG THÁI GOOGLE INDEX & TELEGRAM</span>
-                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                                <button class="btn" style="background:#10b981; color:white; font-size:0.8rem; font-weight:bold; padding:7px 14px; border-radius:8px;" onclick="toggleBlogSection('blogSec3',event)">✍️ Viết Bài Mới</button>
-                                <button class="btn" style="background:#0284c7; color:white; font-size:0.8rem; font-weight:bold; padding:7px 14px; border-radius:8px;" id="btnBatchIndex" onclick="triggerBatchGoogleIndex()">⚡ Nộp Index Hàng Loạt</button>
-                                <button class="btn" style="background:#0088cc; color:white; font-size:0.8rem; font-weight:bold; padding:7px 14px; border-radius:8px;" id="btnBatchTelegramShare" onclick="triggerBatchTelegramShare()">✈️ Share Telegram Hàng Loạt</button>
-                            </div>
-                        </div>
-                        <div style="min-height:380px; max-height:550px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
-                            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">
-                                <thead>
-                                    <tr style="background:#f0f9ff; border-bottom:1px solid #bae6fd; color:#0369a1; position:sticky; top:0; z-index:1;">
-                                        <th style="padding:10px 14px;">Tiêu đề bài viết</th>
-                                        <th style="padding:10px 14px;">Trạng thái</th>
-                                        <th style="padding:10px 14px;">Google Index Status</th>
-                                        <th style="padding:10px 14px;">Telegram SEO Status</th>
-                                        <th style="padding:10px 14px; text-align:right;">Hành động</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="indexingPostsTableBody">
-                                    <tr><td colspan="5" style="padding:20px; text-align:center; color:#94a3b8;">Đang tải danh sách bài viết AI...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- 1. Cấu hình DeepSeek API Key (Mặc định thu gọn) -->
-                    <div id="blogSec1" class="blog-sec-collapsed" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:1.2rem; margin-bottom:1rem; transition:all 0.2s;">
-                        <div onclick="toggleBlogSection('blogSec1',event)" style="font-weight:700; color:#0f172a; padding-bottom:6px; margin-bottom:10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;"><span>🔑 1. Cấu Hình DeepSeek API Key <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(Click Mở Rộng)</span></span><span class="sec-toggle-arrow">▸</span></div>
-                        <div style="display:flex; gap:10px;">
-                            <input type="password" id="ap_deepseek_key" placeholder="Nhập API Key sk-..." style="flex:1; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px;">
-                            <button class="btn btn-primary" onclick="apSaveDeepseekKey()">💾 Lưu Key</button>
-                        </div>
-                        <div style="font-size:0.75rem; color:#64748b; margin-top:6px;">Lấy API Key tại: <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:#2563eb;">platform.deepseek.com</a></div>
-                    </div>
-
-                    <!-- 2. Quản Lý Hàng Đợi Từ Khóa SEO (Keyword Pipeline - Mặc định thu gọn) -->
-                    <div id="blogSec2" class="blog-sec-collapsed" style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:1.2rem; margin-bottom:1rem; transition:all 0.2s;">
-                        <div onclick="toggleBlogSection('blogSec2',event)" style="font-weight:700; color:#1e40af; padding-bottom:6px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; cursor:pointer; user-select:none;">
-                            <span style="display:flex;align-items:center;gap:8px;">🎯 2. Hàng Đợi Từ Khóa SEO (Keyword Backlog) <span style="font-size:0.75rem; font-weight:normal; color:#3b82f6;">(Click Mở Rộng)</span> <span class="sec-toggle-arrow">▸</span></span>
-                            <button class="btn" style="background:#3b82f6; color:white; font-size:0.85rem; padding:6px 14px;" onclick="suggestKeywords()" id="btnSuggestKw">✨ AI Gợi Ý & Thêm Hàng Đợi</button>
-                        </div>
-                        
-                        <!-- Form nhập từ khóa thủ công -->
-                        <div style="display:flex; gap:8px; margin-bottom:12px;">
-                            <input type="text" id="ap_manual_kw" placeholder="Nhập từ khóa SEO thủ công (VD: nguồn sỉ gia dụng Hà Nội)" style="flex:1; padding:8px 12px; border:1px solid #93c5fd; border-radius:8px; font-size:0.9rem;">
-                            <button class="btn btn-primary" style="padding:8px 14px; font-size:0.85rem; background:#2563eb;" onclick="addManualKeyword()">+ Thêm Vào Hàng Đợi</button>
                         </div>
                     </div>
 
