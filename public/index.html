@@ -2141,19 +2141,27 @@
             const CHUNK_SIZE = 50; 
             let isFirst = !appendMode; // Xóa DB ở chunk đầu tiên nếu chọn Ghi đè
 
+            let totalUpdated = 0;
+            let totalCreated = 0;
+
             async function uploadChunks() {
                 for (let i = 0; i < newImportedProducts.length; i += CHUNK_SIZE) {
                     const chunk = newImportedProducts.slice(i, i + CHUNK_SIZE);
                     let current = Math.min(i + CHUNK_SIZE, newImportedProducts.length);
                     let percent = Math.floor((current / newImportedProducts.length) * 100);
                     
-                    document.getElementById('importProgressText').innerHTML = `⏳ Đang đẩy lên máy chủ: <strong>${current} / ${newImportedProducts.length}</strong> sản phẩm vừa đọc từ Excel...`;
+                    document.getElementById('importProgressText').innerHTML = `⏳ Đang đẩy lên máy chủ: <strong>${current} / ${newImportedProducts.length}</strong> sản phẩm...`;
                     document.getElementById('importProgressBar').style.width = percent + '%';
                     
-                    await fetchAPI('/api/products/import', {
+                    const res = await fetchAPI('/api/products/import', {
                         method: 'POST',
                         body: { products: chunk, clearFirst: (i === 0) ? isFirst : false }
                     });
+
+                    if (res && res.updatedCount !== undefined) {
+                        totalUpdated += (res.updatedCount || 0);
+                        totalCreated += (res.createdCount || 0);
+                    }
                     
                     await new Promise(resolve => setTimeout(resolve, 100));
                 }
@@ -2172,7 +2180,7 @@
                 if (typeof closeModal === 'function') closeModal('excelModal');
                 else document.getElementById('excelModal').classList.remove('active');
 
-                alert(`✅ Đã nhập thành công đủ ${newImportedProducts.length} sản phẩm từ file Excel!`);
+                alert(`🎉 BÁO CÁO KẾT QUẢ IMPORT THÀNH CÔNG!\n----------------------------------\n🔄 SP ĐƯỢC CẬP NHẬT (thay đổi dữ liệu SP cũ): ${totalUpdated} / ${newImportedProducts.length}\n✨ SP TẠO MỚI (mới hoàn toàn): ${totalCreated} / ${newImportedProducts.length}\n📦 TỔNG SỐ SẢN PHẨM ĐÃ XỬ LÝ: ${newImportedProducts.length} sản phẩm.`);
             }
 
             uploadChunks().catch(e => {

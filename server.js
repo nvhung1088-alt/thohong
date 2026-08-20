@@ -1351,6 +1351,9 @@ app.post('/api/products/import', authenticateToken, async (req, res) => {
             });
         }
 
+        let updatedCount = 0;
+        let createdCount = 0;
+
         const CHUNK_SIZE = 500;
         for (let i = 0; i < products.length; i += CHUNK_SIZE) {
             const chunk = products.slice(i, i + CHUNK_SIZE);
@@ -1361,6 +1364,9 @@ app.post('/api/products/import', authenticateToken, async (req, res) => {
                 let realId = String(p.id);
                 if (cleanSku && skuToIdMap.has(cleanSku)) {
                     realId = skuToIdMap.get(cleanSku);
+                    updatedCount++;
+                } else {
+                    createdCount++;
                 }
 
                 // Sắp xếp các nấc giá sỉ theo điều kiện số lượng tăng dần
@@ -1394,7 +1400,7 @@ app.post('/api/products/import', authenticateToken, async (req, res) => {
                 }
             }
         }
-        res.json({ success: true, count: products.length });
+        res.json({ success: true, total: products.length, updatedCount, createdCount });
     } catch (e) {
         console.error('[IMPORT ERROR]', e.message);
         res.status(500).json({ error: e.message });
