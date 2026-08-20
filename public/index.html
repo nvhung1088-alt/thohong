@@ -3176,8 +3176,12 @@
                 el.style.display = '';
             }
             if (id === 'detailModalOverlay') {
-                updateURLParams({ p: null });
-                updateSEO();
+                const blogDetailView = document.getElementById('blogDetailView');
+                const isViewingBlog = (blogDetailView && blogDetailView.style.display === 'block') || window.location.pathname.startsWith('/blog/');
+                if (!isViewingBlog) {
+                    updateURLParams({ p: null });
+                    updateSEO();
+                }
             }
         }
 
@@ -3231,7 +3235,11 @@
                         newPath = `/san-pham/${pSlug}`;
                         searchParams.delete('p');
                     } else if (params.cat === undefined) {
-                        if (activeCategory && activeCategory !== 'all') {
+                        const blogDetailView = document.getElementById('blogDetailView');
+                        const isViewingBlog = (blogDetailView && blogDetailView.style.display === 'block') || window.location.pathname.startsWith('/blog/');
+                        if (isViewingBlog) {
+                            newPath = window.location.pathname;
+                        } else if (activeCategory && activeCategory !== 'all') {
                             newPath = `/danh-muc/${toSlug(activeCategory)}`;
                         } else {
                             newPath = '/';
