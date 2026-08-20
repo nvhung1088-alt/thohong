@@ -3,20 +3,20 @@ const API_KEY = process.env.PANCAKE_API_KEY || "49a4811c88044bba9601b60159c68735
 const WAREHOUSE_ID = process.env.PANCAKE_WAREHOUSE_ID || "dac2f936-28a2-4ac0-b6ba-c3dba5ddf4b1";
 
 async function test() {
-    // Payload của một sản phẩm (ví dụ Gọt Xoáy Chì mà tôi đã sync được id đúng)
+    // Payload test cho đơn hàng Thỏ Hồng Store
     const orderPayload = {
         order: {
-            order_sources: 'ĐHTK Store',
+            order_sources: 'Thỏ Hồng Store',
             warehouse_id: WAREHOUSE_ID,
-            bill_full_name: "Test Khách DHTK",
+            bill_full_name: "Test Khách Thỏ Hồng",
             bill_phone_number: "0987123123",
             shipping_address: {
-                full_name: "Test Khách DHTK",
+                full_name: "Test Khách Thỏ Hồng",
                 phone_number: "0987123123",
-                full_address: "123 Đường Test DHTK",
-                address: "123 Đường Test DHTK"
+                full_address: "123 Đường Test Thỏ Hồng",
+                address: "123 Đường Test Thỏ Hồng"
             },
-            note: 'Đơn test từ web DHTK',
+            note: 'Đơn test từ web Thỏ Hồng',
             items: [
                 {
                     quantity: 1,

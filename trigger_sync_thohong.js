@@ -1,10 +1,14 @@
 async function triggerSync() {
     try {
-        console.log("1. Đang đăng nhập Admin...");
-        const loginRes = await fetch("https://www.donghangtietkiem.com/api/auth/login", {
+        const baseUrl = process.env.BASE_URL || "https://thohong.top";
+        console.log(`1. Đang đăng nhập Admin trên ${baseUrl}...`);
+        const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: "admin", password: "dhtk2024" })
+            body: JSON.stringify({ 
+                username: process.env.ADMIN_USER || "admin", 
+                password: process.env.ADMIN_PASSWORD || "dhtk2024" 
+            })
         });
         const loginData = await loginRes.json();
         if (!loginData.token) {
@@ -13,7 +17,7 @@ async function triggerSync() {
         }
         console.log("✅ Đăng nhập thành công! Đang gọi lệnh Đồng Bộ POS...");
 
-        const syncRes = await fetch("https://www.donghangtietkiem.com/api/pos/sync", {
+        const syncRes = await fetch(`${baseUrl}/api/pos/sync`, {
             method: "GET",
             headers: { "Authorization": `Bearer ${loginData.token}` }
         });

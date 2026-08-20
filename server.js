@@ -2054,7 +2054,7 @@ async function performPosSync(posCredentials) {
 
 // 10. PANCAKE POS PROXY SYNC (SECURE & ALIGNED WITH MOCKUP)
 
-app.get('/api/pos/sync', async (req, res) => {
+app.get('/api/pos/sync', authenticateToken, async (req, res) => {
     const posCredentials = {
         apiKey: process.env.PANCAKE_API_KEY,
         shopId: process.env.PANCAKE_SHOP_ID,

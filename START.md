@@ -23,3 +23,4 @@
 - **Sprint 7 (Hoàn thành)**: Cập nhật UI Make.com Automation. Bổ sung trạng thái Loading (⏳ Đang gửi...) cho nút Share đơn lẻ để chống click đúp. 
 - **Sprint 8 (Hoàn thành)**: Giải quyết dứt điểm lỗi Make.com Webhook & Facebook Pages. Khắc phục lỗi ngập lụt Queue bằng delay, chuẩn hóa parse mảng ảnh.
 - **Sprint 9 (Hoàn thành)**: Đồng bộ mã nguồn 100% giữa dự án DHTK và Thỏ Hồng. Hợp nhất AI Keyword SEO (nhận diện ngành hàng thông minh), dọn dẹp triệt để cross-domain hardcoded (thohong.top vs dhtk.vercel.app), và bổ sung trang 404 cho Thỏ Hồng. Hai dự án dùng chung 1 khung code chuẩn.
+- **Sprint 10 (Hoàn thành)**: Vá triệt để các lỗ hổng bảo mật mảng đồng bộ POS: Bảo vệ route `/api/pos/sync` bằng `authenticateToken` (chống DDoS & Rate Limit POS), xác nhận bọc kín API `/api/settings` chỉ trả public keys, dọn dẹp và chuẩn hóa các kịch bản test/trigger sync sang `trigger_sync_thohong.js` và `test_thohong_push.js`.
