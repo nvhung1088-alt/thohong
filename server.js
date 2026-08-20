@@ -1340,13 +1340,36 @@ app.post('/api/products/import', authenticateToken, async (req, res) => {
             await db.execute('DELETE FROM products');
         }
 
+        // Tra cứu CSDL hiện tại để lấy Map giữa SKU -> ID sản phẩm cũ (phục vụ cập nhật sản phẩm trùng SKU)
+        const skuToIdMap = new Map();
+        if (clearFirst === false) {
+            const existingRes = await db.execute("SELECT id, sku FROM products WHERE sku IS NOT NULL AND sku != ''");
+            (existingRes.rows || []).forEach(r => {
+                if (r.sku) {
+                    skuToIdMap.set(String(r.sku).trim().toUpperCase(), String(r.id));
+                }
+            });
+        }
+
         const CHUNK_SIZE = 500;
         for (let i = 0; i < products.length; i += CHUNK_SIZE) {
             const chunk = products.slice(i, i + CHUNK_SIZE);
             const stmts = chunk.map(p => {
+                const cleanSku = String(p.sku || '').trim().toUpperCase();
+                
+                // Nếu sản phẩm đã có trên Web trùng SKU -> Giữ nguyên ID cũ để GHI ĐÈ / CẬP NHẬT bản ghi cũ!
+                let realId = String(p.id);
+                if (cleanSku && skuToIdMap.has(cleanSku)) {
+                    realId = skuToIdMap.get(cleanSku);
+                }
+
+                // Sắp xếp các nấc giá sỉ theo điều kiện số lượng tăng dần
+                let tiers = Array.isArray(p.pricingTiers) ? [...p.pricingTiers] : [];
+                tiers.sort((a, b) => (parseInt(a.condition) || 0) - (parseInt(b.condition) || 0));
+
                 const detailsJson = JSON.stringify({
                     images: p.images || [],
-                    pricingTiers: p.pricingTiers || [],
+                    pricingTiers: tiers,
                     options: p.options || [],
                     variants: p.variants || [],
                     description: p.description || '',
@@ -1355,7 +1378,7 @@ app.post('/api/products/import', authenticateToken, async (req, res) => {
                 return {
                     sql: `INSERT OR REPLACE INTO products (id, name, sku, price, costPrice, imageUrl, category, quantity, status, discountGroup, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     args: [
-                        String(p.id), String(p.name || ''), String(p.sku || ''), parseInt(p.price) || 0, parseInt(p.costPrice) || 0,
+                        realId, String(p.name || ''), String(p.sku || ''), parseInt(p.price) || 0, parseInt(p.costPrice) || 0,
                         String(p.imageUrl || (p.images && p.images[0]) || ''), String(p.category || ''), parseInt(p.quantity) || 0,
                         String(p.status || 'active'), String(p.discountGroup || ''), detailsJson
                     ]
@@ -1363,7 +1386,6 @@ app.post('/api/products/import', authenticateToken, async (req, res) => {
             });
             
             const batchResult = await db.executeBatch(stmts);
-            // Check for errors in the batch result
             if (batchResult.results) {
                 for (let r of batchResult.results) {
                     if (r.type === 'error') {
