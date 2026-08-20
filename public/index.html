@@ -307,20 +307,11 @@
             flex-shrink: 0;
             white-space: nowrap;
             -webkit-overflow-scrolling: touch;
-            scrollbar-width: thin;
+            scrollbar-width: none;
         }
         .apanel-tab-bar::-webkit-scrollbar {
-            height: 5px;
-        }
-        .apanel-tab-bar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        .apanel-tab-bar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        .apanel-tab-bar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+            height: 0;
+            display: none;
         }
         .apanel-tab { 
             background: transparent; 
@@ -353,7 +344,7 @@
         
         /* Admin Panel Body & Force Vertical Scrollbar 10px */
         .apanel-body {
-            padding: 1.5rem;
+            padding: 1rem 1.2rem;
             flex: 1;
             overflow-y: scroll !important;
             min-height: 0;
@@ -1398,10 +1389,10 @@
                 </div>
                 <!-- Tab: Blog AI -->
                 <div id="tab-blog" class="apanel-content" style="display:none;">
-                    <div style="margin-bottom:1.2rem; padding-bottom:10px; border-bottom:2px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                        <h3 style="margin:0; font-size:1.25rem; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                    <div style="margin:0 0 1rem 0; padding-bottom:10px; border-bottom:2px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <h3 style="margin:0; padding:0; font-size:1.15rem; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
                             <span>📝 Blog AI — Viết Bài Tự Động Chuẩn SEO</span>
-                            <span style="font-size:0.75rem; background:#eff6ff; color:#2563eb; padding:3px 10px; border-radius:12px; font-weight:700; border:1px solid #bfdbfe;">DeepSeek v4 Pro</span>
+                            <span style="font-size:0.72rem; background:#eff6ff; color:#2563eb; padding:2px 8px; border-radius:10px; font-weight:700; border:1px solid #bfdbfe;">DeepSeek v4 Pro</span>
                         </h3>
                     </div>
 
