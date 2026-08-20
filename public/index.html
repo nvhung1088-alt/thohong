@@ -2079,25 +2079,18 @@
                     }
                 }
 
-                // LỌC TRÙNG CHỈ THEO MÃ SKU (LOẠI BỎ HOÀN TOÀN LỌC THEO TÊN)
+                // LỌC TRÙNG THEO MÃ SKU VỚI CSDL CŨ (ĐẢM BẢO NHẬP ĐỦ 100% DÒNG TỪ EXCEL)
                 const cleanSku = sku ? sku.trim().toUpperCase() : '';
 
                 let targetId = 'SP' + Date.now() + '_' + idx;
-                let inBatchIndex = -1;
 
-                if (cleanSku) {
+                if (cleanSku && products && products.length > 0) {
                     let existingIndex = products.findIndex(p => 
-                        p.sku && String(p.sku).trim().toUpperCase() === cleanSku
-                    );
-
-                    inBatchIndex = newImportedProducts.findIndex(p => 
                         p.sku && String(p.sku).trim().toUpperCase() === cleanSku
                     );
 
                     if (existingIndex > -1) {
                         targetId = products[existingIndex].id; // CẬP NHẬT sản phẩm cũ đã có trên Web trùng SKU
-                    } else if (inBatchIndex > -1) {
-                        targetId = newImportedProducts[inBatchIndex].id; // CẬP NHẬT sản phẩm trùng SKU trong cùng file Excel
                     }
                 }
 
@@ -2133,11 +2126,7 @@
                     variants: [defaultVariant] 
                 };
 
-                if (inBatchIndex > -1) {
-                    newImportedProducts[inBatchIndex] = product;
-                } else {
-                    newImportedProducts.push(product);
-                }
+                newImportedProducts.push(product);
             });
 
             document.getElementById('excelStep2').innerHTML = `
