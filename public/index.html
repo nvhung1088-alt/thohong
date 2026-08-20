@@ -2079,25 +2079,26 @@
                     }
                 }
 
-                // LỌC TRÙNG THEO MÃ SKU HOẶC TÊN TẠI CƠ SỞ DỮ LIỆU
-                const cleanSku = (sku || pName).trim().toUpperCase();
-                const cleanName = pName.trim().toLowerCase();
+                // LỌC TRÙNG CHỈ THEO MÃ SKU (LOẠI BỎ HOÀN TOÀN LỌC THEO TÊN)
+                const cleanSku = sku ? sku.trim().toUpperCase() : '';
 
                 let targetId = 'SP' + Date.now() + '_' + idx;
-                let existingIndex = products.findIndex(p => 
-                    (p.sku && String(p.sku).trim().toUpperCase() === cleanSku) || 
-                    (cleanName && p.name && String(p.name).trim().toLowerCase() === cleanName)
-                );
+                let inBatchIndex = -1;
 
-                let inBatchIndex = newImportedProducts.findIndex(p => 
-                    (p.sku && String(p.sku).trim().toUpperCase() === cleanSku) || 
-                    (cleanName && p.name && String(p.name).trim().toLowerCase() === cleanName)
-                );
+                if (cleanSku) {
+                    let existingIndex = products.findIndex(p => 
+                        p.sku && String(p.sku).trim().toUpperCase() === cleanSku
+                    );
 
-                if (existingIndex > -1) {
-                    targetId = products[existingIndex].id; // CẬP NHẬT sản phẩm cũ đã có trên Web
-                } else if (inBatchIndex > -1) {
-                    targetId = newImportedProducts[inBatchIndex].id; // CẬP NHẬT sản phẩm trùng trong cùng file Excel
+                    inBatchIndex = newImportedProducts.findIndex(p => 
+                        p.sku && String(p.sku).trim().toUpperCase() === cleanSku
+                    );
+
+                    if (existingIndex > -1) {
+                        targetId = products[existingIndex].id; // CẬP NHẬT sản phẩm cũ đã có trên Web trùng SKU
+                    } else if (inBatchIndex > -1) {
+                        targetId = newImportedProducts[inBatchIndex].id; // CẬP NHẬT sản phẩm trùng SKU trong cùng file Excel
+                    }
                 }
 
                 let prices = {};
