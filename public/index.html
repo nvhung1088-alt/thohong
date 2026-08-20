@@ -2409,18 +2409,18 @@
                 currentFiltered = products.filter(p => {
                     if(activeCategory !== 'all' && p.category !== activeCategory) return false;
                     if(searchQ && !p.name.toLowerCase().includes(searchQ) && !p.sku.toLowerCase().includes(searchQ)) return false;
-                    // Auto-hide out-of-stock products (admin always sees all)
-                    if (!isAdmin && storeSettings.hideOutOfStock) {
-                        const totalStock = p.variants.length > 0
-                            ? p.variants.reduce((s, v) => s + (Number(v.stock) || 0), 0)
-                            : (Number(p.quantity) || 0);
-                        if (totalStock <= 0) return false;
-                    }
                     return true;
                 });
 
-                if(sortMode === 'price_asc') currentFiltered.sort((a,b) => a.pricingTiers[0].price - b.pricingTiers[0].price);
-                if(sortMode === 'price_desc') currentFiltered.sort((a,b) => b.pricingTiers[0].price - a.pricingTiers[0].price);
+                // Đẩy sản phẩm hết hàng xuống dưới cùng danh sách (Out-of-Stock to Bottom Sorting)
+                currentFiltered.sort((a, b) => {
+                    const aOOS = isProductOutOfStock(a) ? 1 : 0;
+                    const bOOS = isProductOutOfStock(b) ? 1 : 0;
+                    if (aOOS !== bOOS) return aOOS - bOOS; // Còn hàng (0) đứng trên, Hết hàng (1) đứng dưới
+                    if (sortMode === 'price_asc') return (a.pricingTiers[0]?.price || 0) - (b.pricingTiers[0]?.price || 0);
+                    if (sortMode === 'price_desc') return (b.pricingTiers[0]?.price || 0) - (a.pricingTiers[0]?.price || 0);
+                    return 0;
+                });
 
                 if(currentFiltered.length === 0) { 
                     listEl.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: #94a3b8;">Không tìm thấy sản phẩm nào!</div>'; 
@@ -2850,11 +2850,6 @@
             const p = findProductByAnyId(id, urlSlug);
             if (!p) {
                 showToast('⚠️ Sản phẩm không tồn tại hoặc đã bị gỡ', 'warning');
-                showProduct404Modal();
-                return;
-            }
-            if (!isAdmin && isHideOutOfStockEnabled() && isProductOutOfStock(p)) {
-                showToast('⚠️ Sản phẩm này hiện đang hết hàng và đã ẩn khỏi gian hàng', 'warning');
                 showProduct404Modal();
                 return;
             }

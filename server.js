@@ -4000,6 +4000,11 @@ app.get('/sitemap.xml', async (req, res) => {
             const pName = r.name || 'san-pham';
             const nameSlug = slugifyVietnamese(pName) || 'san-pham';
             const prodUrl = `${baseUrl}/san-pham/${nameSlug}-p${pId}`;
+            let title = 'Tổng Kho Sỉ Lẻ Thỏ Hồng - Hệ Thống Đặt Hàng Thông Minh';
+            let desc = 'Hệ thống đặt hàng sỉ lẻ thông minh Thỏ Hồng / ĐHTK, tự động tính toán chiết khấu, đồng bộ tồn kho POS trực tuyến.';
+            let image = 'https://thohong.top/media__1784598666512.png';
+            let blogPostObj = null;
+            let prodStockStatus = 'InStock';
             xml += `  <url>\n    <loc>${prodUrl}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
         });
 
@@ -4209,9 +4214,24 @@ app.use(async (req, res, next) => {
                             } catch(e) {}
                         }
                         const pDesc = row[5]?.value || '';
-                        title = `${pName} | ${storeName}`;
+
+                        // Tính toán tổng tồn kho thực tế cho SSR Schema
+                        let pStock = 0;
+                        try {
+                            const detailsObj = JSON.parse(row[4]?.value || '{}');
+                            if (Array.isArray(detailsObj.variants) && detailsObj.variants.length > 0) {
+                                pStock = detailsObj.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+                            } else {
+                                pStock = Number(detailsObj.quantity) || 0;
+                            }
+                        } catch(e) {}
+
+                        const isOOS = pStock <= 0;
+                        title = isOOS ? `[Tạm Hết Hàng] ${pName} | ${storeName}` : `${pName} | ${storeName}`;
                         const formatPrice = pPrice ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pPrice) : 'Giá sỉ tốt nhất';
-                        desc = `${pName} giá chỉ từ ${formatPrice}. ${pDesc || 'Hàng sẵn kho, giao nhanh, chiết khấu tự động.'}`.substring(0, 160);
+                        const oosPrefix = isOOS ? '[Tạm hết hàng] ' : '';
+                        desc = `${oosPrefix}${pName} giá chỉ từ ${formatPrice}. ${pDesc || 'Chiết khấu tự động theo số lượng.'}`.substring(0, 160);
+                        prodStockStatus = isOOS ? 'OutOfStock' : 'InStock';
                     } else {
                         title = `404 - Sản Phẩm Không Tồn Tại | ${storeName}`;
                         desc = `Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị gỡ tại ${storeName}.`;
@@ -4281,7 +4301,7 @@ app.use(async (req, res, next) => {
                 "@type": "Offer",
                 "priceCurrency": "VND",
                 "price": 0,
-                "availability": "https://schema.org/InStock",
+                "availability": `https://schema.org/${prodStockStatus || 'InStock'}`,
                 "url": fullUrl
             }
         };
