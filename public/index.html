@@ -3177,8 +3177,18 @@
             }
             if (id === 'detailModalOverlay') {
                 const blogDetailView = document.getElementById('blogDetailView');
-                const isViewingBlog = (blogDetailView && blogDetailView.style.display === 'block') || window.location.pathname.startsWith('/blog/');
-                if (!isViewingBlog) {
+                const isViewingBlog = blogDetailView && blogDetailView.style.display === 'block';
+                if (isViewingBlog && window.currentActiveBlogUrl) {
+                    window.history.replaceState({}, '', window.currentActiveBlogUrl);
+                    if (window.currentActiveBlogSEO) {
+                        updateSEO(
+                            window.currentActiveBlogSEO.title,
+                            window.currentActiveBlogSEO.desc,
+                            window.currentActiveBlogSEO.image,
+                            window.currentActiveBlogSEO.canonical
+                        );
+                    }
+                } else {
                     updateURLParams({ p: null });
                     updateSEO();
                 }
@@ -5195,6 +5205,9 @@
                 const blogImg = p.cover_image || p.imageUrl || p.image || '';
                 const blogCanonical = `${window.location.origin}/blog/${p.slug || p.id || slug}`;
                 
+                window.currentActiveBlogUrl = `/blog/${p.slug || p.id || slug}`;
+                window.currentActiveBlogSEO = { title: blogTitle, desc: blogDesc, image: blogImg, canonical: blogCanonical };
+
                 updateSEO(blogTitle, blogDesc, blogImg, blogCanonical);
 
                 const dateStr = p.created_at ? new Date(p.created_at).toLocaleDateString('vi-VN') : '';
