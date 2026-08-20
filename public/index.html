@@ -2284,11 +2284,19 @@
                 const label = isAll ? 'Tất cả sản phẩm' : c;
                 const count = isAll ? totalCount : catCounts[c];
                 const isActive = activeCategory === c;
-                return `<button class="cat-pill ${isActive ? 'active' : ''}" onclick="setCategory('${c}')">${label} (${count})</button>`;
+                return `
+                    <div class="cat-tab ${isActive ? 'active' : ''}" onclick="setCategory('${c}')">
+                        <span>${label}</span>
+                        <span class="cat-badge-count">${count}</span>
+                    </div>
+                `;
             }).join('');
 
-            const container = document.getElementById('categoryList');
+            const container = document.getElementById('categoryTabs');
             if (container) container.innerHTML = html;
+
+            const badge = document.getElementById('catTotalBadge');
+            if (badge) badge.textContent = sortedCats.length;
         }
 
         function getActiveVariant(pId) {
