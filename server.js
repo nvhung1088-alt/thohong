@@ -4333,8 +4333,10 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
 } else {
     // Trên Vercel: Bỏ qua initDB tự động để tránh 8 truy vấn lặp lại gây trễ cold start
     try { getCachedHtml(); } catch(e) {}
-    console.log('[Vercel] Server ready. Direct CDN route active.');
+    console.log('[Vercel] Server ready. Express app exported for Serverless Handler.');
 }
+
+module.exports = app;
 
 module.exports = app;
 // Trigger Vercel Build
