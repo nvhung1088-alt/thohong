@@ -25,6 +25,10 @@
       "dest": "server.js"
     },
     {
+      "src": "/robots.txt",
+      "dest": "server.js"
+    },
+    {
       "src": "/rss.xml",
       "dest": "server.js"
     },

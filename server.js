@@ -4003,18 +4003,24 @@ app.get('/sitemap.xml', async (req, res) => {
             xml += `  <url>\n    <loc>${prodUrl}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
         });
 
-        // Add published Blog posts to Sitemap
-        const blogResult = await db.execute("SELECT slug, updated_at FROM blog_posts WHERE status = 'published' ORDER BY created_at DESC");
-        const blogRows = blogResult.rows || [];
-        blogRows.forEach(b => {
-            const rawSlug = b.slug?.value || b.slug || '';
-            const blogSlug = slugifyVietnamese(rawSlug) || rawSlug;
-            if (blogSlug) {
-                const blogUrl = `${baseUrl}/blog/${blogSlug}`;
-                const lastmod = (b.updated_at?.value || b.updated_at || today).split('T')[0];
-                xml += `  <url>\n    <loc>${blogUrl}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
-            }
-        });
+        // Add published Blog posts to Sitemap dynamically from blogs table
+        try {
+            const blogResult = await db.execute("SELECT id, slug, title, createdAt, updatedAt FROM blogs ORDER BY createdAt DESC");
+            const blogRows = blogResult.rows || [];
+            blogRows.forEach(b => {
+                const bSlug = b.slug?.value || b.slug || b[1]?.value || b[1] || '';
+                const bTitle = b.title?.value || b.title || b[2]?.value || b[2] || '';
+                const rawBlogSlug = bSlug || toAsciiSlug(bTitle) || b.id;
+                if (rawBlogSlug) {
+                    const blogUrl = `${baseUrl}/blog/${rawBlogSlug}`;
+                    const bUpdated = b.updatedAt?.value || b.updatedAt || b.createdAt?.value || b.createdAt || today;
+                    const lastmod = String(bUpdated).split('T')[0] || today;
+                    xml += `  <url>\n    <loc>${blogUrl}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.85</priority>\n  </url>\n`;
+                }
+            });
+        } catch(be) {
+            console.error('[SITEMAP BLOG QUERY WARN]', be.message);
+        }
 
         xml += `</urlset>`;
 
@@ -4027,6 +4033,16 @@ app.get('/sitemap.xml', async (req, res) => {
         res.setHeader('Content-Type', 'application/xml; charset=utf-8');
         return res.send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://${host}/</loc><lastmod>${today}</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>`);
     }
+});
+
+// Dynamic robots.txt
+app.get('/robots.txt', (req, res) => {
+    const host = req.headers['x-forwarded-host'] || req.headers.host || 'thohong.top';
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const baseUrl = `${protocol}://${host}`;
+    const txt = `# robots.txt - ${host}\nUser-agent: *\nAllow: /\nDisallow: /admin/\n\nSitemap: ${baseUrl}/sitemap.xml\n`;
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return res.send(txt);
 });
 
 // 15. SEO SERVER-SIDE RENDERING FOR CATEGORIES & PRODUCTS (ZALO / FB SHARE PREVIEW)

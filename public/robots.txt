@@ -1,6 +1,0 @@
-# robots.txt - www.thohong.top
-User-agent: *
-Allow: /
-Disallow: /admin/
-
-Sitemap: https://www.thohong.top/sitemap.xml
