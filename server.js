@@ -808,7 +808,22 @@ async function extractBlogImages(blogData) {
     return uniqueImages.slice(0, 4);
 }
 
-async function triggerMakeWebhook(blogData, isManual = false) {
+function getSiteDomain(reqOrHost, defaultDomain = 'https://thohong.top') {
+    let host = '';
+    if (typeof reqOrHost === 'string') {
+        host = reqOrHost;
+    } else if (reqOrHost && reqOrHost.headers) {
+        host = reqOrHost.headers['x-forwarded-host'] || reqOrHost.headers.host || '';
+    }
+    if (host.includes('thohong')) return 'https://thohong.top';
+    if (host.includes('donghangtietkiem') || host.includes('dhtk')) return 'https://donghangtietkiem.com';
+    if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+        return `https://${host.replace(/^https?:\/\//, '')}`;
+    }
+    return defaultDomain;
+}
+
+async function triggerMakeWebhook(blogData, isManual = false, reqOrHost = null) {
     try {
         if (!isManual) {
             const autoRes = await db.execute("SELECT value FROM settings WHERE key = 'autoMakeShare'");
@@ -822,13 +837,15 @@ async function triggerMakeWebhook(blogData, isManual = false) {
         const webhookUrl = result.rows && result.rows[0] ? result.rows[0].value.trim() : '';
         if (!webhookUrl) return { error: '⚠️ Chưa cấu hình Make.com Webhook URL!' };
 
+        const siteDomain = getSiteDomain(reqOrHost, 'https://thohong.top');
+
         let rawSlug = String(blogData.slug || blogData.id || '').trim();
         rawSlug = rawSlug.replace(/^https?:\/\/[^\/]+/i, '').replace(/^\/?blog\/?/i, '').replace(/^\/+/, '');
         let cleanSlug = rawSlug;
-        let finalLink = `https://thohong.top/blog/${rawSlug}`;
+        let finalLink = `${siteDomain}/blog/${rawSlug}`;
 
         const imagesList = await extractBlogImages(blogData);
-        let finalImage = imagesList[0];
+        let finalImage = imagesList[0] || `${siteDomain}/media__1784598666512.png`;
 
         const smartHashtags = generateSmartHashtags(blogData);
 
@@ -847,13 +864,13 @@ async function triggerMakeWebhook(blogData, isManual = false) {
             excerpt: cleanExcerpt,
             content: blogData.content || '',
             link: finalLink,
-            image: imagesList[0],
-            image1: imagesList[0],
-            image2: imagesList[1],
-            image3: imagesList[2],
-            image4: imagesList[3],
-            images: imagesList,
-            facebook_photo_url: imagesList[0],
+            image: finalImage,
+            image1: imagesList[0] || finalImage,
+            image2: imagesList[1] || '',
+            image3: imagesList[2] || '',
+            image4: imagesList[3] || '',
+            images: imagesList.length > 0 ? imagesList : [finalImage],
+            facebook_photo_url: finalImage,
             hashtags: smartHashtags,
             formatted_content: formattedContent,
             created_at: blogData.created_at || new Date().toISOString()
@@ -923,6 +940,8 @@ app.post('/api/admin/social/make-share-now', authenticateToken, async (req, res)
             }
         }
 
+        const siteDomain = getSiteDomain(req, 'https://thohong.top');
+
         // Dự phòng nếu chưa có bài viết nào trong DB
         if (!blogData) {
             blogData = {
@@ -930,11 +949,11 @@ app.post('/api/admin/social/make-share-now', authenticateToken, async (req, res)
                 title: '🎉 Bài viết thử nghiệm phân phối Đa Kênh qua Make.com!',
                 slug: 'bai-viet-thu-nghiem-make-automation',
                 excerpt: 'Tự động xuất bản bài viết tin tức mới nhất từ hệ thống website Thỏ Hồng lên Facebook, Instagram, Telegram, Zalo OA...',
-                image: 'https://thohong.top/media__1784598666512.png'
+                image: `${siteDomain}/media__1784598666512.png`
             };
         }
 
-        const result = await triggerMakeWebhook(blogData, true);
+        const result = await triggerMakeWebhook(blogData, true, req);
         if (result.error) return res.status(400).json({ error: result.error });
         res.json(result);
     } catch(e) {
@@ -958,7 +977,7 @@ app.post('/api/admin/social/make-share-batch', authenticateToken, async (req, re
 
         let count = 0;
         for (const post of unsharedPosts) {
-            const r = await triggerMakeWebhook(post, true);
+            const r = await triggerMakeWebhook(post, true, req);
             if (r.success) count++;
         }
 
@@ -2329,7 +2348,7 @@ app.post('/api/admin/blog', authenticateToken, async (req, res) => {
             // Native Facebook Share bị loại bỏ vì đã dùng Make.com Webhook thay thế
             
             try { 
-                makeResult = await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, content, created_at: now }); 
+                makeResult = await triggerMakeWebhook({ id, title, slug, excerpt: finalSummary, image: cover_image, content, created_at: now }, false, req); 
                 if (makeResult && makeResult.error) console.error('[MAKE WEBHOOK ERROR]', makeResult.error);
             } 
             catch(e) { 
