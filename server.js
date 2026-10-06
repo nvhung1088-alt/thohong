@@ -100,7 +100,8 @@ async function executeTurso(sql, args = []) {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(reqBody)
+        body: JSON.stringify(reqBody),
+        signal: AbortSignal.timeout(5000)
     });
 
     if (!res.ok) {
@@ -145,7 +146,8 @@ async function executeBatchTurso(stmts) {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(reqBody)
+        body: JSON.stringify(reqBody),
+        signal: AbortSignal.timeout(5000)
     });
 
     if (!res.ok) {
@@ -3995,6 +3997,7 @@ app.get('/sitemap.xml', async (req, res) => {
         xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
         
         xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
+        xml += `  <url>\n    <loc>${baseUrl}/blog</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
         xml += `  <url>\n    <loc>${baseUrl}/dia-chi</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
         xml += `  <url>\n    <loc>${baseUrl}/lien-he</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
 
@@ -4019,26 +4022,19 @@ app.get('/sitemap.xml', async (req, res) => {
             const pName = r.name || 'san-pham';
             const nameSlug = slugifyVietnamese(pName) || 'san-pham';
             const prodUrl = `${baseUrl}/san-pham/${nameSlug}-p${pId}`;
-            let title = 'Tổng Kho Sỉ Lẻ Thỏ Hồng - Hệ Thống Đặt Hàng Thông Minh';
-            let desc = 'Hệ thống đặt hàng sỉ lẻ thông minh Thỏ Hồng / ĐHTK, tự động tính toán chiết khấu, đồng bộ tồn kho POS trực tuyến.';
-            let image = 'https://thohong.top/media__1784598666512.png';
-            let blogPostObj = null;
-            let prodStockStatus = 'InStock';
             xml += `  <url>\n    <loc>${prodUrl}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
         });
 
-        // Add published Blog posts to Sitemap dynamically from blogs table
+        // 4. Published Blog Posts (Real-time Dynamic from blog_posts)
         try {
-            const blogResult = await db.execute("SELECT id, slug, title, createdAt, updatedAt FROM blogs ORDER BY createdAt DESC");
+            const blogResult = await db.execute("SELECT id, slug, title, status, created_at, updated_at FROM blog_posts WHERE status = 'published' OR status IS NULL OR status = '' ORDER BY created_at DESC");
             const blogRows = blogResult.rows || [];
             blogRows.forEach(b => {
-                const bSlug = b.slug?.value || b.slug || b[1]?.value || b[1] || '';
-                const bTitle = b.title?.value || b.title || b[2]?.value || b[2] || '';
-                const rawBlogSlug = bSlug || toAsciiSlug(bTitle) || b.id;
-                if (rawBlogSlug) {
-                    const blogUrl = `${baseUrl}/blog/${rawBlogSlug}`;
-                    const bUpdated = b.updatedAt?.value || b.updatedAt || b.createdAt?.value || b.createdAt || today;
-                    const lastmod = String(bUpdated).split('T')[0] || today;
+                const bSlug = b.slug || toAsciiSlug(b.title || '') || b.id;
+                if (bSlug) {
+                    const blogUrl = `${baseUrl}/blog/${bSlug}`;
+                    const rawDate = b.updated_at || b.created_at || today;
+                    const lastmod = String(rawDate).split('T')[0] || today;
                     xml += `  <url>\n    <loc>${blogUrl}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.85</priority>\n  </url>\n`;
                 }
             });
@@ -4074,7 +4070,8 @@ const escapeHtmlServer = (s) => String(s || '').replace(/&/g, '&amp;').replace(/
 const ssrSeoCache = {}; // Memory cache for warm starts
 
 app.use(async (req, res, next) => {
-    const fullPath = req.headers['x-matched-path'] || req.originalUrl || req.url || '';
+    try {
+        const fullPath = req.headers['x-matched-path'] || req.originalUrl || req.url || '';
     if (req.path.startsWith('/api/') || req.url.startsWith('/api/') || fullPath.includes('/api/')) return next();
 
     const isCat = req.query.seo_type === 'cat' || fullPath.includes('/danh-muc/');
@@ -4135,38 +4132,48 @@ app.use(async (req, res, next) => {
 
                 if (isBlog) {
                     const cleanBlogSlug = decodedSlug.replace(/^\/?blog\/?/i, '').trim();
-                    const batchRes = await db.executeBatch([
-                        { sql: "SELECT key, value FROM settings WHERE key IN ('storeName')", args: [] },
-                        { sql: "SELECT id, title, summary, content, imageUrl, createdAt, updatedAt FROM blogs WHERE slug = ? OR id = ? OR LOWER(slug) = ? LIMIT 1", args: [cleanBlogSlug, cleanBlogSlug, cleanBlogSlug.toLowerCase()] }
-                    ]);
-                    const settingsRows = batchRes.results?.[0]?.response?.result?.rows || [];
-                    settingsRows.forEach(r => { if (r[0]?.value === 'storeName') storeName = r[1]?.value || storeName; });
+                    if (!cleanBlogSlug || cleanBlogSlug === 'blog') {
+                        title = `Blog Tin Tức & Cẩm Nang Mua Sắm | ${storeName}`;
+                        desc = `Tổng hợp cẩm nang mua sắm thông minh, xu hướng phụ kiện thời trang và mẹo hay tại ${storeName}.`;
+                        blogPostObj = { title, desc, image, created: new Date().toISOString(), updated: new Date().toISOString() };
+                    } else {
+                        const batchRes = await db.executeBatch([
+                            { sql: "SELECT key, value FROM settings WHERE key IN ('storeName')", args: [] },
+                            { sql: "SELECT id, title, summary, content, cover_image, created_at, updated_at FROM blog_posts WHERE slug = ? OR id = ? OR LOWER(slug) = ? LIMIT 1", args: [cleanBlogSlug, cleanBlogSlug, cleanBlogSlug.toLowerCase()] }
+                        ]);
+                        const settingsRows = batchRes.results?.[0]?.response?.result?.rows || [];
+                        settingsRows.forEach(r => { if (r[0]?.value === 'storeName') storeName = r[1]?.value || storeName; });
 
-                    let blogRows = batchRes.results?.[1]?.response?.result?.rows || [];
-                    if (blogRows.length === 0) {
-                        const fbRes = await db.execute({
-                            sql: "SELECT id, title, summary, content, imageUrl, createdAt, updatedAt FROM blogs WHERE LOWER(title) LIKE ? OR LOWER(slug) LIKE ? LIMIT 1",
-                            args: [`%${cleanBlogSlug.toLowerCase()}%`, `%${cleanBlogSlug.toLowerCase()}%`]
-                        });
-                        blogRows = fbRes.rows || [];
-                    }
+                        let blogRows = batchRes.results?.[1]?.response?.result?.rows || [];
+                        if (blogRows.length === 0) {
+                            const fbRes = await db.execute({
+                                sql: "SELECT id, title, summary, content, cover_image, created_at, updated_at FROM blog_posts WHERE LOWER(title) LIKE ? OR LOWER(slug) LIKE ? LIMIT 1",
+                                args: [`%${cleanBlogSlug.toLowerCase()}%`, `%${cleanBlogSlug.toLowerCase()}%`]
+                            });
+                            blogRows = fbRes.rows || [];
+                        }
 
-                    if (blogRows.length > 0) {
-                        const row = blogRows[0];
-                        const bTitle = row.title || row[1]?.value || row[1] || '';
-                        const bSummary = row.summary || row[2]?.value || row[2] || '';
-                        const bContent = row.content || row[3]?.value || row[3] || '';
-                        const bCover = row.imageUrl || row[4]?.value || row[4] || '';
-                        const bCreated = row.createdAt || row[5]?.value || row[5] || new Date().toISOString();
-                        const bUpdated = row.updatedAt || row[6]?.value || row[6] || bCreated;
+                        if (blogRows.length > 0) {
+                            const row = blogRows[0];
+                            const bTitle = row.title || row[1]?.value || row[1] || '';
+                            const bSummary = row.summary || row[2]?.value || row[2] || '';
+                            const bContent = row.content || row[3]?.value || row[3] || '';
+                            const bCover = row.cover_image || row[4]?.value || row[4] || '';
+                            const bCreated = row.created_at || row[5]?.value || row[5] || new Date().toISOString();
+                            const bUpdated = row.updated_at || row[6]?.value || row[6] || bCreated;
 
-                        const rawText = bSummary || bContent;
-                        const cleanSummary = String(rawText).replace(/<[^>]*>/g, '').replace(/[#*>\-\n\r]/g, ' ').replace(/\s+/g, ' ').trim();
+                            const rawText = bSummary || bContent;
+                            const cleanSummary = String(rawText).replace(/<[^>]*>/g, '').replace(/[#*>\-\n\r]/g, ' ').replace(/\s+/g, ' ').trim();
 
-                        title = `${bTitle} | ${storeName}`;
-                        desc = cleanSummary.substring(0, 155) || `Đọc bài viết ${bTitle} mới nhất tại ${storeName}. Mẹo hay và báo giá văn phòng phẩm tốt nhất.`;
-                        if (bCover) image = bCover;
-                        blogPostObj = { title: bTitle, desc, image, created: bCreated, updated: bUpdated };
+                            title = `${bTitle} | ${storeName}`;
+                            desc = cleanSummary.substring(0, 155) || `Đọc bài viết ${bTitle} mới nhất tại ${storeName}.`;
+                            if (bCover) image = bCover;
+                            blogPostObj = { title: bTitle, desc, image, created: bCreated, updated: bUpdated };
+                        } else {
+                            title = `Blog Tin Tức & Cẩm Nang Mua Sắm | ${storeName}`;
+                            desc = `Tổng hợp cẩm nang mua sắm thông minh tại ${storeName}.`;
+                            blogPostObj = { title, desc, image, created: new Date().toISOString(), updated: new Date().toISOString() };
+                        }
                     }
                 } else if (isCat) {
                     const rawCatName = decodedSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -4273,8 +4280,13 @@ app.use(async (req, res, next) => {
     }
 
     // Inject dynamic Meta, Canonical and Open Graph tags into HTML response
-    let out = html
-        .replace(/<head>/i, `<head>\n    <link rel="canonical" href="${escapeHtmlServer(fullUrl)}">`)
+    let out = html;
+    if (/<link rel="canonical"[^>]*>/i.test(out)) {
+        out = out.replace(/<link rel="canonical"[^>]*>/i, `<link rel="canonical" id="canonicalTag" href="${escapeHtmlServer(fullUrl)}">`);
+    } else {
+        out = out.replace(/<head>/i, `<head>\n    <link rel="canonical" id="canonicalTag" href="${escapeHtmlServer(fullUrl)}">`);
+    }
+    out = out
         .replace(/<title>.*?<\/title>/i, `<title>${escapeHtmlServer(title)}</title>`)
         .replace(/<meta name="description" id="seoDescription" content=".*?">/i, `<meta name="description" id="seoDescription" content="${escapeHtmlServer(desc)}">`)
         .replace(/<meta property="og:title" id="ogTitle" content=".*?">/i, `<meta property="og:title" id="ogTitle" content="${escapeHtmlServer(title)}">`)
@@ -4349,12 +4361,18 @@ app.use(async (req, res, next) => {
         out = out.replace('</head>', `${ssrSchemaJson}</head>`);
     }
 
-    if (settings.customHeaderCode) {
+    if (typeof settings !== 'undefined' && settings?.customHeaderCode) {
         out = out.replace('</head>', `${settings.customHeaderCode}\n</head>`);
     }
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    return res.send(out);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.send(out);
+    } catch (fatalErr) {
+        console.error('[SEO SSR FATAL]', fatalErr.message);
+        const fallbackHtml = getCachedHtml() || '<!DOCTYPE html><html><head><title>Thỏ Hồng</title></head><body></body></html>';
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.send(fallbackHtml);
+    }
 });
 
 // 16. SPA FALLBACK ROUTE (GUARANTEES 200 OK FOR ALL FRONTEND ROUTES)
