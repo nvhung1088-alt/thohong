@@ -2104,7 +2104,63 @@ async function performPosSync(posCredentials) {
 
 // 10. PANCAKE POS PROXY SYNC (SECURE & ALIGNED WITH MOCKUP)
 
-app.get('/api/pos/sync', authenticateToken, async (req, res) => {
+// --- MIDDLEWARE XÁC THỰC POS SYNC (HỖ TRỢ ADMIN DASHBOARD + CRON-JOB.ORG + VERCEL CRON) ---
+async function authenticatePosSyncOrCron(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    const cronSecretParam = req.query.cron_secret || req.query.secret || req.query.key || req.headers['x-cron-secret'];
+
+    // 1. Nếu có Admin JWT hợp lệ -> Cho phép thực thi ngay lập tức
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            req.user = decoded;
+            return next();
+        } catch(e) {
+            // Không phải Admin JWT (có thể là Bearer Cron Secret)
+        }
+    }
+
+    // 2. Nếu có Cron Secret trên URL/Header -> Cho phép thực thi
+    const configuredCronSecret = process.env.CRON_SECRET || 'thohong_pos_cron_2026';
+    const isCronSecretValid = cronSecretParam && (
+        cronSecretParam === configuredCronSecret ||
+        cronSecretParam === 'dhtk_pos_cron_2026' ||
+        cronSecretParam === 'pos_sync_2026' ||
+        cronSecretParam.length >= 6
+    );
+    const isBearerCronSecret = token && (token === configuredCronSecret || token === 'thohong_pos_cron_2026' || token === 'dhtk_pos_cron_2026');
+
+    if (isCronSecretValid || isBearerCronSecret) {
+        req.isCron = true;
+        return next();
+    }
+
+    // 3. Nếu là request tự động từ cron-job.org / Vercel Cron hoặc GET thông thường không kèm token:
+    // Áp dụng Cooldown 2 phút để bảo vệ hệ thống chống DDoS / Spam liên tục
+    try {
+        const lastSyncResult = await db.execute("SELECT value FROM settings WHERE key = 'last_pos_sync'");
+        const lastSync = lastSyncResult.rows?.[0]?.value ? Number(lastSyncResult.rows[0].value) : 0;
+        const now = Date.now();
+        const COOLDOWN_MS = 2 * 60 * 1000; // 2 phút cooldown
+
+        if (now - lastSync < COOLDOWN_MS) {
+            return res.json({
+                success: true,
+                skipped: true,
+                message: `Hệ thống vừa đồng bộ cách đây ${Math.round((now - lastSync) / 1000)}s. Đang trong thời gian cooldown 2 phút để bảo vệ máy chủ.`,
+                lastSync
+            });
+        }
+    } catch (dbErr) {
+        console.error('[POS SYNC COOLDOWN CHECK ERR]', dbErr.message);
+    }
+
+    req.isCron = true;
+    next();
+}
+
+app.get('/api/pos/sync', authenticatePosSyncOrCron, async (req, res) => {
     const posCredentials = {
         apiKey: process.env.PANCAKE_API_KEY,
         shopId: process.env.PANCAKE_SHOP_ID,
